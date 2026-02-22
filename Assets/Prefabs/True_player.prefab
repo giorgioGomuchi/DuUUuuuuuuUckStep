@@ -163,7 +163,7 @@ Transform:
   m_GameObject: {fileID: 3816967603303198950}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalPosition: {x: 0.098, y: 0.27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -420,7 +420,7 @@ Transform:
   m_GameObject: {fileID: 5770645327049198007}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.8, y: -0.3, z: 0}
+  m_LocalPosition: {x: 0.8, y: -0.072, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -496,7 +496,7 @@ Transform:
   m_GameObject: {fileID: 6082436944425872812}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.098, y: -0.23, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -760,8 +760,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bodyRenderer: {fileID: 1269501977103988454}
   weaponPivot: {fileID: 1299991719994296931}
-  mainWeaponPivot: {fileID: 1299991719994296931}
-  secondaryWeaponPivot: {fileID: 6949648203099397145}
+  mainWeaponPivot: {fileID: 4920168545880070600}
+  secondaryWeaponPivot: {fileID: 8920157103955024760}
 --- !u!1 &8901454381241487176
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,8 +5,8 @@ public class PlayerVisualController : MonoBehaviour
     [SerializeField] private SpriteRenderer bodyRenderer;
     [SerializeField] private Transform weaponPivot;
 
-    [SerializeField] private Transform mainWeaponPivot;
-    [SerializeField] private Transform secondaryWeaponPivot;
+    [SerializeField] private SpriteRenderer mainWeaponPivot;
+    [SerializeField] private SpriteRenderer secondaryWeaponPivot;
 
     public void SetAim(Vector2 aimDirection)
     {
@@ -14,6 +14,8 @@ public class PlayerVisualController : MonoBehaviour
             return;
 
         bodyRenderer.flipX = aimDirection.x < 0;
+
+        FlipWeapon(aimDirection);
 
     }
 
@@ -23,11 +25,13 @@ public class PlayerVisualController : MonoBehaviour
         weaponPivot.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
-    private void FlipBody(Vector2 dir)
+    private void FlipWeapon(Vector2 dir)
     {
         bool lookingRight = dir.x >= 0f;
 
-        bodyRenderer.flipX = !lookingRight;
+        mainWeaponPivot.flipY = !lookingRight;
+        secondaryWeaponPivot.flipY = !lookingRight;
+
 
         Vector3 scale = weaponPivot.localScale;
         scale.y = lookingRight ? 1f : -1f;
