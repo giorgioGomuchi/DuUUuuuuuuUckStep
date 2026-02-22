@@ -122,9 +122,8 @@ public class WeaponBehaviour : MonoBehaviour
 
     private void FireMelee(MeleeAnimatedWeaponDataSO data)
     {
-        GameObject hit = Instantiate(data.hitPrefab, firePoint.position, transform.rotation);
+        var controller = Instantiate(data.hitPrefab, firePoint.position, transform.rotation).GetComponent<MeleeHitController>();
 
-        var controller = hit.GetComponent<MeleeHitController>();
         controller.Initialize(
             data.damage,
             data.targetLayer,
