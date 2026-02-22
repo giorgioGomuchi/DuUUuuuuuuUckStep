@@ -183,11 +183,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3fb3443a939352c448d10701cde5bae3, type: 3}
---- !u!212 &301454111 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 8920157103955024760, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-  m_PrefabInstance: {fileID: 2124301386336204746}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &545200289
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -546,49 +541,49 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1267788424530607883, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1267788424530607883, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5594368813941261800, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
       propertyPath: m_Name
       value: True_player
       objectReference: {fileID: 0}
-    - target: {fileID: 6949648203099397145, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.098
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: goodColor.b
+      value: 0.33042666
       objectReference: {fileID: 0}
-    - target: {fileID: 6949648203099397145, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.27
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: goodColor.g
+      value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 7382249323911148104, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.8
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: goodColor.r
+      value: 0.2028302
       objectReference: {fileID: 0}
-    - target: {fileID: 7382249323911148104, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.072
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: thirdCooldown
+      value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 8331451426797187615, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: mainWeaponPivot
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: rhythmTolerance
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: perfectTolerance
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: firstSecondCooldown
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: rhythmFeedbackRenderer
       value: 
       objectReference: {fileID: 2101757399}
-    - target: {fileID: 8331451426797187615, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: secondaryWeaponPivot
-      value: 
-      objectReference: {fileID: 301454111}
-    - target: {fileID: 8920157103955024760, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 33e42adb3a993ef4398daca21ab7526e, type: 3}
-    - target: {fileID: 8920157103955024760, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
-      propertyPath: m_WasSpriteAssigned
-      value: 1
+    - target: {fileID: 5802899414157904659, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: RythmSettings.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8311277986750256229, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: allowDualWield
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

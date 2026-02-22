@@ -8,7 +8,7 @@ public class MeleeHitController : MonoBehaviour
     private bool initialized;
 
     [Header("Knockback")]
-    [SerializeField] private float knockbackForce;
+    private float knockbackForce;
 
     private Animator animator;
     private Collider2D hitCollider;
@@ -39,6 +39,9 @@ public class MeleeHitController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (((1 << other.gameObject.layer) & targetLayer) == 0) return;
+
+
         var projectile = other.GetComponent<EnemyProjectile>();
         if (projectile != null)
         {
