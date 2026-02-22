@@ -186,6 +186,17 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: 4791de9ba2f5de44fbbf5f4da019dc95, type: 2}
   firePoint: {fileID: 7382249323911148104}
   weaponVisual: {fileID: 8920157103955024760}
+  firstSecondCooldown: 2
+  thirdCooldown: 3
+  maxComboSteps: 3
+  rhythmTolerance: 0.3
+  perfectTolerance: 0.1
+  perfectDamageMultiplier: 1.75
+  rhythmFeedbackRenderer: {fileID: 0}
+  goodColor: {r: 1, g: 1, b: 1, a: 1}
+  perfectColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  failColor: {r: 1, g: 0, b: 0, a: 1}
+  feedbackFlashTime: 0.15
 --- !u!1 &5327712827678538197
 GameObject:
   m_ObjectHideFlags: 0
@@ -811,3 +822,14 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: f56c94d9f6bd4d7428fd0595571285a8, type: 2}
   firePoint: {fileID: 2883798344072078977}
   weaponVisual: {fileID: 4920168545880070600}
+  firstSecondCooldown: 1
+  thirdCooldown: 2
+  maxComboSteps: 3
+  rhythmTolerance: 0.5
+  perfectTolerance: 0.3
+  perfectDamageMultiplier: 1.75
+  rhythmFeedbackRenderer: {fileID: 4920168545880070600}
+  goodColor: {r: 0.2028302, g: 1, b: 0.33042666, a: 1}
+  perfectColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  failColor: {r: 1, g: 0, b: 0, a: 1}
+  feedbackFlashTime: 0.15
