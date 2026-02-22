@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a698ded331e9b0d43a1a11160ac2e024, type: 3}
+  m_Name: Eugenia
+  m_EditorClassIdentifier: 
+  enemyName: 
+  sprite: {fileID: 0}
+  attackType: 1
+  maxHealth: 10
+  damage: 1
+  viewDistance: 6
+  chaseRange: 5
+  moveSpeed: 2
+  chaseSpeed: 3
+  stopDistance: 0.6
+  idleTime: 0.6
+  wanderTime: 1.8
+  wanderChance: 0.75
+  wanderRadius: 3
+  attackCooldown: 1
+  targetLayerProyectile:
+    serializedVersion: 2
+    m_Bits: 0
+  meleeRange: 0.5
+  sniperAimDuration: 0.6
+  sniperBlinkInterval: 0.08
+  sniperProjectileCount: 1
+  sniperSpreadAngle: 8
+  sniperTimeBetweenShots: 0.03
+  sniperProjectilePrefab: {fileID: 6390833445296210467, guid: 3e2243272ccfe3e4e88cb7fc782d8273, type: 3}
+  sniperProjectileSpeed: 12

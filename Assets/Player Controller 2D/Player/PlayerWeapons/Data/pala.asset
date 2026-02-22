@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07ca0e084eb5c82448ffb44c17b7546a, type: 3}
+  m_Name: pala
+  m_EditorClassIdentifier: 
+  weaponName: pala
+  weaponIcon: {fileID: 21300000, guid: 6ee063cbc51d28c4caedd9c93b811e4e, type: 3}
+  damage: 1
+  cooldown: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 640
+  cameraShakeDuration: 0.1
+  cameraShakeStrength: 0.15
+  knockbackForce: 8
+  swingAngle: 120
+  swingDuration: 0.15
+  hitPrefab: {fileID: 5479714505732433738, guid: 9897fbf55ac55ba4bb043f3c5af50570, type: 3}
+  range: 1.2
+  hitLifetime: 5
+  attackAnimation: {fileID: 0}
+  feedbackRotationAngle: -75
+  feedbackRotationDuration: 0.08
+  spriteAngleOffset: 0
