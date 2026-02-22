@@ -4,13 +4,13 @@ using UnityEngine.InputSystem;
 
 public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActions
 {
-    public event Action<Vector2> MoveEvent;
-    public event Action<Vector2> AimEvent;
-    public event Action FirePrimaryEvent;
-    public event Action FireSecondaryEvent;
-    public event Action SwitchWeaponEvent;
+    public static event Action<Vector2> MoveEvent;
+    public static event Action<Vector2> AimEvent;
+    public static event Action FirePrimaryEvent;
+    public static event Action FireSecondaryEvent;
+    public static event Action SwitchWeaponEvent;
 
-    public Vector2 MoveInput { get; private set; }
+    public static Vector2 MoveInput { get; private set; }
 
     private InputSystem_Actions input;
 

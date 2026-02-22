@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerInputReader))]
 public class PlayerAnimationController : MonoBehaviour
 {
     [Header("References")]
@@ -9,11 +8,9 @@ public class PlayerAnimationController : MonoBehaviour
     [Header("Animator Parameters")]
     [SerializeField] private string speedParameter = "Speed";
 
-    private PlayerInputReader input;
 
     private void Awake()
     {
-        input = GetComponent<PlayerInputReader>();
 
         if (animator == null)
         {
@@ -27,7 +24,7 @@ public class PlayerAnimationController : MonoBehaviour
 
     private void Update()
     {
-        float speed = input.MoveInput.magnitude;
+        float speed = PlayerInputReader.MoveInput.magnitude;
         animator.SetFloat(speedParameter, speed);
     }
 }
