@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8ce3b1c72ca9ee4d9e24cd7f212acb4, type: 3}
+  m_Name: Escoputa
+  m_EditorClassIdentifier: 
+  weaponName: 
+  weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
+  damage: 1
+  cooldown: 0.5
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  cameraShakeDuration: 0.1
+  cameraShakeStrength: 0.15
+  knockbackForce: 2.5
+  projectilePrefab: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
+  projectileSpeed: 12
+  pellets: 6
+  spreadAngleDegrees: 18
+  randomSpread: 1

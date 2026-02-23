@@ -186,17 +186,7 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: 4791de9ba2f5de44fbbf5f4da019dc95, type: 2}
   firePoint: {fileID: 7382249323911148104}
   weaponVisual: {fileID: 8920157103955024760}
-  firstSecondCooldown: 2
-  thirdCooldown: 3
-  maxComboSteps: 3
-  rhythmTolerance: 0.3
-  perfectTolerance: 0.1
-  perfectDamageMultiplier: 1.75
-  rhythmFeedbackRenderer: {fileID: 0}
-  goodColor: {r: 1, g: 1, b: 1, a: 1}
-  perfectColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  failColor: {r: 1, g: 0, b: 0, a: 1}
-  feedbackFlashTime: 0.15
+  debugLogs: 0
 --- !u!1 &5327712827678538197
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,7 +233,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainWeapon: {fileID: 5802899414157904659}
   secondaryWeapon: {fileID: 4295726288201216857}
-  allowDualWield: 0
+  allowDualWield: 1
+  rhythmCombat: {fileID: 0}
+  perfectDamageMultiplier: 1.75
+  cancelAttackOnFail: 1
+  debugLogs: 1
 --- !u!1 &5594368813941261800
 GameObject:
   m_ObjectHideFlags: 0
@@ -259,6 +253,7 @@ GameObject:
   - component: {fileID: 4327081478098081933}
   - component: {fileID: 6466824036278410424}
   - component: {fileID: 162600176082314574}
+  - component: {fileID: 6494226186206726626}
   m_Layer: 6
   m_Name: True_player
   m_TagString: Untagged
@@ -406,6 +401,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
+--- !u!114 &6494226186206726626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5594368813941261800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ce134c59ba40694981c8a4bf6a57c8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rhythmCombat: {fileID: 0}
+  weaponSlots: {fileID: 8311277986750256229}
+  shotgunRecipeId: MeleeMeleeRanged_Shotgun
+  shotgunWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  shotgunDurationSeconds: 6
+  debugLogs: 1
 --- !u!1 &5770645327049198007
 GameObject:
   m_ObjectHideFlags: 0
@@ -822,14 +835,4 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: f56c94d9f6bd4d7428fd0595571285a8, type: 2}
   firePoint: {fileID: 2883798344072078977}
   weaponVisual: {fileID: 4920168545880070600}
-  firstSecondCooldown: 1
-  thirdCooldown: 2
-  maxComboSteps: 3
-  rhythmTolerance: 0.5
-  perfectTolerance: 0.3
-  perfectDamageMultiplier: 1.75
-  rhythmFeedbackRenderer: {fileID: 4920168545880070600}
-  goodColor: {r: 0.2028302, g: 1, b: 0.33042666, a: 1}
-  perfectColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  failColor: {r: 1, g: 0, b: 0, a: 1}
-  feedbackFlashTime: 0.15
+  debugLogs: 0
