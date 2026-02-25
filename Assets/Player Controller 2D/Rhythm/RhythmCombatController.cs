@@ -3,15 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public enum RhythmHitQuality
-{
-    Fail,
-    Good,
-    Perfect
-}
-
 [Serializable]
-public class RhythmQualityEvent : UnityEvent<RhythmHitQuality> { }
+public class RhythmInputEvent : UnityEvent<RhythmInputResult> { }
 
 [Serializable]
 public class ComboTriggeredEvent : UnityEvent<RhythmComboRecipeSO> { }
@@ -21,24 +14,31 @@ public class RhythmCombatController : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private RhythmClock rhythmClock;
 
-    [Header("Timing Windows (seconds)")]
-    [SerializeField] private float goodWindowSeconds = 0.06f;
-    [SerializeField] private float perfectWindowSeconds = 0.025f;
-    [SerializeField] private float bufferResetSeconds = 0.5f;
+    [Header("Timing Windows")]
+    [SerializeField] private float goodWindowSeconds = 0.075f;
+    [SerializeField] private float perfectWindowSeconds = 0.03f;
+
+    [Header("Combo Buffer")]
+    [SerializeField] private float bufferResetSeconds = 0.55f;
     [SerializeField] private int maxBufferSize = 8;
+
+    [Header("Perfect Tracking")]
+    [SerializeField] private int perfectHistorySize = 16;
 
     [Header("Combo Recipes")]
     [SerializeField] private List<RhythmComboRecipeSO> recipes = new();
 
     [Header("Events")]
-    public RhythmQualityEvent onQualityEvaluated;
+    public RhythmInputEvent onInputEvaluated;
     public ComboTriggeredEvent onComboTriggered;
 
-    [Header("Debug")]
-    [SerializeField] private bool debugLogs = true;
+    [SerializeField] private int accuracyHistorySize = 16;
+    private readonly Queue<float> accuracyHistory = new();
 
+    private readonly List<CombatAction> actionBuffer = new();
     private readonly List<RhythmHitQuality> qualityBuffer = new();
-    private readonly List<CombatAction> buffer = new();
+    private readonly Queue<RhythmHitQuality> perfectHistory = new();
+
     private float lastInputTime;
 
     private void Awake()
@@ -47,101 +47,93 @@ public class RhythmCombatController : MonoBehaviour
             rhythmClock = FindFirstObjectByType<RhythmClock>();
     }
 
-    public RhythmHitQuality RegisterAttack(CombatAction action)
+    public RhythmInputResult RegisterAttack(CombatAction action)
     {
-        var quality = EvaluateQuality();
+        float dist = rhythmClock != null ? rhythmClock.GetDistanceToNearestBeatSeconds() : 0f;
+        float phase = rhythmClock != null ? rhythmClock.GetBeatPhase01() : 0f;
 
-        if (debugLogs)
-            Debug.Log($"[RhythmCombat] Input={action} Quality={quality}");
+        RhythmHitQuality quality = EvaluateQuality(dist);
+        bool wasEarly = phase < 0.5f;
 
-        onQualityEvaluated?.Invoke(quality);
+        var result = new RhythmInputResult
+        {
+            action = action,
+            quality = quality,
+            distanceToBeat = dist,
+            beatPhase01 = phase,
+            wasEarly = wasEarly
+        };
 
-        // Reset buffer if too late or fail
+        onInputEvaluated?.Invoke(result);
+
+        TrackPerfectHistory(quality);
+        TrackAccuracyHistory(quality);
+
         if (Time.time - lastInputTime > bufferResetSeconds || quality == RhythmHitQuality.Fail)
         {
-            buffer.Clear();
+            actionBuffer.Clear();
             qualityBuffer.Clear();
         }
 
         lastInputTime = Time.time;
 
-        buffer.Add(action);
+        actionBuffer.Add(action);
         qualityBuffer.Add(quality);
-        TrimQualityBuffer();
-        TrimBuffer();
 
-        TryResolveRecipes(quality);
+        TrimBuffers();
+        TryResolveRecipes();
 
-        return quality;
+        return result;
     }
 
-    private RhythmHitQuality EvaluateQuality()
+    private RhythmHitQuality EvaluateQuality(float dist)
     {
-        if (rhythmClock == null)
-            return RhythmHitQuality.Good; // fallback
-
-        float dist = rhythmClock.GetDistanceToNearestBeatSeconds();
-
         if (dist <= perfectWindowSeconds) return RhythmHitQuality.Perfect;
         if (dist <= goodWindowSeconds) return RhythmHitQuality.Good;
         return RhythmHitQuality.Fail;
     }
 
-    private void TrimBuffer()
+    private void TrackPerfectHistory(RhythmHitQuality quality)
     {
-        while (buffer.Count > maxBufferSize)
-            buffer.RemoveAt(0);
+        perfectHistory.Enqueue(quality);
+
+        while (perfectHistory.Count > perfectHistorySize)
+            perfectHistory.Dequeue();
     }
 
-    private void TrimQualityBuffer()
+    public float GetRecentPerfectRatio()
     {
-        while (qualityBuffer.Count > maxBufferSize)
-            qualityBuffer.RemoveAt(0);
+        if (perfectHistory.Count == 0)
+            return 0f;
+
+        int perfectCount = 0;
+
+        foreach (var q in perfectHistory)
+            if (q == RhythmHitQuality.Perfect)
+                perfectCount++;
+
+        return (float)perfectCount / perfectHistory.Count;
     }
 
-    //private void TryResolveRecipes(RhythmHitQuality lastQuality)
-    //{
-    //    if (recipes == null || recipes.Count == 0) return;
+    private void TrimBuffers()
+    {
+        while (actionBuffer.Count > maxBufferSize) actionBuffer.RemoveAt(0);
+        while (qualityBuffer.Count > maxBufferSize) qualityBuffer.RemoveAt(0);
+    }
 
-    //    foreach (var recipe in recipes)
-    //    {
-    //        if (recipe == null || recipe.Length == 0) continue;
-
-    //        if (recipe.RequireGoodOrPerfect && lastQuality == RhythmHitQuality.Fail)
-    //            continue;
-
-    //        if (EndsWithSequence(recipe.Sequence))
-    //        {
-    //            if (debugLogs)
-    //                Debug.Log($"[RhythmCombat] Combo triggered: {recipe.RecipeId}");
-
-    //            onComboTriggered?.Invoke(recipe);
-    //            buffer.Clear();
-    //            return;
-    //        }
-    //    }
-    //}
-
-    private void TryResolveRecipes(RhythmHitQuality lastQuality)
+    private void TryResolveRecipes()
     {
         if (recipes == null || recipes.Count == 0) return;
 
         foreach (var recipe in recipes)
         {
             if (recipe == null || recipe.Length == 0) continue;
-
-            if (!EndsWithSequence(recipe.Sequence))
-                continue;
-
-            if (!SequenceQualityIsValid(recipe))
-                continue;
-
-            if (debugLogs)
-                Debug.Log($"[RhythmCombat] Combo triggered: {recipe.RecipeId}");
+            if (!EndsWithSequence(recipe.Sequence)) continue;
+            if (recipe.RequireGoodOrPerfect && !LastWasPerfect()) continue;
 
             onComboTriggered?.Invoke(recipe);
 
-            buffer.Clear();
+            actionBuffer.Clear();
             qualityBuffer.Clear();
             return;
         }
@@ -150,51 +142,48 @@ public class RhythmCombatController : MonoBehaviour
     private bool EndsWithSequence(CombatAction[] sequence)
     {
         if (sequence == null) return false;
-        if (buffer.Count < sequence.Length) return false;
+        if (actionBuffer.Count < sequence.Length) return false;
 
-        int start = buffer.Count - sequence.Length;
+        int start = actionBuffer.Count - sequence.Length;
 
         for (int i = 0; i < sequence.Length; i++)
-        {
-            if (buffer[start + i] != sequence[i])
+            if (actionBuffer[start + i] != sequence[i])
                 return false;
-        }
+
         return true;
     }
 
-    private bool SequenceQualityIsValid(RhythmComboRecipeSO recipe)
+    private bool LastWasPerfect()
     {
-        if (qualityBuffer.Count < recipe.Length)
-            return false;
+        if (qualityBuffer.Count == 0) return false;
+        return qualityBuffer[^1] == RhythmHitQuality.Perfect;
+    }
 
-        int start = qualityBuffer.Count - recipe.Length;
 
-        for (int i = 0; i < recipe.Length; i++)
+    private void TrackAccuracyHistory(RhythmHitQuality quality)
+    {
+        float score = quality switch
         {
-            var q = qualityBuffer[start + i];
+            RhythmHitQuality.Perfect => 1f,
+            RhythmHitQuality.Good => 0.6f,
+            _ => 0f
+        };
 
-            // Último input debe ser PERFECT
-            if (i == recipe.Length - 1)
-            {
-                if (q != RhythmHitQuality.Perfect)
-                    return false;
-            }
-            else
-            {
-                // Los anteriores no pueden ser FAIL
-                if (q == RhythmHitQuality.Fail)
-                    return false;
-            }
-        }
+        accuracyHistory.Enqueue(score);
 
-        return true;
+        while (accuracyHistory.Count > accuracyHistorySize)
+            accuracyHistory.Dequeue();
+    }
+
+    public float GetRecentAccuracy01()
+    {
+        if (accuracyHistory.Count == 0)
+            return 0f;
+
+        float sum = 0f;
+        foreach (var s in accuracyHistory)
+            sum += s;
+
+        return Mathf.Clamp01(sum / accuracyHistory.Count);
     }
 }
-
-/*
-Unity setup:
-- Put this on the same "RhythmSystem" GameObject.
-- Assign RhythmClock.
-- Add recipes list (SO_RhythmComboRecipe assets).
-- Weapon system should call RegisterAttack(Melee/Ranged) when an attack is requested.
-*/

@@ -7,25 +7,18 @@ public class RhythmClock : MonoBehaviour
 
     [Header("Tempo")]
     [SerializeField] private float bpm = 145f;
-
-    [Header("Debug")]
-    [SerializeField] private bool debugLogs = false;
+    [SerializeField] private int beatsPerBar = 4;
 
     private double startDspTime;
     private bool started;
 
     public float BPM => bpm;
-    public float SecondsPerBeat => 60f / Mathf.Max(1f, bpm);
+    public float SecondsPerBeat => 60f / bpm;
+    public float SecondsPerBar => SecondsPerBeat * beatsPerBar;
 
     private void Start()
     {
         StartClock();
-    }
-
-    private void Awake()
-    {
-        if (musicSource == null)
-            musicSource = GetComponent<AudioSource>();
     }
 
     public void StartClock()
@@ -35,9 +28,6 @@ public class RhythmClock : MonoBehaviour
 
         if (musicSource != null && !musicSource.isPlaying)
             musicSource.Play();
-
-        if (debugLogs)
-            Debug.Log($"[RhythmClock] Started at dsp={startDspTime:0.000}");
     }
 
     public float GetBeatPhase01()
@@ -45,27 +35,50 @@ public class RhythmClock : MonoBehaviour
         if (!started) return 0f;
 
         double elapsed = AudioSettings.dspTime - startDspTime;
-        double spb = SecondsPerBeat;
-
-        if (spb <= 0.0001) return 0f;
-
-        double phase = (elapsed % spb) / spb; // 0..1
+        double phase = (elapsed % SecondsPerBeat) / SecondsPerBeat;
         return (float)phase;
     }
 
     public float GetDistanceToNearestBeatSeconds()
     {
-        if (!started) return float.MaxValue;
+        float phase = GetBeatPhase01();
+        float dist = Mathf.Min(phase, 1f - phase);
+        return dist * SecondsPerBeat;
+    }
 
-        float phase = GetBeatPhase01(); // 0..1
-        float distPhase = Mathf.Min(phase, 1f - phase); // nearest edge (beat)
-        return distPhase * SecondsPerBeat;
+    public bool IsBarStart()
+    {
+        if (!started) return false;
+
+        double elapsed = AudioSettings.dspTime - startDspTime;
+        double barTime = elapsed % SecondsPerBar;
+
+        return barTime < 0.02; // ventana pequeña
+    }
+
+    public double GetSongElapsedDSP()
+    {
+        if (!started) return 0;
+        return AudioSettings.dspTime - startDspTime;
+    }
+
+    public int GetCurrentBarIndex()
+    {
+        return Mathf.FloorToInt((float)(GetSongElapsedDSP() / SecondsPerBar));
+    }
+
+    public double GetNextBarDSP()
+    {
+        double elapsed = GetSongElapsedDSP();
+        double bars = System.Math.Ceiling(elapsed / SecondsPerBar);
+        return startDspTime + (bars * SecondsPerBar);
+    }
+
+    public double GetNextSubdivisionDSP(int division)
+    {
+        double subdivisionLength = SecondsPerBeat / (division / 4.0);
+        double elapsed = GetSongElapsedDSP();
+        double next = System.Math.Ceiling(elapsed / subdivisionLength);
+        return startDspTime + (next * subdivisionLength);
     }
 }
-
-/*
-Unity setup:
-- Put this on a GameObject like "RhythmSystem".
-- Assign an AudioSource with your music.
-- Call StartClock() once (e.g., on scene start).
-*/

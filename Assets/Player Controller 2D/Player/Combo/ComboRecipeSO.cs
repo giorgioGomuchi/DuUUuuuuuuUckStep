@@ -1,12 +1,5 @@
 using UnityEngine;
 
-public enum CombatAction
-{
-    Melee,
-    Ranged,
-    Dash,
-    Special
-}
 
 [CreateAssetMenu(menuName = "Combat/Rhythm Combo Recipe", fileName = "SO_RhythmComboRecipe")]
 public class RhythmComboRecipeSO : ScriptableObject
@@ -20,10 +13,12 @@ public class RhythmComboRecipeSO : ScriptableObject
     [Header("Rules")]
     [SerializeField] private bool requireGoodOrPerfect = true;
 
+    [SerializeField] private string displayName = "Shotgun Combo";
+    public string DisplayName => displayName;
+
     public string RecipeId => recipeId;
     public CombatAction[] Sequence => sequence;
     public bool RequireGoodOrPerfect => requireGoodOrPerfect;
-
     public int Length => sequence != null ? sequence.Length : 0;
 }
 

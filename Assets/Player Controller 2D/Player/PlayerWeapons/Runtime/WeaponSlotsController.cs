@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class WeaponSlotsController : MonoBehaviour
 {
@@ -11,7 +10,7 @@ public class WeaponSlotsController : MonoBehaviour
     [Header("Rhythm Combat")]
     [SerializeField] private RhythmCombatController rhythmCombat;
     [SerializeField] private float perfectDamageMultiplier = 1.75f;
-    [SerializeField] private bool cancelAttackOnFail = true;
+    [SerializeField] private bool cancelAttackOnFail = false;
 
     [Header("Temporary Overrides")]
     [SerializeField] private bool debugLogs = true;
@@ -22,45 +21,30 @@ public class WeaponSlotsController : MonoBehaviour
 
     private Vector2 currentAim;
 
-    // Override state (we will override ONLY ranged weapons by default)
-    private Coroutine rangedOverrideRoutine;
+    // Override (no coroutine)
     private WeaponDataSO cachedMainWeaponData;
     private WeaponDataSO cachedSecondaryWeaponData;
-    private bool hasCachedData;
+    private bool overrideActive;
+    private float overrideEndTime;
 
     private void Awake()
     {
         singleState = new SingleWieldState(this);
         dualState = new DualWieldState(this);
 
-        if (allowDualWield)
-            currentState = dualState;
-        else
-            currentState = singleState;
+        currentState = allowDualWield ? dualState : singleState;
 
         if (rhythmCombat == null)
             rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
 
-        currentState.Enter(); // critical
-    }
-
-    #region State Control
-
-    public void SetSingleWield()
-    {
-        currentState?.Exit();
-        currentState = singleState;
         currentState.Enter();
     }
 
-    public void SetDualWield()
+    private void Update()
     {
-        currentState?.Exit();
-        currentState = dualState;
-        currentState.Enter();
+        if (overrideActive && Time.time >= overrideEndTime)
+            EndRangedOverride();
     }
-
-    #endregion
 
     #region Public API (called from PlayerRoot)
 
@@ -114,21 +98,21 @@ public class WeaponSlotsController : MonoBehaviour
 
         CombatAction action = GetActionForWeapon(weapon);
 
-        RhythmHitQuality quality = RhythmHitQuality.Good;
-        if (rhythmCombat != null)
-            quality = rhythmCombat.RegisterAttack(action);
+        RhythmInputResult result = rhythmCombat != null
+            ? rhythmCombat.RegisterAttack(action)
+            : new RhythmInputResult { action = action, quality = RhythmHitQuality.Good, distanceToBeat = 0f, beatPhase01 = 0f, wasEarly = true };
 
-        if (cancelAttackOnFail && quality == RhythmHitQuality.Fail)
+        if (cancelAttackOnFail && result.quality == RhythmHitQuality.Fail)
         {
             if (debugLogs) Debug.Log($"[WeaponSlots] Cancel attack (Fail). action={action}", this);
             return;
         }
 
-        if (quality == RhythmHitQuality.Perfect)
+        if (result.quality == RhythmHitQuality.Perfect)
         {
             weapon.SetNextAttackDamageMultiplier(perfectDamageMultiplier);
 
-            if (debugLogs) Debug.Log($"[WeaponSlots] Perfect! Applied dmg x{perfectDamageMultiplier:0.00} to {weapon.name}", this);
+            if (debugLogs) Debug.Log($"[WeaponSlots] Perfect => dmg x{perfectDamageMultiplier:0.00} ({weapon.name})", this);
         }
 
         weapon.TryFire();
@@ -137,19 +121,13 @@ public class WeaponSlotsController : MonoBehaviour
     private CombatAction GetActionForWeapon(WeaponBehaviour weapon)
     {
         if (weapon == null) return CombatAction.Ranged;
-
-        var data = weapon.WeaponData;
-        return data is MeleeAnimatedWeaponDataSO ? CombatAction.Melee : CombatAction.Ranged;
+        return weapon.WeaponData is MeleeAnimatedWeaponDataSO ? CombatAction.Melee : CombatAction.Ranged;
     }
 
     #endregion
 
     #region Temporary Overrides (Shotgun mode, etc.)
 
-    /// <summary>
-    /// Temporarily overrides the RANGED weapon data for the player.
-    /// This is intended for combos like Melee->Melee->Ranged => Shotgun.
-    /// </summary>
     public void ApplyTemporaryRangedOverride(WeaponDataSO overrideWeaponData, float durationSeconds)
     {
         if (overrideWeaponData == null)
@@ -164,61 +142,45 @@ public class WeaponSlotsController : MonoBehaviour
             return;
         }
 
-        // Stop previous override if any
-        if (rangedOverrideRoutine != null)
-            StopCoroutine(rangedOverrideRoutine);
+        CacheWeaponDataIfNeeded();
+        ApplyOverrideToRangedWeapons(overrideWeaponData);
 
-        rangedOverrideRoutine = StartCoroutine(RangedOverrideRoutine(overrideWeaponData, durationSeconds));
+        overrideActive = true;
+        overrideEndTime = Time.time + durationSeconds;
+
+        if (debugLogs)
+            Debug.Log($"[WeaponSlots] Ranged override ON for {durationSeconds:0.00}s", this);
     }
 
-    private IEnumerator RangedOverrideRoutine(WeaponDataSO overrideWeaponData, float durationSeconds)
+    private void CacheWeaponDataIfNeeded()
     {
-        CacheWeaponDataIfNeeded();
+        if (overrideActive) return; // already cached
 
-        bool appliedAny = false;
+        cachedMainWeaponData = mainWeapon != null ? mainWeapon.WeaponData : null;
+        cachedSecondaryWeaponData = secondaryWeapon != null ? secondaryWeapon.WeaponData : null;
+    }
 
-        appliedAny |= TryApplyRangedOverrideToWeapon(mainWeapon, overrideWeaponData);
-        appliedAny |= TryApplyRangedOverrideToWeapon(secondaryWeapon, overrideWeaponData);
-
-        if (debugLogs)
-            Debug.Log($"[WeaponSlots] Ranged override applied={appliedAny} for {durationSeconds:0.00}s", this);
-
-        yield return new WaitForSeconds(durationSeconds);
-
-        RestoreCachedWeaponData();
-
-        if (debugLogs)
-            Debug.Log("[WeaponSlots] Ranged override ended, restored original data.", this);
-
-        rangedOverrideRoutine = null;
+    private void ApplyOverrideToRangedWeapons(WeaponDataSO overrideWeaponData)
+    {
+        TryApplyRangedOverrideToWeapon(mainWeapon, overrideWeaponData);
+        TryApplyRangedOverrideToWeapon(secondaryWeapon, overrideWeaponData);
     }
 
     private bool TryApplyRangedOverrideToWeapon(WeaponBehaviour weapon, WeaponDataSO overrideWeaponData)
     {
         if (weapon == null) return false;
 
-        // Only replace ranged weapons (keep melee as-is)
-        bool isRanged = weapon.WeaponData is RangedWeaponDataSO || weapon.WeaponData is ExplosiveWeaponDataSO;
+        bool isRanged = weapon.WeaponData is RangedWeaponDataSO || weapon.WeaponData is ExplosiveWeaponDataSO || weapon.WeaponData is ShotgunWeaponDataSO;
         if (!isRanged) return false;
 
-        weapon.SetWeaponData(overrideWeaponData); // requires one method added in WeaponBehaviour
+        weapon.SetWeaponData(overrideWeaponData);
         weapon.SetAim(currentAim);
-
         return true;
     }
 
-    private void CacheWeaponDataIfNeeded()
+    private void EndRangedOverride()
     {
-        if (hasCachedData) return;
-
-        cachedMainWeaponData = mainWeapon != null ? mainWeapon.WeaponData : null;
-        cachedSecondaryWeaponData = secondaryWeapon != null ? secondaryWeapon.WeaponData : null;
-        hasCachedData = true;
-    }
-
-    private void RestoreCachedWeaponData()
-    {
-        if (!hasCachedData) return;
+        overrideActive = false;
 
         if (mainWeapon != null && cachedMainWeaponData != null)
         {
@@ -232,13 +194,12 @@ public class WeaponSlotsController : MonoBehaviour
             secondaryWeapon.SetAim(currentAim);
         }
 
-        hasCachedData = false;
         cachedMainWeaponData = null;
         cachedSecondaryWeaponData = null;
+
+        if (debugLogs)
+            Debug.Log("[WeaponSlots] Ranged override OFF (restored).", this);
     }
-
-
-
 
     #endregion
 }

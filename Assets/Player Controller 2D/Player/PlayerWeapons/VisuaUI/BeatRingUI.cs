@@ -1,4 +1,4 @@
-using System.Collections;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,29 +7,36 @@ public class BeatRingUI : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private RhythmClock rhythmClock;
     [SerializeField] private RhythmCombatController rhythmCombat;
+    [SerializeField] private MusicDirector musicDirector;
 
-    [Header("UI")]
-    [SerializeField] private Image ringImage;                 // Filled Radial 360
-    [SerializeField] private RectTransform shrinkingIndicator; // scale pulse
+    [Header("Ring")]
+    [SerializeField] private Image ringImage;
+    [SerializeField] private RectTransform shrinkingIndicator;
 
-    [Header("Shrink Settings")]
-    [SerializeField] private float maxScale = 1.0f;
-    [SerializeField] private float minScale = 0.25f;
+    [Header("Hit Pulse")]
+    [SerializeField] private Image hitPulseImage;
+    [SerializeField] private float pulseDuration = 0.25f;
+    [SerializeField] private float maxPulseScale = 1.8f;
 
-    [Header("Feedback")]
+    [Header("Text")]
+    [SerializeField] private TMP_Text feedbackText;
+    [SerializeField] private float textDuration = 0.5f;
+
+    [Header("Colors")]
+    [SerializeField] private Color perfectColor = new Color(1f, 0.9f, 0.2f);
     [SerializeField] private Color goodColor = Color.white;
-    [SerializeField] private Color perfectColor = Color.yellow;
-    [SerializeField] private Color failColor = Color.red;
-    [SerializeField] private float flashSeconds = 0.12f;
+    [SerializeField] private Color failColor = new Color(1f, 0.2f, 0.2f);
+    [SerializeField] private Color comboColor = Color.cyan;
+    [SerializeField] private Color baseRingColor = Color.white;
 
-    [Header("SFX")]
-    [SerializeField] private AudioSource sfxSource;
-    [SerializeField] private AudioClip goodClip;
-    [SerializeField] private AudioClip perfectClip;
-    [SerializeField] private AudioClip failClip;
+    private Color currentTargetColor;
 
-    private Coroutine flashRoutine;
-    private Color originalColor;
+    [Header("BuildUp Visual")]
+    [SerializeField] private Color buildUpColor = Color.magenta;
+    [SerializeField] private float buildUpPulseMultiplier = 2f;
+
+    private float pulseTimer;
+    private float textTimer;
 
     private void Awake()
     {
@@ -39,86 +46,148 @@ public class BeatRingUI : MonoBehaviour
         if (rhythmCombat == null)
             rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
 
+        if (hitPulseImage != null)
+            hitPulseImage.color = Color.clear;
+        currentTargetColor = baseRingColor;
+
         if (ringImage != null)
-            originalColor = ringImage.color;
+            ringImage.color = baseRingColor;
     }
 
     private void OnEnable()
     {
-        if (rhythmCombat != null)
-            rhythmCombat.onQualityEvaluated.AddListener(OnQuality);
+        rhythmCombat.onInputEvaluated.AddListener(OnInput);
+        rhythmCombat.onComboTriggered.AddListener(OnCombo);
     }
 
     private void OnDisable()
     {
-        if (rhythmCombat != null)
-            rhythmCombat.onQualityEvaluated.RemoveListener(OnQuality);
+        rhythmCombat.onInputEvaluated.RemoveListener(OnInput);
+        rhythmCombat.onComboTriggered.RemoveListener(OnCombo);
     }
 
     private void Update()
     {
+        UpdateRing();
+        UpdatePulse();
+        UpdateText();
+    }
+
+    private void UpdateRing()
+    {
         if (rhythmClock == null) return;
 
-        float phase = rhythmClock.GetBeatPhase01(); // 0..1
+        float phase = rhythmClock.GetBeatPhase01();
+
+        //bool isBuildUp = musicDirector != null && musicDirector.IsBuildUpActive();
+
+        // Determinar color objetivo
+        //currentTargetColor = isBuildUp ? buildUpColor : baseRingColor;
+
+        // Interpolación suave
         if (ringImage != null)
+        {
+            ringImage.color = Color.Lerp(
+                ringImage.color,
+                currentTargetColor,
+                Time.deltaTime * 6f
+            );
+
             ringImage.fillAmount = phase;
+        }
 
         if (shrinkingIndicator != null)
         {
-            float scale = Mathf.Lerp(maxScale, minScale, phase);
+            float scale = Mathf.Lerp(1f, 0.3f, phase);
             shrinkingIndicator.localScale = Vector3.one * scale;
         }
     }
 
-    private void OnQuality(RhythmHitQuality quality)
+    private void UpdatePulse()
     {
-        switch (quality)
+        if (pulseTimer > 0f)
         {
-            case RhythmHitQuality.Perfect:
-                Flash(perfectColor);
-                PlayClip(perfectClip);
-                break;
-            case RhythmHitQuality.Good:
-                Flash(goodColor);
-                PlayClip(goodClip);
-                break;
-            default:
-                Flash(failColor);
-                PlayClip(failClip);
-                break;
+            pulseTimer -= Time.deltaTime;
+
+            float t = 1f - (pulseTimer / pulseDuration);
+
+            float scale = Mathf.Lerp(0.5f, maxPulseScale, t);
+            hitPulseImage.rectTransform.localScale = Vector3.one * scale;
+
+            Color c = hitPulseImage.color;
+            c.a = Mathf.Lerp(1f, 0f, t);
+            hitPulseImage.color = c;
         }
     }
 
-    private void Flash(Color c)
+    private void UpdateText()
     {
-        if (ringImage == null) return;
-
-        if (flashRoutine != null)
-            StopCoroutine(flashRoutine);
-
-        flashRoutine = StartCoroutine(FlashRoutine(c));
+        if (textTimer > 0f)
+        {
+            textTimer -= Time.deltaTime;
+        }
+        else if (feedbackText != null)
+        {
+            feedbackText.text = "";
+        }
     }
 
-    private IEnumerator FlashRoutine(Color c)
+    private void OnInput(RhythmInputResult result)
     {
-        ringImage.color = c;
-        yield return new WaitForSeconds(flashSeconds);
-        ringImage.color = originalColor;
+        Color c = result.quality switch
+        {
+            RhythmHitQuality.Perfect => perfectColor,
+            RhythmHitQuality.Good => goodColor,
+            _ => failColor
+        };
+
+        TriggerPulse(c);
+
+        if (feedbackText != null)
+        {
+            string timing = "";
+
+            if (result.quality != RhythmHitQuality.Fail)
+                timing = result.wasEarly ? "EARLY" : "LATE";
+            else
+                timing = result.wasEarly ? "EARLY" : "LATE";
+
+            feedbackText.text =
+                $"{result.action.ToString().ToUpper()} - " +
+                $"{result.quality.ToString().ToUpper()} " +
+                $"({timing})";
+
+            feedbackText.color = c;
+
+            feedbackText.fontSize =
+                result.quality == RhythmHitQuality.Perfect ? 42 :
+                result.quality == RhythmHitQuality.Good ? 34 : 28;
+        }
+
+        textTimer = textDuration;
     }
 
-    private void PlayClip(AudioClip clip)
+    private void OnCombo(RhythmComboRecipeSO recipe)
     {
-        if (sfxSource == null || clip == null) return;
-        sfxSource.PlayOneShot(clip);
+        if (feedbackText == null || recipe == null)
+            return;
+
+        feedbackText.text = $"COMBO: {recipe.RecipeId}";
+        feedbackText.color = comboColor;
+        feedbackText.fontSize = 48;
+
+        textTimer = 0.8f;
+
+        TriggerPulse(comboColor);
+    }
+
+    private void TriggerPulse(Color c)
+    {
+        if (hitPulseImage == null)
+            return;
+
+        hitPulseImage.color = c;
+        hitPulseImage.rectTransform.localScale = Vector3.one * 0.5f;
+        pulseTimer = pulseDuration;
     }
 }
-
-/*
-Unity setup:
-- Create a Canvas -> add an Image for the ring:
-  - Image Type: Filled
-  - Fill Method: Radial 360
-- Add a child (Image/RectTransform) as shrinkingIndicator.
-- Add this script to the UI root, link refs.
-- Assign SFX clips.
-*/
