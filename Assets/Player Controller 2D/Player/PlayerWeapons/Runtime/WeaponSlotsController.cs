@@ -7,12 +7,13 @@ public class WeaponSlotsController : MonoBehaviour
     [SerializeField] private WeaponBehaviour secondaryWeapon;
     [SerializeField] private bool allowDualWield;
 
-    [Header("Rhythm Combat")]
-    [SerializeField] private RhythmCombatController rhythmCombat;
-    [SerializeField] private float perfectDamageMultiplier = 1.75f;
-    [SerializeField] private bool cancelAttackOnFail = false;
+    [Header("Rhythm System (Optional Master Switch)")]
+    [Tooltip("If false, ALL weapons fire in Normal mode regardless of WeaponDataSO settings.")]
+    [SerializeField] private bool rhythmSystemEnabled = false;
 
-    [Header("Temporary Overrides")]
+    [SerializeField] private RhythmCombatController rhythmCombat;
+
+    [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
     private IWeaponState currentState;
@@ -20,6 +21,10 @@ public class WeaponSlotsController : MonoBehaviour
     private DualWieldState dualState;
 
     private Vector2 currentAim;
+
+    // Fire modes
+    private IFireMode normalMode;
+    private IFireMode rhythmMode;
 
     // Override (no coroutine)
     private WeaponDataSO cachedMainWeaponData;
@@ -36,6 +41,9 @@ public class WeaponSlotsController : MonoBehaviour
 
         if (rhythmCombat == null)
             rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
+
+        normalMode = new NormalFireMode();
+        rhythmMode = new RhythmFireMode(rhythmCombat);
 
         currentState.Enter();
     }
@@ -60,12 +68,23 @@ public class WeaponSlotsController : MonoBehaviour
         secondaryWeapon?.SetAim(direction);
     }
 
+    /// <summary>
+    /// Optional global switch (power-up / settings / accessibility).
+    /// </summary>
+    public void SetRhythmSystemEnabled(bool enabled)
+    {
+        rhythmSystemEnabled = enabled;
+
+        if (debugLogs)
+            Debug.Log($"[WeaponSlots] Rhythm system enabled = {rhythmSystemEnabled}", this);
+    }
+
     #endregion
 
     #region Internal helpers used by states
 
-    public void FireMain() => TryFireWithRhythm(mainWeapon);
-    public void FireSecondaryWeapon() => TryFireWithRhythm(secondaryWeapon);
+    public void FireMain() => TryFire(mainWeapon);
+    public void FireSecondaryWeapon() => TryFire(secondaryWeapon);
 
     public void SwapWeapons()
     {
@@ -90,32 +109,24 @@ public class WeaponSlotsController : MonoBehaviour
 
     #endregion
 
-    #region Rhythm Gate
+    #region Fire Routing (Per-weapon Rhythm Gate)
 
-    private void TryFireWithRhythm(WeaponBehaviour weapon)
+    private void TryFire(WeaponBehaviour weapon)
     {
-        if (weapon == null) return;
+        if (weapon == null || weapon.WeaponData == null)
+            return;
 
         CombatAction action = GetActionForWeapon(weapon);
 
-        RhythmInputResult result = rhythmCombat != null
-            ? rhythmCombat.RegisterAttack(action)
-            : new RhythmInputResult { action = action, quality = RhythmHitQuality.Good, distanceToBeat = 0f, beatPhase01 = 0f, wasEarly = true };
+        // Per-weapon routing + optional global override
+        IFireMode mode = (rhythmSystemEnabled && weapon.WeaponData.useRhythmGate)
+            ? rhythmMode
+            : normalMode;
 
-        if (cancelAttackOnFail && result.quality == RhythmHitQuality.Fail)
-        {
-            if (debugLogs) Debug.Log($"[WeaponSlots] Cancel attack (Fail). action={action}", this);
-            return;
-        }
+        mode.TryFire(weapon, action);
 
-        if (result.quality == RhythmHitQuality.Perfect)
-        {
-            weapon.SetNextAttackDamageMultiplier(perfectDamageMultiplier);
-
-            if (debugLogs) Debug.Log($"[WeaponSlots] Perfect => dmg x{perfectDamageMultiplier:0.00} ({weapon.name})", this);
-        }
-
-        weapon.TryFire();
+        if (debugLogs && rhythmSystemEnabled && weapon.WeaponData.useRhythmGate)
+            Debug.Log($"[WeaponSlots] Fired with RHYTHM mode: {weapon.name}", this);
     }
 
     private CombatAction GetActionForWeapon(WeaponBehaviour weapon)
@@ -154,7 +165,7 @@ public class WeaponSlotsController : MonoBehaviour
 
     private void CacheWeaponDataIfNeeded()
     {
-        if (overrideActive) return; // already cached
+        if (overrideActive) return;
 
         cachedMainWeaponData = mainWeapon != null ? mainWeapon.WeaponData : null;
         cachedSecondaryWeaponData = secondaryWeapon != null ? secondaryWeapon.WeaponData : null;
@@ -170,7 +181,11 @@ public class WeaponSlotsController : MonoBehaviour
     {
         if (weapon == null) return false;
 
-        bool isRanged = weapon.WeaponData is RangedWeaponDataSO || weapon.WeaponData is ExplosiveWeaponDataSO || weapon.WeaponData is ShotgunWeaponDataSO;
+        bool isRanged =
+            weapon.WeaponData is RangedWeaponDataSO ||
+            weapon.WeaponData is ExplosiveWeaponDataSO ||
+            weapon.WeaponData is ShotgunWeaponDataSO;
+
         if (!isRanged) return false;
 
         weapon.SetWeaponData(overrideWeaponData);

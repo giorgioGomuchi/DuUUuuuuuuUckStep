@@ -1185,7 +1185,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3285cfa80f9fff478dd240a1f74eedd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  musicSource: {fileID: 1163674120}
+  musicSource: {fileID: 0}
   bpm: 145
   beatsPerBar: 4
 --- !u!4 &1546302358
@@ -1224,9 +1224,9 @@ MonoBehaviour:
   combat: {fileID: 1546302356}
   beats: {fileID: 220746897}
   beatsClips:
+  - {fileID: 8300000, guid: e1e8c7029b4c0e844af22007c75b7994, type: 3}
   - {fileID: 8300000, guid: 2c57dde779259f947b62e749f0be693f, type: 3}
   - {fileID: 8300000, guid: 1bafb03db0a993c418ed3adf350ba5ab, type: 3}
-  - {fileID: 8300000, guid: e1e8c7029b4c0e844af22007c75b7994, type: 3}
   - {fileID: 8300000, guid: 9f44cb5bae9d2844c9add67c99ecc523, type: 3}
   - {fileID: 8300000, guid: 69cd339ff3f72ad4186d24c2a1a53416, type: 3}
   shakers: {fileID: 1257561527}
@@ -1250,7 +1250,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 4fa0e2916655d2446b6c8849a58ff47e, type: 3}
   - {fileID: 8300000, guid: c405fc85dae797c419d3dded118a9dd3, type: 3}
   fadeSpeed: 4
-  snareRollClip: {fileID: 8300000, guid: ead20b3fa0fcb2e4ea78cbc5277204e9, type: 3}
 --- !u!114 &1546302360
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1258,7 +1257,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1546302355}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f8a32ccd80ce954a944d808aa2dbbb6, type: 3}
   m_Name: 
@@ -1843,6 +1842,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4295726288201216857, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: weaponData
+      value: 
+      objectReference: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
     - target: {fileID: 5594368813941261800, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
       propertyPath: m_Name
       value: True_player
@@ -1850,14 +1853,18 @@ PrefabInstance:
     - target: {fileID: 6494226186206726626, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
       propertyPath: rhythmCombat
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1546302356}
     - target: {fileID: 8311277986750256229, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
       propertyPath: rhythmCombat
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1546302356}
     - target: {fileID: 8311277986750256229, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
       propertyPath: allowDualWield
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8311277986750256229, guid: 46851099d5e488e43a0effc1c7043094, type: 3}
+      propertyPath: rhythmSystemEnabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

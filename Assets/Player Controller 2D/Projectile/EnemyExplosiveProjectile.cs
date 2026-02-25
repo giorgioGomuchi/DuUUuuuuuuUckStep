@@ -3,6 +3,13 @@ using UnityEngine;
 
 public class EnemyExplosiveProjectile : EnemyProjectile
 {
+    [Header("Collision")]
+    [SerializeField] private LayerMask worldMask; // Walls/Obstacles/etc (para destruir si golpea mundo)
+    [SerializeField] private LayerMask parryMask;
+
+    private bool reflected;
+
+
     [Header("Explosion")]
     [SerializeField] private float explosionRadius = 2f;
     [SerializeField] private int explosionDamage = 3;
@@ -32,27 +39,39 @@ public class EnemyExplosiveProjectile : EnemyProjectile
 
     protected override void OnHit(Collider2D other)
     {
-        // 1️⃣ Parry
-        if (IsParryLayer(other))
+        DebugLayerInfo(other);
+
+        // 1) Parry (zonas/parry colliders)
+        if ((parryMask.value & (1 << other.gameObject.layer)) != 0)
         {
             Vector2 forward = other.transform.right;
             Reflect(forward);
             return;
         }
 
-        // 2️⃣ Mundo
-        if (IsWorldLayer(other))
+        // 2) Mundo
+        if ((worldMask.value & (1 << other.gameObject.layer)) != 0)
         {
-            Explode();
+            if (debugLogs) Debug.Log("[EnemyProjectile] Hit world -> Kill", this);
+            Kill();
             return;
         }
 
-        // 3️⃣ Si impacta directamente un target válido
-        if (IsInTargetMask(other))
+        // 3) Daño normal
+        if (!IsInTargetMask(other))
+            return;
+
+        if (reflected)
         {
-            var damageable = other.GetComponentInParent<IDamageable>();
-            if (damageable != null)
-                damageable.TakeDamage(damage);
+            var enemy = other.GetComponentInParent<EnemyHealth>();
+            if (enemy != null)
+                enemy.TakeDamage(damage);
+        }
+        else
+        {
+            var player = other.GetComponentInParent<PlayerHealth>();
+            if (player != null)
+                player.TakeDamage(damage);
         }
 
         Explode();

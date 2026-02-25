@@ -4,6 +4,20 @@ using UnityEngine;
 
 public class WeaponDataSO : ScriptableObject
 {
+    [Header("Attack Strategy")]
+    public AttackModuleSO attackModule;
+
+    [Header("Rhythm")]
+    [Tooltip("If true, this weapon uses RhythmCombatController timing. If false, it fires with normal cooldown only.")]
+    public bool useRhythmGate = false;
+
+    [Tooltip("If true, a Fail timing can cancel the shot (only when rhythm gate is enabled).")]
+    public bool cancelAttackOnFail = false;
+
+    [Tooltip("Damage multiplier applied on Perfect timing (only when rhythm gate is enabled).")]
+    [Range(1f, 3f)]
+    public float perfectDamageMultiplier = 1.75f;
+
     [Header("General")]
     public string weaponName;
     public Sprite weaponIcon;          // icono / sprite en mano

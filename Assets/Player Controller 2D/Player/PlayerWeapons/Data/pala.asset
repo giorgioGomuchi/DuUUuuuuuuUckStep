@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07ca0e084eb5c82448ffb44c17b7546a, type: 3}
   m_Name: pala
   m_EditorClassIdentifier: 
+  useRhythmGate: 0
+  cancelAttackOnFail: 0
+  perfectDamageMultiplier: 1.75
   weaponName: pala
   weaponIcon: {fileID: 21300000, guid: 6ee063cbc51d28c4caedd9c93b811e4e, type: 3}
   damage: 1
-  cooldown: 1
+  cooldown: 0.2
   targetLayer:
     serializedVersion: 2
     m_Bits: 640

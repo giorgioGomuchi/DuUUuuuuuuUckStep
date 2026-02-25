@@ -9,24 +9,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8ce3b1c72ca9ee4d9e24cd7f212acb4, type: 3}
-  m_Name: Escoputa
+  m_Script: {fileID: 11500000, guid: 1ad6a96e9afbf4245a026c44d2598a41, type: 3}
+  m_Name: Boomerang
   m_EditorClassIdentifier: 
-  useRhythmGate: 1
+  attackModule: {fileID: 0}
+  useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
-  weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
+  weaponIcon: {fileID: 0}
   damage: 1
-  cooldown: 1
+  cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 0
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
-  projectilePrefab: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
+  projectilePrefab: {fileID: 0}
   projectileSpeed: 12
-  pellets: 6
-  spreadAngleDegrees: 18
-  randomSpread: 1
+  outboundDistance: 6
+  returnSpeedMultiplier: 1.15
+  deflectOnlyWhileReturning: 1
+  outboundDistanceAfterDeflect: 4.5
