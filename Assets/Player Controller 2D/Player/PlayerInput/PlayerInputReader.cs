@@ -4,13 +4,17 @@ using UnityEngine.InputSystem;
 
 public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActions
 {
-    public static event Action<Vector2> MoveEvent;
-    public static event Action<Vector2> AimEvent;
-    public static event Action FirePrimaryEvent;
-    public static event Action FireSecondaryEvent;
-    public static event Action SwitchWeaponEvent;
+    public event Action<Vector2> OnAimScreen;
 
-    public static Vector2 MoveInput { get; private set; }
+    public Vector2 Move { get; private set; }
+    public Vector2 AimScreen { get; private set; }
+
+    public bool FirePrimaryHeld { get; private set; }
+    public bool FireSecondaryHeld { get; private set; }
+
+    // Press (edge) para acciones que se consumen (dash, switch)
+    public bool DashPressed { get; private set; }
+    public bool SwitchWeaponPressed { get; private set; }
 
     private InputSystem_Actions input;
 
@@ -20,60 +24,66 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         input.Player.SetCallbacks(this);
     }
 
-    private void OnEnable()
+    private void OnEnable() => input.Player.Enable();
+    private void OnDisable() => input.Player.Disable();
+
+    // --- Consumo ---
+    public bool ConsumeDashPressed()
     {
-        input.Player.Enable();
+        if (!DashPressed) return false;
+        DashPressed = false;
+        return true;
     }
 
-    private void OnDisable()
+    public bool ConsumeSwitchWeaponPressed()
     {
-        input.Player.Disable();
+        if (!SwitchWeaponPressed) return false;
+        SwitchWeaponPressed = false;
+        return true;
     }
 
+    // --- Callbacks ---
     public void OnMove(InputAction.CallbackContext context)
     {
-        MoveInput = context.ReadValue<Vector2>();
-        MoveEvent?.Invoke(MoveInput);
-
-#if UNITY_EDITOR
-#endif
+        Move = context.ReadValue<Vector2>();
     }
 
     public void OnAim(InputAction.CallbackContext context)
     {
-        Vector2 aim = context.ReadValue<Vector2>();
-        AimEvent?.Invoke(aim);
-
-#if UNITY_EDITOR
-#endif
+        AimScreen = context.ReadValue<Vector2>();
+        OnAimScreen?.Invoke(AimScreen);
     }
 
     public void OnFirePrimary(InputAction.CallbackContext context)
     {
-        if (context.performed)
-        {
-            Debug.Log("Primary Fire");
-            FirePrimaryEvent?.Invoke();
-        }
+        // Held para autofire (si tu arma lo permite por cooldown)
+        if (context.started) FirePrimaryHeld = true;
+        if (context.canceled) FirePrimaryHeld = false;
     }
 
     public void OnFireSecondary(InputAction.CallbackContext context)
     {
-        if (context.performed)
-            FireSecondaryEvent?.Invoke();
+        if (context.started) FireSecondaryHeld = true;
+        if (context.canceled) FireSecondaryHeld = false;
     }
 
     public void OnSwitchWeapon(InputAction.CallbackContext context)
     {
         if (context.performed)
-            SwitchWeaponEvent?.Invoke();
+            SwitchWeaponPressed = true;
     }
 
-    // Métodos obligatorios del interface aunque no los uses:
+    // Jump = Dash
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+            DashPressed = true;
+    }
+
+    // No usados ahora
     public void OnAttack(InputAction.CallbackContext context) { }
     public void OnInteract(InputAction.CallbackContext context) { }
     public void OnCrouch(InputAction.CallbackContext context) { }
-    public void OnJump(InputAction.CallbackContext context) { }
     public void OnPrevious(InputAction.CallbackContext context) { }
     public void OnNext(InputAction.CallbackContext context) { }
     public void OnSprint(InputAction.CallbackContext context) { }

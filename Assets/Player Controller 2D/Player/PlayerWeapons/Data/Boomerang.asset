@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Boomerang
   m_EditorClassIdentifier: 
   attackModule: {fileID: 11400000, guid: 4c8f00f711077fb4a9828a4d62051938, type: 2}
-  useRhythmGate: 1
+  useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 

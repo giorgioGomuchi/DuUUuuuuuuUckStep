@@ -4,8 +4,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("Stats")]
     [SerializeField] private int maxHealth = 10;
+    [SerializeField] private int currentHealth = 10;
 
-    [SerializeField] private int currentHealth;
+    private bool invulnerable;
+
+    public void SetInvulnerable(bool value) => invulnerable = value;
 
     private void Awake()
     {
@@ -15,11 +18,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(int amount)
     {
-        currentHealth -= amount;
-        Debug.Log($"[Player] Took {amount} damage. HP = {currentHealth}");
+        if (invulnerable) return;
 
-        if (currentHealth <= 0f)
-            Die();
+        currentHealth -= amount;
+        if (currentHealth <= 0)
+        {
+            currentHealth = 0;
+            // TODO: muerte
+        }
     }
 
 

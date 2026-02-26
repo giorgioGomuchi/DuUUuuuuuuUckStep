@@ -6,31 +6,34 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float speed = 5f;
 
     private Rigidbody2D rb;
+    private bool velocityOverride;
 
-    private Vector2 moveInput;
+    public Vector2 CurrentVelocity => rb.velocity;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
     }
 
-    private void OnEnable()
+    public void Move(Vector2 direction)
     {
-        PlayerInputReader.MoveEvent += SetMove;
+        if (velocityOverride) return;
+        rb.velocity = direction * speed;
     }
 
-    private void OnDisable()
+    public void ForceVelocity(Vector2 velocity)
     {
-        PlayerInputReader.MoveEvent -= SetMove;
+        velocityOverride = true;
+        rb.velocity = velocity;
     }
 
-    private void SetMove(Vector2 dir)
+    public void ReleaseVelocityOverride()
     {
-        moveInput = dir;
+        velocityOverride = false;
     }
 
-    private void FixedUpdate()
+    public void Stop()
     {
-        rb.velocity = moveInput * speed;
+        rb.velocity = Vector2.zero;
     }
 }

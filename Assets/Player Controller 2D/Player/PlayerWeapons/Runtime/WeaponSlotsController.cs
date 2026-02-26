@@ -139,6 +139,13 @@ public class WeaponSlotsController : MonoBehaviour
 
     #region Temporary Overrides (Shotgun mode, etc.)
 
+    public void CancelAllAttacks()
+    {
+        // Cancelación “limpia” base: desbloquea locks (boomerang) y permite que módulos cancelables limpien.
+        mainWeapon?.CancelAttack();
+        secondaryWeapon?.CancelAttack();
+    }
+
     public void ApplyTemporaryRangedOverride(WeaponDataSO overrideWeaponData, float durationSeconds)
     {
         if (overrideWeaponData == null)

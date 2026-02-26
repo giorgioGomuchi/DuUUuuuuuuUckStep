@@ -167,5 +167,16 @@ public class WeaponBehaviour : MonoBehaviour
         attackLocked = false;
     }
 
+    public void CancelAttack()
+    {
+        // Base cancel: unlock boomerang/locks
+        attackLocked = false;
+
+        if (weaponData != null && weaponData.attackModule is ICancelableAttackModule cancelable)
+        {
+            cancelable.Cancel(this, weaponData);
+        }
+    }
+
     #endregion
 }

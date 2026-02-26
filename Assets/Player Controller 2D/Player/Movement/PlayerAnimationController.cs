@@ -4,27 +4,26 @@ public class PlayerAnimationController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Animator animator;
+    [SerializeField] private PlayerMovement movement;
 
     [Header("Animator Parameters")]
     [SerializeField] private string speedParameter = "Speed";
 
-
     private void Awake()
     {
+        if (animator == null) animator = GetComponentInChildren<Animator>();
+        if (movement == null) movement = GetComponentInChildren<PlayerMovement>();
 
-        if (animator == null)
+        if (animator == null || movement == null)
         {
-            Debug.LogError("[PlayerAnimationController] Animator reference is missing.");
+            Debug.LogError("[PlayerAnimationController] Missing refs (Animator or PlayerMovement).");
             enabled = false;
-            return;
         }
-
-        Debug.Log("[PlayerAnimationController] Initialized");
     }
 
     private void Update()
     {
-        float speed = PlayerInputReader.MoveInput.magnitude;
+        float speed = movement.CurrentVelocity.magnitude;
         animator.SetFloat(speedParameter, speed);
     }
 }
