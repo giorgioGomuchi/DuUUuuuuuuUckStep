@@ -9,11 +9,15 @@ public class MeleeHitController : MonoBehaviour
     [Header("Knockback")]
     private float knockbackForce;
 
-    [Header("Deflect/Parry")]
+    [Header("Deflect / Parry")]
     [SerializeField] private bool enableDeflect = true;
     [SerializeField, Range(-1f, 1f)] private float deflectDotThreshold = 0.5f;
     [SerializeField] private float deflectSpeedMultiplier = 1.0f;
     [SerializeField] private bool disableColliderAfterDeflect = true;
+
+    [Header("Boomerang Rhythm Integration")]
+    [SerializeField] private bool useRhythmForBoomerangRebound = true;
+    [SerializeField] private BoomerangMusicDirector boomerangMusic;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
@@ -25,18 +29,22 @@ public class MeleeHitController : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         hitCollider = GetComponent<Collider2D>();
+
+        if (boomerangMusic == null)
+            boomerangMusic = FindFirstObjectByType<BoomerangMusicDirector>();
     }
 
     public void Initialize(int damage, LayerMask targetLayer, float fallbackLifetime, float knockbackForce)
     {
         this.damage = damage;
         this.targetLayer = targetLayer;
-        initialized = true;
         this.knockbackForce = knockbackForce;
+        initialized = true;
 
         float lifetime = fallbackLifetime;
 
-        if (animator != null && animator.runtimeAnimatorController != null &&
+        if (animator != null &&
+            animator.runtimeAnimatorController != null &&
             animator.runtimeAnimatorController.animationClips.Length > 0)
         {
             lifetime = animator.runtimeAnimatorController.animationClips[0].length;
@@ -50,29 +58,78 @@ public class MeleeHitController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // 0) DEFLECT primero, sin depender del targetLayer (para poder devolver balas enemigas)
+        // =========================================================
+        // 0) DEFLECT (SIEMPRE PRIMERO)
+        // =========================================================
+
         if (enableDeflect)
         {
             var deflectable = other.GetComponent<IDeflectable2D>();
-            if (deflectable == null) deflectable = other.GetComponentInParent<IDeflectable2D>();
+            if (deflectable == null)
+                deflectable = other.GetComponentInParent<IDeflectable2D>();
 
             if (deflectable != null && deflectable.CanBeDeflected)
             {
-                Vector2 incoming = Vector2.zero;
-                var proj = other.GetComponent<KinematicProjectile2D>();
-                if (proj == null) proj = other.GetComponentInParent<KinematicProjectile2D>();
-                if (proj != null) incoming = proj.CurrentDirection;
+                var boomerang = other.GetComponent<BoomerangProjectile2D>();
+                if (boomerang == null)
+                    boomerang = other.GetComponentInParent<BoomerangProjectile2D>();
 
                 Vector2 forward = transform.right;
 
-                // Si no podemos leer incoming, permitimos deflect igualmente (más permisivo)
-                float dot = (incoming.sqrMagnitude > 0.0001f) ? Vector2.Dot(incoming.normalized, -forward) : 1f;
+                Vector2 incoming = Vector2.zero;
+                var proj = other.GetComponent<KinematicProjectile2D>();
+                if (proj == null)
+                    proj = other.GetComponentInParent<KinematicProjectile2D>();
+
+                if (proj != null)
+                    incoming = proj.CurrentDirection;
+
+                float dot = (incoming.sqrMagnitude > 0.0001f)
+                    ? Vector2.Dot(incoming.normalized, -forward)
+                    : 1f;
 
                 if (dot > deflectDotThreshold)
                 {
+                    // =====================================================
+                    // BOOMERANG CON RITMO
+                    // =====================================================
+
+                    if (useRhythmForBoomerangRebound && boomerang != null && boomerangMusic != null)
+                    {
+                        bool success = boomerangMusic.TryRegisterRebound();
+
+                        if (!success)
+                        {
+                            if (debugLogs)
+                                Debug.Log("[MeleeHitController] Boomerang rebound FAIL (outside beat window)", this);
+                            return;
+                        }
+
+                        var infoRhythm = new DeflectInfo(
+                            newDirection: forward,
+                            newTargetMask: targetLayer,
+                            speedMultiplier: deflectSpeedMultiplier,
+                            instigator: this
+                        );
+
+                        deflectable.Deflect(infoRhythm);
+
+                        if (debugLogs)
+                            Debug.Log("[MeleeHitController] Boomerang rebound SUCCESS", this);
+
+                        if (disableColliderAfterDeflect && hitCollider != null)
+                            hitCollider.enabled = false;
+
+                        return;
+                    }
+
+                    // =====================================================
+                    // DEFLECT NORMAL (proyectiles enemigos, etc.)
+                    // =====================================================
+
                     var info = new DeflectInfo(
                         newDirection: forward,
-                        newTargetMask: targetLayer,      // el melee “pertenece” al jugador => targetLayer suele ser Enemy
+                        newTargetMask: targetLayer,
                         speedMultiplier: deflectSpeedMultiplier,
                         instigator: this
                     );
@@ -80,35 +137,32 @@ public class MeleeHitController : MonoBehaviour
                     deflectable.Deflect(info);
 
                     if (debugLogs)
-                        Debug.Log($"[MeleeHitController] DEFLECT success other={other.name} dot={dot}", this);
+                        Debug.Log($"[MeleeHitController] DEFLECT success other={other.name}", this);
 
                     if (disableColliderAfterDeflect && hitCollider != null)
                         hitCollider.enabled = false;
 
-                    return; // si deflecta, no hacemos daño a nada más en este trigger
-                }
-                else
-                {
-                    if (debugLogs)
-                        Debug.Log($"[MeleeHitController] DEFLECT blocked by dot threshold dot={dot} other={other.name}", this);
+                    return;
                 }
             }
         }
 
-        // 1) Daño normal solo si está dentro del targetLayer
-        if (((1 << other.gameObject.layer) & targetLayer.value) == 0) return;
+        // =========================================================
+        // 1) DAÑO NORMAL (solo targetLayer)
+        // =========================================================
 
-        // daño
+        if (((1 << other.gameObject.layer) & targetLayer.value) == 0)
+            return;
+
         var damageable = other.GetComponentInParent<IDamageable>();
         if (damageable != null)
         {
             damageable.TakeDamage(damage);
+
+            if (debugLogs)
+                Debug.Log($"[MeleeHitController] HIT other={other.name} dmg={damage}", this);
         }
 
-        if (debugLogs)
-            Debug.Log($"[MeleeHitController] HIT other={other.name} damageable={damageable}", this);
-
-        // knockback
         var enemyHealth = other.GetComponentInParent<EnemyHealth>();
         if (enemyHealth != null)
         {
@@ -116,10 +170,10 @@ public class MeleeHitController : MonoBehaviour
             enemyHealth.ApplyKnockback(hitDir, knockbackForce);
 
             if (debugLogs)
-                Debug.Log($"[MeleeHitController] Knockback hitDir={hitDir} force={knockbackForce}", this);
+                Debug.Log($"[MeleeHitController] Knockback dir={hitDir} force={knockbackForce}", this);
         }
 
-        // evitar multi-hit en el mismo swing
-        if (hitCollider != null) hitCollider.enabled = false;
+        if (hitCollider != null)
+            hitCollider.enabled = false;
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Boomerang
   m_EditorClassIdentifier: 
   attackModule: {fileID: 11400000, guid: 4c8f00f711077fb4a9828a4d62051938, type: 2}
-  useRhythmGate: 0
+  useRhythmGate: 1
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
@@ -22,13 +22,13 @@ MonoBehaviour:
   cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 384
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
   projectilePrefab: {fileID: 828991490477125810, guid: 1d22c6fed087a6b478adaa47ea0ddd6b, type: 3}
   projectileSpeed: 12
-  outboundDistance: 6
+  outboundDistance: 3
   returnSpeedMultiplier: 1.15
   deflectOnlyWhileReturning: 1
   outboundDistanceAfterDeflect: 4.5

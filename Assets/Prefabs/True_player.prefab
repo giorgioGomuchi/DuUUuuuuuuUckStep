@@ -234,9 +234,9 @@ MonoBehaviour:
   mainWeapon: {fileID: 5802899414157904659}
   secondaryWeapon: {fileID: 4295726288201216857}
   allowDualWield: 1
-  rhythmSystemEnabled: 0
+  rhythmSystemEnabled: 1
   rhythmCombat: {fileID: 0}
-  debugLogs: 1
+  debugLogs: 0
 --- !u!1 &5594368813941261800
 GameObject:
   m_ObjectHideFlags: 0
@@ -831,7 +831,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c2afa5ac724c954890e28ad33a534ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  weaponData: {fileID: 11400000, guid: fcda4b8408f78264eb73c664af248269, type: 2}
   firePoint: {fileID: 2883798344072078977}
   weaponVisual: {fileID: 4920168545880070600}
   debugLogs: 0

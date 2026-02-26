@@ -5,18 +5,18 @@ public class RangedAttackModuleSO : AttackModuleSO
 {
     [SerializeField] private bool debugLogs = false;
 
-    public override void Execute(WeaponBehaviour weapon, WeaponDataSO data)
+    public override bool Execute(WeaponBehaviour weapon, WeaponDataSO data)
     {
         if (data is not RangedWeaponDataSO rangedData)
         {
             Debug.LogError("[RangedAttackModuleSO] Wrong WeaponData type.", weapon);
-            return;
+            return false;
         }
 
         if (rangedData.projectilePrefab == null)
         {
             Debug.LogError("[RangedAttackModuleSO] projectilePrefab is null.", weapon);
-            return;
+            return false;
         }
 
         int finalDamage = weapon.ConsumeFinalDamage(rangedData.damage);
@@ -26,7 +26,7 @@ public class RangedAttackModuleSO : AttackModuleSO
         if (projectile == null)
         {
             Debug.LogError("[RangedAttackModuleSO] Projectile missing KinematicProjectile2D.", weapon);
-            return;
+            return false;
         }
 
         projectile.Initialize(weapon.CurrentAim, rangedData.projectileSpeed, finalDamage, rangedData.targetLayer);
@@ -48,5 +48,8 @@ public class RangedAttackModuleSO : AttackModuleSO
 
         if (debugLogs)
             Debug.Log($"[RangedAttackModuleSO] Fired dmg={finalDamage}", weapon);
+
+        return true;
+
     }
 }

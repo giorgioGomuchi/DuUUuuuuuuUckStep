@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: pala
   m_EditorClassIdentifier: 
   attackModule: {fileID: 11400000, guid: 3aa34992675385445a670692bb6406b6, type: 2}
-  useRhythmGate: 0
+  useRhythmGate: 1
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: pala

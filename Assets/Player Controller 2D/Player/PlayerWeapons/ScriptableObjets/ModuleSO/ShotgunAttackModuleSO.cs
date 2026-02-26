@@ -5,18 +5,18 @@ public class ShotgunAttackModuleSO : AttackModuleSO
 {
     [SerializeField] private bool debugLogs = false;
 
-    public override void Execute(WeaponBehaviour weapon, WeaponDataSO data)
+    public override bool Execute(WeaponBehaviour weapon, WeaponDataSO data)
     {
         if (data is not ShotgunWeaponDataSO shotgun)
         {
             Debug.LogError("[ShotgunAttackModuleSO] Wrong WeaponData type.", weapon);
-            return;
+            return false;
         }
 
         if (shotgun.projectilePrefab == null)
         {
             Debug.LogError("[ShotgunAttackModuleSO] projectilePrefab is null.", weapon);
-            return;
+            return false;
         }
 
         int baseDamage = weapon.ConsumeFinalDamage(shotgun.damage);
@@ -32,6 +32,8 @@ public class ShotgunAttackModuleSO : AttackModuleSO
 
         if (debugLogs)
             Debug.Log($"[ShotgunAttackModuleSO] Fired pellets={pellets} dmg={baseDamage}", weapon);
+
+        return true;
     }
 
     private static Vector2 GetPelletDirection(Vector2 aim, ShotgunWeaponDataSO data, int pelletIndex, int pellets)

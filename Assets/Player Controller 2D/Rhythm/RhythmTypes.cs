@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 public enum RhythmHitQuality
 {
@@ -12,7 +12,9 @@ public enum CombatAction
     Melee,
     Ranged,
     Dash,
-    Special
+    Special,
+
+    BoomerangRebound
 }
 
 public enum MusicState

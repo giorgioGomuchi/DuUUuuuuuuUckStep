@@ -19,6 +19,17 @@ public class MusicDirector : MonoBehaviour
     [SerializeField] private AudioSource synth;
     [SerializeField] private AudioClip[] synthClips;
 
+    // ✅ NUEVO: rebound notes + crescendo
+    [Header("Boomerang Rebound Audio")]
+    [SerializeField] private AudioSource reboundSfxSource;     // OneShot notes
+    [SerializeField] private AudioClip[] reboundSfxClips;      // 1..N distintos
+
+    [SerializeField] private AudioSource reboundCrescendoSource; // loop layer
+    [SerializeField] private float reboundCrescendoFadeSpeed = 10f;
+    [SerializeField, Range(0f, 1f)] private float reboundCrescendoMaxVolume = 0.9f;
+
+    [SerializeField] private int dropThreshold = 5; // debe coincidir con combat (o lo serializas igual)
+
     [Header("Settings")]
     [SerializeField] private float fadeSpeed = 4f;
 
@@ -32,9 +43,8 @@ public class MusicDirector : MonoBehaviour
     private float groove;
     private int lastProcessedBar = -1;
 
-    // =========================================================
-    // INIT
-    // =========================================================
+    // ✅ runtime rebound intensity 0..1
+    private float reboundIntensity01;
 
     private void Awake()
     {
@@ -45,13 +55,27 @@ public class MusicDirector : MonoBehaviour
             combat = FindFirstObjectByType<RhythmCombatController>();
 
         if (combat != null)
+        {
             combat.onComboTriggered.AddListener(OnComboTriggered);
+
+            // ✅ NUEVO: escuchar rebotes
+            combat.onBoomerangRebound.AddListener(OnBoomerangRebound);
+            combat.onBoomerangReboundReset.AddListener(OnBoomerangReboundReset);
+            combat.onBoomerangDropTriggered.AddListener(OnBoomerangDropTriggered);
+        }
     }
 
     private void Start()
     {
         ScheduleInitialLoops();
         SetAllVolumes(0f);
+
+        if (reboundCrescendoSource != null)
+        {
+            reboundCrescendoSource.volume = 0f;
+            if (!reboundCrescendoSource.isPlaying)
+                reboundCrescendoSource.Play(); // loop “siempre”, volumen controla presencia
+        }
     }
 
     private void Update()
@@ -59,9 +83,10 @@ public class MusicDirector : MonoBehaviour
         if (clock == null) return;
 
         UpdateGrooveAndState();
-        HandleVariation();       // 👈 AÑADIDO
+        HandleVariation();
         HandleDrop();
         UpdateVolumes();
+        UpdateReboundCrescendo();
     }
 
     // =========================================================
@@ -106,6 +131,12 @@ public class MusicDirector : MonoBehaviour
         TriggerDrop();
     }
 
+    // ✅ Drop por rebotes
+    private void OnBoomerangDropTriggered()
+    {
+        TriggerDrop();
+    }
+
     public void TriggerDrop()
     {
         if (clock == null) return;
@@ -126,7 +157,7 @@ public class MusicDirector : MonoBehaviour
     }
 
     // =========================================================
-    // VARIATION SYSTEM (ARREGLO DEFINITIVO)
+    // VARIATION SYSTEM
     // =========================================================
 
     private void HandleVariation()
@@ -136,7 +167,6 @@ public class MusicDirector : MonoBehaviour
         if (currentBar == lastProcessedBar)
             return;
 
-        // Cambio de compás detectado
         TryReschedule(beats, beatsClips);
         TryReschedule(shakers, shakersClips);
         TryReschedule(bass, bassClips);
@@ -147,7 +177,6 @@ public class MusicDirector : MonoBehaviour
         if (source == null || clips == null || clips.Length <= 1)
             return;
 
-        // Probabilidad depende del groove
         if (Random.value > groove)
             return;
 
@@ -158,6 +187,57 @@ public class MusicDirector : MonoBehaviour
         source.Stop();
         source.clip = clips[index];
         source.PlayScheduled(nextBar);
+    }
+
+    // =========================================================
+    // BOOMERANG REBOUND AUDIO
+    // =========================================================
+
+    private void OnBoomerangRebound(int streak, RhythmHitQuality quality)
+    {
+
+        Debug.Log("[MusicDirector] Rebound audio triggered");
+        // 1) Nota distinta por rebote
+        PlayReboundNote(streak, quality);
+
+        // 2) Crescendo (0..1)
+        reboundIntensity01 = Mathf.Clamp01((float)streak / Mathf.Max(1, dropThreshold));
+    }
+
+    private void OnBoomerangReboundReset()
+    {
+        reboundIntensity01 = 0f;
+    }
+
+    private void PlayReboundNote(int streak, RhythmHitQuality quality)
+    {
+        if (reboundSfxSource == null || reboundSfxClips == null || reboundSfxClips.Length == 0)
+            return;
+
+        // índice: 1->0, 2->1, etc (clamp)
+        int idx = Mathf.Clamp(streak - 1, 0, reboundSfxClips.Length - 1);
+        AudioClip clip = reboundSfxClips[idx];
+        if (clip == null) return;
+
+        // leve boost si Perfect
+        float vol = (quality == RhythmHitQuality.Perfect) ? 1f : 0.8f;
+
+        // Si quieres cuantizar al siguiente beat exacto, puedes hacerlo con PlayScheduled.
+        // Como ya estás dentro de Good/Perfect, el OneShot inmediato suele sonar bien.
+        reboundSfxSource.PlayOneShot(clip, vol);
+    }
+
+    private void UpdateReboundCrescendo()
+    {
+        if (reboundCrescendoSource == null)
+            return;
+
+        float target = reboundIntensity01 * reboundCrescendoMaxVolume;
+        reboundCrescendoSource.volume = Mathf.Lerp(
+            reboundCrescendoSource.volume,
+            target,
+            Time.deltaTime * reboundCrescendoFadeSpeed
+        );
     }
 
     // =========================================================

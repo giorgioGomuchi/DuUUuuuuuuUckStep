@@ -135,6 +135,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifetime: 5
+  debugLogs: 0
 --- !u!50 &5608136717209487095
 Rigidbody2D:
   serializedVersion: 4

@@ -5,18 +5,18 @@ public class MeleeAttackModuleSO : AttackModuleSO
 {
     [SerializeField] private bool debugLogs = false;
 
-    public override void Execute(WeaponBehaviour weapon, WeaponDataSO data)
+    public override bool Execute(WeaponBehaviour weapon, WeaponDataSO data)
     {
         if (data is not MeleeAnimatedWeaponDataSO meleeData)
         {
             Debug.LogError("[MeleeAttackModuleSO] Wrong WeaponData type.", weapon);
-            return;
+            return false;
         }
 
         if (meleeData.hitPrefab == null)
         {
             Debug.LogError("[MeleeAttackModuleSO] hitPrefab is null.", weapon);
-            return;
+            return false;
         }
 
         var go = Object.Instantiate(meleeData.hitPrefab, weapon.FirePoint.position, weapon.transform.rotation);
@@ -24,7 +24,7 @@ public class MeleeAttackModuleSO : AttackModuleSO
         if (controller == null)
         {
             Debug.LogError("[MeleeAttackModuleSO] hitPrefab missing MeleeHitController.", weapon);
-            return;
+            return false;
         }
 
         int finalDamage = weapon.ConsumeFinalDamage(meleeData.damage);
@@ -38,5 +38,7 @@ public class MeleeAttackModuleSO : AttackModuleSO
 
         if (debugLogs)
             Debug.Log($"[MeleeAttackModuleSO] Spawned hit dmg={finalDamage}", weapon);
+
+        return true;
     }
 }

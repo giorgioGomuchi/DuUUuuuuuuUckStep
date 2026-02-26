@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,6 +8,10 @@ public class RhythmInputEvent : UnityEvent<RhythmInputResult> { }
 
 [Serializable]
 public class ComboTriggeredEvent : UnityEvent<RhythmComboRecipeSO> { }
+
+// ✅ NUEVOS EVENTOS
+[Serializable]
+public class BoomerangReboundEvent : UnityEvent<int, RhythmHitQuality> { }
 
 public class RhythmCombatController : MonoBehaviour
 {
@@ -32,6 +36,19 @@ public class RhythmCombatController : MonoBehaviour
     public RhythmInputEvent onInputEvaluated;
     public ComboTriggeredEvent onComboTriggered;
 
+    // ✅ NUEVOS: eventos del boomerang
+    [Header("Boomerang Rebound Events")]
+    public BoomerangReboundEvent onBoomerangRebound;
+    public UnityEvent onBoomerangReboundReset;
+    public UnityEvent onBoomerangDropTriggered;
+
+    [Header("Boomerang Rebound Settings")]
+    [SerializeField] private int dropThreshold = 5;           // 5º rebote -> drop
+    [SerializeField] private bool perfectCountsAsTwo = true;  // Perfect suma 2
+    [SerializeField] private bool resetOnFail = true;
+
+    private int reboundStreak;
+
     [SerializeField] private int accuracyHistorySize = 16;
     private readonly Queue<float> accuracyHistory = new();
 
@@ -46,6 +63,10 @@ public class RhythmCombatController : MonoBehaviour
         if (rhythmClock == null)
             rhythmClock = FindFirstObjectByType<RhythmClock>();
     }
+
+    // =========================================================
+    // PUBLIC API
+    // =========================================================
 
     public RhythmInputResult RegisterAttack(CombatAction action)
     {
@@ -85,6 +106,52 @@ public class RhythmCombatController : MonoBehaviour
 
         return result;
     }
+
+    // ✅ API específica para Boomerang Rebound (evalúa + streak + drop)
+    public RhythmInputResult RegisterBoomerangRebound()
+    {
+        RhythmInputResult result = RegisterAttack(CombatAction.BoomerangRebound);
+
+        if (result.quality == RhythmHitQuality.Fail)
+        {
+            if (resetOnFail)
+                ResetBoomerangReboundStreak();
+
+            return result;
+        }
+
+        int add = 1;
+        if (perfectCountsAsTwo && result.quality == RhythmHitQuality.Perfect)
+            add = 2;
+
+        reboundStreak += add;
+
+        // notifica: streak actual + calidad del input
+        onBoomerangRebound?.Invoke(reboundStreak, result.quality);
+
+        if (reboundStreak >= dropThreshold)
+        {
+            // disparamos evento de drop (MusicDirector lo usará)
+            onBoomerangDropTriggered?.Invoke();
+            ResetBoomerangReboundStreak();
+        }
+
+        return result;
+    }
+
+    public void ResetBoomerangReboundStreak()
+    {
+        if (reboundStreak == 0) return;
+
+        reboundStreak = 0;
+        onBoomerangReboundReset?.Invoke();
+    }
+
+    public int GetBoomerangReboundStreak() => reboundStreak;
+
+    // =========================================================
+    // INTERNAL
+    // =========================================================
 
     private RhythmHitQuality EvaluateQuality(float dist)
     {
@@ -158,7 +225,6 @@ public class RhythmCombatController : MonoBehaviour
         if (qualityBuffer.Count == 0) return false;
         return qualityBuffer[^1] == RhythmHitQuality.Perfect;
     }
-
 
     private void TrackAccuracyHistory(RhythmHitQuality quality)
     {

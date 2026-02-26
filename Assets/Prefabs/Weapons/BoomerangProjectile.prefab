@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5641371957355748568}
   - component: {fileID: 7868648901545767540}
   - component: {fileID: 7229750255448800791}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: BoomerangProjectile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -180,10 +180,10 @@ MonoBehaviour:
   outboundDistanceAfterDeflect: 4.5
   spinSpeed: 720
   owner: {fileID: 0}
-  returnWindowVfxRoot: {fileID: 0}
+  returnWindowVfxRoot: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
   trail: {fileID: 7229750255448800791}
   spriteRenderer: {fileID: 5641371957355748568}
-  returningColor: {r: 0, g: 0, b: 0, a: 1}
+  returningColor: {r: 0.8301887, g: 0.7563303, b: 0.21537916, a: 0.7176471}
   enableSpin: 1
   spinDegPerSec: 720
 --- !u!96 &7229750255448800791

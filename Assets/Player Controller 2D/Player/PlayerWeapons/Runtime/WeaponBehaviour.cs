@@ -85,15 +85,28 @@ public class WeaponBehaviour : MonoBehaviour
         if (Time.time < nextFireTime)
             return;
 
+        if (IsAttackLocked)
+        {
+            if (debugLogs)
+                Debug.Log("[WeaponBehaviour] Fire blocked: attack is locked (e.g., boomerang active).", this);
+            return;
+        }
+
         if (weaponData.attackModule == null)
         {
             Debug.LogError($"[{name}] WeaponData has no AttackModule assigned. weapon={weaponData.weaponName}", this);
             return;
         }
 
-        weaponData.attackModule.Execute(this, weaponData);
+        //weaponData.attackModule.Execute(this, weaponData);
 
-        ApplyCameraShake();
+        bool didFire = weaponData.attackModule.Execute(this, weaponData);
+
+        if (didFire)
+        {
+            nextFireTime = Time.time + weaponData.cooldown;
+            ApplyCameraShake();
+        }
         nextFireTime = Time.time + weaponData.cooldown;
 
         if (debugLogs)

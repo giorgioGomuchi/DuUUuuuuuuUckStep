@@ -448,4 +448,4 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: e65ba918d2c7103428b4063764510843, type: 2}
   weaponPivot: {fileID: 1570461677760652048}
   firePoint: {fileID: 6937666030254782957}
-  debugLogs: 1
+  debugLogs: 0
