@@ -12,6 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07ca0e084eb5c82448ffb44c17b7546a, type: 3}
   m_Name: LAser Sword
   m_EditorClassIdentifier: 
+  attackModule: {fileID: 11400000, guid: 3aa34992675385445a670692bb6406b6, type: 2}
+  useRhythmGate: 0
+  cancelAttackOnFail: 0
+  perfectDamageMultiplier: 1.75
   weaponName: LAserSword
   weaponIcon: {fileID: 21300000, guid: 943670ac40781a44fb65a8a24913e56a, type: 3}
   damage: 1
@@ -21,6 +25,7 @@ MonoBehaviour:
     m_Bits: 0
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
+  knockbackForce: 2.5
   swingAngle: 120
   swingDuration: 0.15
   hitPrefab: {fileID: 0}
@@ -29,3 +34,4 @@ MonoBehaviour:
   attackAnimation: {fileID: 7400000, guid: b835943e66673384398a3599efb7b37c, type: 2}
   feedbackRotationAngle: -30
   feedbackRotationDuration: 0.08
+  spriteAngleOffset: 0

@@ -14,11 +14,41 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     [Header("Runtime")]
     [SerializeField] private Transform owner;
 
+    [Header("Return Window Feedback")]
+    [SerializeField] private GameObject returnWindowVfxRoot;   // un hijo con partículas/glow
+    [SerializeField] private TrailRenderer trail;              // opcional
+    [SerializeField] private SpriteRenderer spriteRenderer;    // opcional para tint
+
+    [SerializeField] private Color returningColor = Color.white; // no fuerzo color si no quieres
+    [SerializeField] private bool enableSpin = true;
+    [SerializeField] private float spinDegPerSec = 720f;
+
+    public System.Action<BoomerangProjectile2D> onFinished; // returned OR destroyed
+    private bool finishedNotified;
+
+    private bool returnWindowActive;
+
     private Vector2 startPos;
     private State state;
 
+
+    public System.Action<BoomerangProjectile2D> onReturnedToOwner;
+
     public override bool CanBeDeflected
         => !deflectOnlyWhileReturning || state == State.Returning;
+
+    protected override void Awake()
+    {
+        base.Awake();
+        if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (trail == null) trail = GetComponentInChildren<TrailRenderer>();
+        SetReturnWindowActive(false);
+    }
+
+    private void OnDisable()
+    {
+        NotifyFinished();
+    }
 
     public void ConfigureBoomerang(Transform owner, float outboundDistance, float returnSpeedMultiplier, bool deflectOnlyWhileReturning, float outboundDistanceAfterDeflect)
     {
@@ -61,23 +91,33 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
             if (dist <= 0.25f)
             {
-                if (debugLogs) Debug.Log("[Boomerang] Reached owner -> Kill", this);
+                NotifyReturnedToOwner();
+                NotifyFinished();
                 Kill();
                 return;
             }
 
-            Vector2 dir = toOwner.normalized;
-            rb.MovePosition(rb.position + dir * (speed * returnSpeedMultiplier) * Time.fixedDeltaTime);
+            Vector2 desiredDir = toOwner.normalized;
 
-            // rotación visual
-            direction = dir;
-            RotateToDirection();
+            // suaviza dirección (curva orgánica)
+            direction = Vector2.Lerp(direction, desiredDir, 8f * Time.fixedDeltaTime).normalized;
+
+            rb.MovePosition(rb.position + direction * (speed * returnSpeedMultiplier) * Time.fixedDeltaTime);
+
+            //RotateToDirection();
+
+            // giro visual
+            if (enableSpin)
+                transform.Rotate(0f, 0f, spinDegPerSec * Time.fixedDeltaTime);
+
+            Debug.Log($"[Boomerang] SPEED ->ENABLE SPEED={enableSpin}", this);
         }
     }
 
     private void SwitchToReturning()
     {
         state = State.Returning;
+        SetReturnWindowActive(CanBeDeflected);
         if (debugLogs) Debug.Log("[Boomerang] Switch -> Returning", this);
     }
 
@@ -94,6 +134,8 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         startPos = rb.position;
         outboundDistance = outboundDistanceAfterDeflect;
         state = State.Outbound;
+
+        SetReturnWindowActive(false);
 
         if (debugLogs)
             Debug.Log($"[Boomerang] DEFLECT -> Outbound again dist={outboundDistance} newMask={targetLayerMask.value}", this);
@@ -119,5 +161,39 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             if (debugLogs)
                 Debug.Log($"[Boomerang] Hit target={other.name} dmg={damage}", this);
         }
+    }
+
+    private void SetReturnWindowActive(bool active)
+    {
+        if (returnWindowActive == active) return;
+        returnWindowActive = active;
+
+        if (returnWindowVfxRoot != null)
+            returnWindowVfxRoot.SetActive(active);
+
+        if (trail != null)
+            trail.emitting = true; // puedes hacer trail always o solo returning
+
+        if (spriteRenderer != null)
+        {
+            // Si no quieres tint, quita esta línea
+            spriteRenderer.color = active ? returningColor : Color.white;
+        }
+
+        if (debugLogs)
+            Debug.Log($"[Boomerang] ReturnWindow {(active ? "ON" : "OFF")}", this);
+    }
+
+    private void NotifyReturnedToOwner()
+{
+    if (debugLogs) Debug.Log("[Boomerang] Returned to owner", this);
+    onReturnedToOwner?.Invoke(this);
+}
+
+    private void NotifyFinished()
+    {
+        if (finishedNotified) return;
+        finishedNotified = true;
+        onFinished?.Invoke(this);
     }
 }

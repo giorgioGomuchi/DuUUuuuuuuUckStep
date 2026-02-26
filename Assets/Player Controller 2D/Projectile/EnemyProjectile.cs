@@ -3,10 +3,10 @@
 public class EnemyProjectile : KinematicProjectile2D
 {
     [Header("Collision")]
-    [SerializeField] private LayerMask worldMask; // Walls/Obstacles/etc (para destruir si golpea mundo)
-    [SerializeField] private LayerMask parryMask;
+    [SerializeField] protected LayerMask worldMask; // Walls/Obstacles/etc (para destruir si golpea mundo)
+    [SerializeField] protected LayerMask parryMask;
 
-    private bool reflected;
+    protected bool reflected;
 
     public void Reflect(Vector2 newDirection)
     {

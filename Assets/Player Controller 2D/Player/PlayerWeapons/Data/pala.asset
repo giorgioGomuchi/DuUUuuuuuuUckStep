@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07ca0e084eb5c82448ffb44c17b7546a, type: 3}
   m_Name: pala
   m_EditorClassIdentifier: 
+  attackModule: {fileID: 11400000, guid: 3aa34992675385445a670692bb6406b6, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75

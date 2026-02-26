@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ad6a96e9afbf4245a026c44d2598a41, type: 3}
   m_Name: Boomerang
   m_EditorClassIdentifier: 
-  attackModule: {fileID: 0}
+  attackModule: {fileID: 11400000, guid: 4c8f00f711077fb4a9828a4d62051938, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
-  weaponIcon: {fileID: 0}
+  weaponIcon: {fileID: 21300000, guid: a13b1bde2efef0341bba8a14164c0abd, type: 3}
   damage: 1
   cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 828991490477125810, guid: 1d22c6fed087a6b478adaa47ea0ddd6b, type: 3}
   projectileSpeed: 12
   outboundDistance: 6
   returnSpeedMultiplier: 1.15

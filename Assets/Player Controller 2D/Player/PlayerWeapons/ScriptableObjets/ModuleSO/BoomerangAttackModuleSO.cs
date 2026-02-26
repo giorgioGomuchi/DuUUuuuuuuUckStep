@@ -18,6 +18,11 @@ public class BoomerangAttackModuleSO : AttackModuleSO
             Debug.LogError("[BoomerangAttackModuleSO] projectilePrefab is null.", weapon);
             return;
         }
+        if (!weapon.TryLockAttack())
+        {
+            // Ya hay boomerang activo
+            return;
+        }
 
         int finalDamage = weapon.ConsumeFinalDamage(boom.damage);
 
@@ -26,12 +31,29 @@ public class BoomerangAttackModuleSO : AttackModuleSO
 
         if (proj == null)
         {
+            weapon.UnlockAttack();
+            weapon.SetVisualVisible(true);
             Debug.LogError("[BoomerangAttackModuleSO] Prefab missing BoomerangProjectile2D.", weapon);
             return;
         }
 
         // Inicializa base projectile data
         proj.Initialize(weapon.CurrentAim, boom.projectileSpeed, finalDamage, boom.targetLayer);
+
+        weapon.SetVisualVisible(false);
+
+        weapon.SetVisualVisible(false);
+
+        proj.onFinished += _ =>
+        {
+            weapon.UnlockAttack();
+            weapon.SetVisualVisible(true);
+        };
+
+        proj.onReturnedToOwner += _ =>
+        {
+            weapon.SetVisualVisible(true);
+        };
 
         // Configura boomerang specifics
         proj.ConfigureBoomerang(

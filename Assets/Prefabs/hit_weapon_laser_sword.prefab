@@ -155,3 +155,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31cf7e01fb301644c99c71ba7ef948a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enableDeflect: 1
+  deflectDotThreshold: 0.465
+  deflectSpeedMultiplier: 1
+  disableColliderAfterDeflect: 1
+  debugLogs: 1

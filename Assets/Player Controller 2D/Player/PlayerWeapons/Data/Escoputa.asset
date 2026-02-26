@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8ce3b1c72ca9ee4d9e24cd7f212acb4, type: 3}
   m_Name: Escoputa
   m_EditorClassIdentifier: 
+  attackModule: {fileID: 11400000, guid: 650f33a2bf792cb459e1528699d39f6c, type: 2}
   useRhythmGate: 1
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
@@ -30,3 +31,11 @@ MonoBehaviour:
   pellets: 6
   spreadAngleDegrees: 18
   randomSpread: 1
+  minPelletSpeed: 10
+  maxPelletSpeed: 15
+  enableWallBounce: 1
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  maxBounces: 1
+  bounceSpeedMultiplier: 0.85

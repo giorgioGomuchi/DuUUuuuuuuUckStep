@@ -24,6 +24,9 @@ public class WeaponBehaviour : MonoBehaviour
 
     public Transform FirePoint => firePoint;
     public Vector2 CurrentAim => currentAim;
+    
+    //only fire one boomerang 
+    private bool attackLocked;
 
     private void Awake()
     {
@@ -89,6 +92,8 @@ public class WeaponBehaviour : MonoBehaviour
         }
 
         weaponData.attackModule.Execute(this, weaponData);
+
+        ApplyCameraShake();
         nextFireTime = Time.time + weaponData.cooldown;
 
         if (debugLogs)
@@ -111,6 +116,42 @@ public class WeaponBehaviour : MonoBehaviour
     {
         weaponData = newData;
         SetupVisual();
+    }
+
+    private void ApplyCameraShake()
+    {
+        if (weaponData == null) return;
+
+        if (CameraShakeProvider.Instance != null)
+        {
+            CameraShakeProvider.Instance.Shake(
+                weaponData.cameraShakeDuration,
+                weaponData.cameraShakeStrength
+            );
+
+            if (debugLogs)
+                Debug.Log($"[WeaponBehaviour] CameraShake applied duration={weaponData.cameraShakeDuration} strength={weaponData.cameraShakeStrength}", this);
+        }
+    }
+
+    public void SetVisualVisible(bool visible)
+    {
+        if (weaponVisual != null)
+            weaponVisual.enabled = visible;
+    }
+
+    public bool IsAttackLocked => attackLocked;
+
+    public bool TryLockAttack()
+    {
+        if (attackLocked) return false;
+        attackLocked = true;
+        return true;
+    }
+
+    public void UnlockAttack()
+    {
+        attackLocked = false;
     }
 
     #endregion

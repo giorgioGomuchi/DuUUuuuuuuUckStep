@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4bac654301a8e6498af78e9fea56771, type: 3}
   m_Name: BazukaQueen
   m_EditorClassIdentifier: 
+  attackModule: {fileID: 11400000, guid: 1b375a8901d1afb48ac8bfdb7441d4b3, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
