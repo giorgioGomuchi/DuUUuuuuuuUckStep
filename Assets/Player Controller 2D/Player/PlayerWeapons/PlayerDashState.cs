@@ -18,6 +18,8 @@ public class PlayerDashState : PlayerState
         startTime = Time.time;
         endTime = startTime + sm.DashDuration;
 
+        ctx.DashVfx?.Play();
+
         // Bloquea TODO (por defecto)
         ctx.Combat.SetCombatBlocked(true);
         ctx.Combat.CancelAllAttacks();
@@ -33,6 +35,9 @@ public class PlayerDashState : PlayerState
 
     public override void Exit()
     {
+        ctx.DashVfx?.Stop();
+
+
         ctx.Movement.ReleaseVelocityOverride();
 
         if (ctx.Health != null)

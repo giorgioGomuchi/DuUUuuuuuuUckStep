@@ -83,4 +83,12 @@ public class PlayerStateMachine : MonoBehaviour
         dash.SetDashDirection(dashDir);
         SetState(dash);
     }
+
+    public Vector2 LastNonZeroMoveDir { get; private set; } = Vector2.right;
+
+    public void UpdateLastNonZeroMove(Vector2 move)
+    {
+        if (move.sqrMagnitude > 0.0001f)
+            LastNonZeroMoveDir = move.normalized;
+    }
 }

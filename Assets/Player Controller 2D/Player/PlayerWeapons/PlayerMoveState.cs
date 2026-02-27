@@ -25,13 +25,18 @@ public class PlayerMoveState : PlayerState
 
     public override void FixedTick()
     {
+        sm.UpdateLastNonZeroMove(ctx.Input.Move);
         ctx.Movement.Move(ctx.Input.Move.normalized);
     }
 
     private Vector2 ResolveDashDirection()
     {
+        // Prioridad: input actual -> last non-zero -> aim -> derecha
         if (ctx.Input.Move.sqrMagnitude > 0.0001f)
             return ctx.Input.Move.normalized;
+
+        if (sm.LastNonZeroMoveDir.sqrMagnitude > 0.0001f)
+            return sm.LastNonZeroMoveDir;
 
         if (ctx.Aim != null && ctx.Aim.CurrentAim.sqrMagnitude > 0.0001f)
             return ctx.Aim.CurrentAim.normalized;

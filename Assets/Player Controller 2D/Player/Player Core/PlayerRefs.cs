@@ -17,6 +17,9 @@ public class PlayerRefs : MonoBehaviour
     public PlayerVisualController visual; // tu script
     public PlayerAnimationController anim; // opcional
 
+    [Header("DashVfx")]
+    public DashVfxController dashVfx;
+
     private void Reset()
     {
         input = GetComponentInChildren<PlayerInputReader>();
@@ -26,5 +29,6 @@ public class PlayerRefs : MonoBehaviour
         aim = GetComponentInChildren<PlayerAim>();
         visual = GetComponentInChildren<PlayerVisualController>();
         anim = GetComponentInChildren<PlayerAnimationController>();
+        dashVfx = GetComponentInChildren<DashVfxController>();
     }
 }

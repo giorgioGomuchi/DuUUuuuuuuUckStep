@@ -20,7 +20,8 @@ public class PlayerRoot : MonoBehaviour
             refs.combat,
             refs.aim,
             refs.visual,
-            health
+            health,
+            refs.dashVfx
         );
 
         // Cableado VISUAL/AIM (NO gameplay)

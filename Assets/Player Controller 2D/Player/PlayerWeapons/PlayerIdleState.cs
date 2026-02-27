@@ -33,9 +33,12 @@ public class PlayerIdleState : PlayerState
 
     private Vector2 ResolveDashDirection()
     {
-        // Basado en movimiento; si no hay input, usa aim, y si no, derecha.
+        // Prioridad: input actual -> last non-zero -> aim -> derecha
         if (ctx.Input.Move.sqrMagnitude > 0.0001f)
             return ctx.Input.Move.normalized;
+
+        if (sm.LastNonZeroMoveDir.sqrMagnitude > 0.0001f)
+            return sm.LastNonZeroMoveDir;
 
         if (ctx.Aim != null && ctx.Aim.CurrentAim.sqrMagnitude > 0.0001f)
             return ctx.Aim.CurrentAim.normalized;

@@ -9,6 +9,7 @@ public sealed class PlayerContext
     public readonly PlayerAim Aim;
     public readonly PlayerVisualController Visual;
     public readonly PlayerHealth Health; // opcional para invulnerabilidad
+    public readonly DashVfxController DashVfx;
 
     public PlayerContext(
         Transform transform,
@@ -17,7 +18,8 @@ public sealed class PlayerContext
         PlayerCombatController combat,
         PlayerAim aim,
         PlayerVisualController visual,
-        PlayerHealth health)
+        PlayerHealth health,
+        DashVfxController dashVfx)
     {
         Transform = transform;
         Input = input;
@@ -26,5 +28,6 @@ public sealed class PlayerContext
         Aim = aim;
         Visual = visual;
         Health = health;
+        DashVfx = dashVfx;
     }
 }
