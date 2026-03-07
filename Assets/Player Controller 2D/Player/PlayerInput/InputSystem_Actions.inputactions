@@ -250,17 +250,6 @@
                 },
                 {
                     "name": "",
-                    "id": "6210a84b-518e-485d-97ea-9f33994427a8",
-                    "path": "<Keyboard>/space",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SwitchWeapon",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "49e841c3-e11c-461a-b026-8785739327c6",
                     "path": "<Keyboard>/q",
                     "interactions": "",

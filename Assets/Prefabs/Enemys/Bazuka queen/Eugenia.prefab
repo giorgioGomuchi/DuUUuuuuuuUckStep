@@ -333,7 +333,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &899678173468343021
 Transform:
   m_ObjectHideFlags: 0
@@ -394,7 +394,7 @@ MonoBehaviour:
   player: {fileID: 0}
   animator: {fileID: 4536380025832430956}
   spriteRenderer: {fileID: 2239573204060911187}
-  debugLogs: 1
+  debugLogs: 0
   rb: {fileID: 0}
 --- !u!114 &1587254067987465293
 MonoBehaviour:
@@ -425,7 +425,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapon: {fileID: 1228678150908601174}
   visualAnimator: {fileID: 4536380025832430956}
-  debugLogs: 1
+  debugLogs: 0
   debugGizmos: 1
   detectRange: 10
   flySpeed: 4

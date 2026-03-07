@@ -9,7 +9,7 @@ public class EnemyFlyingBazookaBrain : EnemyBrain
     [SerializeField] private Animator visualAnimator; // Animator del hijo "Visual"
 
     [Header("Debug")]
-    [SerializeField] private bool debugLogs = true;
+    [SerializeField] private bool debugLogs = false;
     [SerializeField] private bool debugGizmos = true;
 
     [Header("Detection")]

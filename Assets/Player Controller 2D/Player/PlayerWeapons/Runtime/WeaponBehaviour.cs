@@ -15,8 +15,8 @@ public class WeaponBehaviour : MonoBehaviour
 
     private Vector2 currentAim = Vector2.right;
     private float nextFireTime;
-
     private float pendingDamageMultiplier = 1f;
+    private bool attackLocked;
 
     public WeaponDataSO WeaponData => weaponData;
     public float Cooldown => weaponData != null ? weaponData.cooldown : 0f;
@@ -24,16 +24,12 @@ public class WeaponBehaviour : MonoBehaviour
 
     public Transform FirePoint => firePoint;
     public Vector2 CurrentAim => currentAim;
-    
-    //only fire one boomerang 
-    private bool attackLocked;
+    public bool IsAttackLocked => attackLocked;
 
     private void Awake()
     {
         SetupVisual();
     }
-
-    #region Setup
 
     private void SetupVisual()
     {
@@ -58,13 +54,8 @@ public class WeaponBehaviour : MonoBehaviour
             weaponVisual.sortingOrder = 11;
         }
 
-        if (weaponVisual.sprite == null && weaponData.weaponIcon != null)
-            weaponVisual.sprite = weaponData.weaponIcon;
+        weaponVisual.sprite = weaponData.weaponIcon;
     }
-
-    #endregion
-
-    #region Public API
 
     public void SetAim(Vector2 direction)
     {
@@ -74,43 +65,43 @@ public class WeaponBehaviour : MonoBehaviour
         currentAim = direction.normalized;
 
         float angle = Mathf.Atan2(currentAim.y, currentAim.x) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
-    public void TryFire()
+    public bool TryFire()
     {
         if (weaponData == null || firePoint == null)
-            return;
+            return false;
 
         if (Time.time < nextFireTime)
-            return;
+            return false;
 
-        if (IsAttackLocked)
+        if (attackLocked)
         {
             if (debugLogs)
-                Debug.Log("[WeaponBehaviour] Fire blocked: attack is locked (e.g., boomerang active).", this);
-            return;
+                Debug.Log("[WeaponBehaviour] Fire blocked: attack is locked.", this);
+
+            return false;
         }
 
         if (weaponData.attackModule == null)
         {
             Debug.LogError($"[{name}] WeaponData has no AttackModule assigned. weapon={weaponData.weaponName}", this);
-            return;
+            return false;
         }
-
-        //weaponData.attackModule.Execute(this, weaponData);
 
         bool didFire = weaponData.attackModule.Execute(this, weaponData);
 
-        if (didFire)
-        {
-            nextFireTime = Time.time + weaponData.cooldown;
-            ApplyCameraShake();
-        }
+        if (!didFire)
+            return false;
+
         nextFireTime = Time.time + weaponData.cooldown;
+        ApplyCameraShake();
 
         if (debugLogs)
             Debug.Log($"[WeaponBehaviour] Fired using module={weaponData.attackModule.name} weapon={weaponData.weaponName}", this);
+
+        return true;
     }
 
     public void SetNextAttackDamageMultiplier(float multiplier)
@@ -141,9 +132,6 @@ public class WeaponBehaviour : MonoBehaviour
                 weaponData.cameraShakeDuration,
                 weaponData.cameraShakeStrength
             );
-
-            if (debugLogs)
-                Debug.Log($"[WeaponBehaviour] CameraShake applied duration={weaponData.cameraShakeDuration} strength={weaponData.cameraShakeStrength}", this);
         }
     }
 
@@ -153,11 +141,11 @@ public class WeaponBehaviour : MonoBehaviour
             weaponVisual.enabled = visible;
     }
 
-    public bool IsAttackLocked => attackLocked;
-
     public bool TryLockAttack()
     {
-        if (attackLocked) return false;
+        if (attackLocked)
+            return false;
+
         attackLocked = true;
         return true;
     }
@@ -169,14 +157,9 @@ public class WeaponBehaviour : MonoBehaviour
 
     public void CancelAttack()
     {
-        // Base cancel: unlock boomerang/locks
         attackLocked = false;
 
         if (weaponData != null && weaponData.attackModule is ICancelableAttackModule cancelable)
-        {
             cancelable.Cancel(this, weaponData);
-        }
     }
-
-    #endregion
 }

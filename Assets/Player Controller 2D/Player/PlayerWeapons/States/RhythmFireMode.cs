@@ -9,27 +9,27 @@ public sealed class RhythmFireMode : IFireMode
         this.rhythm = rhythm;
     }
 
-    public void TryFire(WeaponBehaviour weapon, CombatAction action)
+    public bool TryFire(WeaponBehaviour weapon, CombatAction action)
     {
-        if (weapon == null) return;
+        if (weapon == null)
+            return false;
 
         // Fallback: no rhythm system available
         if (rhythm == null || weapon.WeaponData == null || !weapon.WeaponData.useRhythmGate)
         {
-            weapon.TryFire();
-            return;
+            return weapon.TryFire();
         }
 
         RhythmInputResult result = rhythm.RegisterAttack(action);
 
-        // Per-weapon cancel rule
+        // Si el arma cancela en fail y el resultado es fail, no se ejecuta el disparo
         if (weapon.WeaponData.cancelAttackOnFail && result.quality == RhythmHitQuality.Fail)
-            return;
+            return false;
 
-        // Per-weapon Perfect bonus
+        // Bonus de daño en perfect
         if (result.quality == RhythmHitQuality.Perfect)
             weapon.SetNextAttackDamageMultiplier(weapon.WeaponData.perfectDamageMultiplier);
 
-        weapon.TryFire();
+        return weapon.TryFire();
     }
 }

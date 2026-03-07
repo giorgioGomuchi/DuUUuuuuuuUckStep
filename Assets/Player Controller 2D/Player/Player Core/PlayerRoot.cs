@@ -2,43 +2,75 @@ using UnityEngine;
 
 public class PlayerRoot : MonoBehaviour
 {
+    [Header("Config")]
+    [SerializeField] private PlayerConfigSO config;
+
     [Header("Core")]
-    public PlayerInputReader input;
-    public PlayerStateMachine stateMachine;
+    [SerializeField] private PlayerInputReader input;
+    [SerializeField] private PlayerStateMachine stateMachine;
 
     [Header("Movement")]
-    public PlayerMovement movement;
+    [SerializeField] private PlayerMovement movement;
+    [SerializeField] private PlayerDashController dashController;
 
     [Header("Combat")]
-    public PlayerCombatController combat;
+    [SerializeField] private PlayerCombatController combat;
+
+    [Header("Combo")]
+    [SerializeField] private PlayerActionRecorder actionRecorder;
 
     [Header("Visual")]
-    public PlayerAim aim;
-    public PlayerVisualController visual; // tu script
-    public PlayerAnimationController anim; // opcional
+    [SerializeField] private PlayerAim aim;
+    [SerializeField] private PlayerVisualController visual;
+    [SerializeField] private PlayerAnimationController anim;
 
-    [Header("DashVfx")]
-    public DashVfxController dashVfx;
+    [Header("Dash VFX")]
+    [SerializeField] private DashVfxController dashVfx;
 
-    [SerializeField] private PlayerHealth health; // si lo tienes en el mismo GO
+    [Header("Health")]
+    [SerializeField] private PlayerHealth health;
 
     private PlayerContext ctx;
 
     private void Awake()
     {
-        input = GetComponentInChildren<PlayerInputReader>();
-        stateMachine = GetComponentInChildren<PlayerStateMachine>();
-        movement = GetComponentInChildren<PlayerMovement>();
-        combat = GetComponentInChildren<PlayerCombatController>();
-        aim = GetComponentInChildren<PlayerAim>();
-        visual = GetComponentInChildren<PlayerVisualController>();
-        anim = GetComponentInChildren<PlayerAnimationController>();
-        dashVfx = GetComponentInChildren<DashVfxController>();
+        ResolveReferences();
+        ApplyConfig();
+        BuildContext();
+        WireEvents();
 
+        stateMachine.Initialize(ctx);
+    }
+
+    private void ResolveReferences()
+    {
+        if (input == null) input = GetComponentInChildren<PlayerInputReader>();
+        if (stateMachine == null) stateMachine = GetComponentInChildren<PlayerStateMachine>();
+
+        if (movement == null) movement = GetComponentInChildren<PlayerMovement>();
+        if (dashController == null) dashController = GetComponentInChildren<PlayerDashController>();
+
+        if (combat == null) combat = GetComponentInChildren<PlayerCombatController>();
+        if (actionRecorder == null) actionRecorder = GetComponentInChildren<PlayerActionRecorder>();
+
+        if (aim == null) aim = GetComponentInChildren<PlayerAim>();
+        if (visual == null) visual = GetComponentInChildren<PlayerVisualController>();
+        if (anim == null) anim = GetComponentInChildren<PlayerAnimationController>();
+        if (dashVfx == null) dashVfx = GetComponentInChildren<DashVfxController>();
 
         if (health == null) health = GetComponent<PlayerHealth>();
+    }
 
-        // Context
+    private void ApplyConfig()
+    {
+        movement?.SetConfig(config);
+        dashController?.SetConfig(config);
+        stateMachine?.SetConfig(config);
+        health?.SetConfig(config);
+    }
+
+    private void BuildContext()
+    {
         ctx = new PlayerContext(
             transform,
             input,
@@ -47,17 +79,21 @@ public class PlayerRoot : MonoBehaviour
             aim,
             visual,
             health,
-            dashVfx
+            dashVfx,
+            dashController,
+            actionRecorder
         );
+    }
 
-        // Cableado VISUAL/AIM (NO gameplay)
-        // Input da screen position; Aim lo traduce a dirección mundo y notifica.
-        input.OnAimScreen += aim.SetAim;
+    private void WireEvents()
+    {
+        if (input != null && aim != null)
+            input.OnAimScreen += aim.SetAim;
 
-        aim.OnAimChanged += visual.SetAim;
-        aim.OnAimChanged += combat.SetAim;
+        if (aim != null && visual != null)
+            aim.OnAimChanged += visual.SetAim;
 
-        // Inicializa StateMachine con context
-        stateMachine.Initialize(ctx);
+        if (aim != null && combat != null)
+            aim.OnAimChanged += combat.SetAim;
     }
 }

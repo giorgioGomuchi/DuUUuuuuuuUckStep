@@ -215,10 +215,93 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c2afa5ac724c954890e28ad33a534ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  weaponData: {fileID: 11400000, guid: f56c94d9f6bd4d7428fd0595571285a8, type: 2}
   firePoint: {fileID: 7382249323911148104}
   weaponVisual: {fileID: 8920157103955024760}
   debugLogs: 0
+--- !u!1 &5091312570011779552
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1746393782997736064}
+  - component: {fileID: 7536537543092515716}
+  - component: {fileID: 8022245342968297746}
+  - component: {fileID: 1236626641403777106}
+  m_Layer: 6
+  m_Name: Action
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1746393782997736064
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5091312570011779552}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 866645837182339489}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7536537543092515716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5091312570011779552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3d8cabecad7ea749b6736cf93920d63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxStoredActions: 12
+  debugLogs: 1
+--- !u!114 &8022245342968297746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5091312570011779552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15bbdaa2fff930f4cb60ed38e524f8c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  actionRecorder: {fileID: 7536537543092515716}
+  recipes:
+  - {fileID: 11400000, guid: 454cc550789ad784d880723a0230b045, type: 2}
+  debugLogs: 1
+--- !u!114 &1236626641403777106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5091312570011779552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ce134c59ba40694981c8a4bf6a57c8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  comboDetector: {fileID: 8022245342968297746}
+  weaponSlots: {fileID: 8311277986750256229}
+  shotgunComboRecipe: {fileID: 11400000, guid: 454cc550789ad784d880723a0230b045, type: 2}
+  shotgunWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  shotgunOverrideSlot: 0
+  shotgunAmmo: 6
+  debugLogs: 1
 --- !u!1 &5327712827678538197
 GameObject:
   m_ObjectHideFlags: 0
@@ -269,6 +352,7 @@ MonoBehaviour:
   allowDualWield: 1
   rhythmSystemEnabled: 0
   rhythmCombat: {fileID: 0}
+  actionRecorder: {fileID: 7536537543092515716}
   debugLogs: 0
 --- !u!114 &348534384107776877
 MonoBehaviour:
@@ -298,7 +382,7 @@ GameObject:
   - component: {fileID: 4327081478098081933}
   - component: {fileID: 6466824036278410424}
   - component: {fileID: 162600176082314574}
-  - component: {fileID: 6494226186206726626}
+  - component: {fileID: 9042011891048754295}
   m_Layer: 6
   m_Name: True_player
   m_TagString: Untagged
@@ -327,6 +411,7 @@ Transform:
   - {fileID: 1235021323659646451}
   - {fileID: 6202469248048800316}
   - {fileID: 6284774773240632146}
+  - {fileID: 1746393782997736064}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4873535713222216241
@@ -341,8 +426,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc513755997c1954ebb7a0513d74c717, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10
+  config: {fileID: 11400000, guid: e2492d813c67a6540b6812e9e7d2c31a, type: 2}
   currentHealth: 0
+  onHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onDied:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!50 &4753914675646192554
 Rigidbody2D:
   serializedVersion: 4
@@ -432,15 +523,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac5051c59731c33498adcca7bb52c709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  config: {fileID: 11400000, guid: e2492d813c67a6540b6812e9e7d2c31a, type: 2}
   input: {fileID: 0}
   stateMachine: {fileID: 0}
   movement: {fileID: 0}
+  dashController: {fileID: 0}
   combat: {fileID: 0}
+  actionRecorder: {fileID: 0}
   aim: {fileID: 0}
   visual: {fileID: 0}
   anim: {fileID: 0}
   dashVfx: {fileID: 0}
-  refs: {fileID: 0}
   health: {fileID: 4873535713222216241}
 --- !u!114 &162600176082314574
 MonoBehaviour:
@@ -454,8 +547,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6f4fb8efd679654abe696c22ac5d23f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
---- !u!114 &6494226186206726626
+  config: {fileID: 11400000, guid: e2492d813c67a6540b6812e9e7d2c31a, type: 2}
+--- !u!114 &9042011891048754295
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -464,15 +557,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5594368813941261800}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ce134c59ba40694981c8a4bf6a57c8c, type: 3}
+  m_Script: {fileID: 11500000, guid: fc12543f38d13cb48a8c07fdba8b8ba7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rhythmCombat: {fileID: 0}
-  weaponSlots: {fileID: 8311277986750256229}
-  shotgunRecipeId: MeleeMeleeRanged_Shotgun
-  shotgunWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
-  shotgunDurationSeconds: 6
-  debugLogs: 1
+  config: {fileID: 11400000, guid: e2492d813c67a6540b6812e9e7d2c31a, type: 2}
+  movement: {fileID: 162600176082314574}
+  health: {fileID: 4873535713222216241}
+  dashVfx: {fileID: 6781371794275807185}
 --- !u!1 &5770645327049198007
 GameObject:
   m_ObjectHideFlags: 0
@@ -592,13 +683,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f345d9dc4b0933c4d818a73b922c1c4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dashDistance: 3.5
-  dashDuration: 0.12
-  dashCooldown: 0.45
-  allowCancelDashWithPrimary: 0
-  allowCancelDashWithSecondary: 0
-  allowCancelDashWithSwitchWeapon: 0
-  dashCancelOpensAtNormalized: 0.35
+  config: {fileID: 0}
+  dashController: {fileID: 9042011891048754295}
 --- !u!1 &6082436944425872812
 GameObject:
   m_ObjectHideFlags: 0

@@ -104,7 +104,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &9009213768834189099
 Transform:
   m_ObjectHideFlags: 0
@@ -166,7 +166,7 @@ MonoBehaviour:
   player: {fileID: 0}
   animator: {fileID: 750376145803700183}
   spriteRenderer: {fileID: 8995034667876626045}
-  debugLogs: 1
+  debugLogs: 0
   rb: {fileID: 0}
 --- !u!114 &7996707933596341154
 MonoBehaviour:
@@ -197,7 +197,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapon: {fileID: 2628831003469463344}
   laserModifier: {fileID: 11400000, guid: 60872bd061cbbb54ab3e85307dcb46b0, type: 2}
-  debugLogs: 1
+  debugLogs: 0
   debugGizmos: 1
 --- !u!114 &2628831003469463344
 MonoBehaviour:
@@ -214,7 +214,7 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: ff8e4dc4e62f68a478a9c57f26ebe03f, type: 2}
   weaponPivot: {fileID: 66410263698112733}
   firePoint: {fileID: 5609852158569445558}
-  debugLogs: 1
+  debugLogs: 0
 --- !u!1 &4233803055838884479
 GameObject:
   m_ObjectHideFlags: 0

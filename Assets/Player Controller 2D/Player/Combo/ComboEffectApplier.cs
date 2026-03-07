@@ -3,43 +3,45 @@ using UnityEngine;
 public class ComboEffectApplier : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private RhythmCombatController rhythmCombat;
+    [SerializeField] private PlayerComboDetector comboDetector;
     [SerializeField] private WeaponSlotsController weaponSlots;
 
     [Header("Shotgun Combo")]
-    [SerializeField] private string shotgunRecipeId = "MeleeMeleeRanged_Shotgun";
+    [SerializeField] private PlayerComboRecipeSO shotgunComboRecipe;
     [SerializeField] private WeaponDataSO shotgunWeaponData;
-    [SerializeField] private float shotgunDurationSeconds = 6f;
+    [SerializeField] private WeaponSlotType shotgunOverrideSlot = WeaponSlotType.Main;
+    [SerializeField] private int shotgunAmmo = 6;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
 
     private void Awake()
     {
-        if (rhythmCombat == null)
-            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
+        if (comboDetector == null)
+            comboDetector = GetComponentInChildren<PlayerComboDetector>();
+
+        if (weaponSlots == null)
+            weaponSlots = GetComponentInChildren<WeaponSlotsController>();
     }
 
     private void OnEnable()
     {
-        if (rhythmCombat != null)
-            rhythmCombat.onComboTriggered.AddListener(OnComboTriggered);
+        if (comboDetector != null)
+            comboDetector.OnComboTriggered += HandleComboTriggered;
     }
 
     private void OnDisable()
     {
-        if (rhythmCombat != null)
-            rhythmCombat.onComboTriggered.RemoveListener(OnComboTriggered);
+        if (comboDetector != null)
+            comboDetector.OnComboTriggered -= HandleComboTriggered;
     }
 
-    private void OnComboTriggered(RhythmComboRecipeSO recipe)
+    private void HandleComboTriggered(PlayerComboRecipeSO recipe)
     {
-        if (recipe == null) return;
+        if (recipe == null)
+            return;
 
-        if (debugLogs)
-            Debug.Log($"[ComboEffectApplier] Combo triggered: {recipe.RecipeId}", this);
-
-        if (recipe.RecipeId != shotgunRecipeId)
+        if (recipe != shotgunComboRecipe)
             return;
 
         if (weaponSlots == null)
@@ -54,6 +56,16 @@ public class ComboEffectApplier : MonoBehaviour
             return;
         }
 
-        weaponSlots.ApplyTemporaryRangedOverride(shotgunWeaponData, shotgunDurationSeconds);
+        weaponSlots.ApplyTemporaryWeaponOverride(
+            shotgunOverrideSlot,
+            shotgunWeaponData,
+            shotgunAmmo);
+
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[ComboEffectApplier] Shotgun override applied | Slot={shotgunOverrideSlot} | Ammo={shotgunAmmo}",
+                this);
+        }
     }
 }

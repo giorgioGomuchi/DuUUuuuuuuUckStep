@@ -1,8 +1,10 @@
 public sealed class NormalFireMode : IFireMode
 {
-    public void TryFire(WeaponBehaviour weapon, CombatAction action)
+    public bool TryFire(WeaponBehaviour weapon, CombatAction action)
     {
-        if (weapon == null) return;
-        weapon.TryFire();
+        if (weapon == null)
+            return false;
+
+        return weapon.TryFire();
     }
 }

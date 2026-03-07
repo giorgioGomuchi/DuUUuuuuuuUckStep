@@ -1,8 +1,4 @@
-
-
-
-
 public interface IFireMode
 {
-    void TryFire(WeaponBehaviour weapon, CombatAction action);
+    bool TryFire(WeaponBehaviour weapon, CombatAction action);
 }
