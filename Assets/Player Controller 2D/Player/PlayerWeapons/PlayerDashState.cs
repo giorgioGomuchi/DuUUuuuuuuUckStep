@@ -35,8 +35,7 @@ public class PlayerDashState : PlayerState
 
     public override void Exit()
     {
-        ctx.DashVfx?.Stop();
-
+        
 
         ctx.Movement.ReleaseVelocityOverride();
 
@@ -44,6 +43,9 @@ public class PlayerDashState : PlayerState
             ctx.Health.SetInvulnerable(false);
 
         // En exit no desbloqueo combate aquí; lo hará el siguiente estado (idle/move)
+
+        ctx.DashVfx?.Stop();
+        ctx.DashVfx?.ClearImmediately();
     }
 
     public override void Tick()
