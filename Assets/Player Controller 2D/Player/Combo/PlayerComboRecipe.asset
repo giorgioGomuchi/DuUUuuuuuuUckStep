@@ -12,6 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 726c2970a57715a4fa728a7294d89b99, type: 3}
   m_Name: PlayerComboRecipe
   m_EditorClassIdentifier: 
-  recipeId: NewCombo
+  recipeId: ESCOPUTA
   consumeMatchedActions: 1
-  steps: []
+  steps:
+  - actionType: 2
+    actionVsAimRelation: 0
+    similarMinDot: 0
+    perpendicularMaxAbsDot: 0
+  - actionType: 2
+    actionVsAimRelation: 0
+    similarMinDot: 0.258
+    perpendicularMaxAbsDot: 0
+  - actionType: 1
+    actionVsAimRelation: 1
+    similarMinDot: 0.258
+    perpendicularMaxAbsDot: 0
