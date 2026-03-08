@@ -19,6 +19,7 @@ public class WeaponBehaviour : MonoBehaviour
     private bool attackLocked;
 
     public WeaponDataSO WeaponData => weaponData;
+    public string WeaponName => weaponData != null ? weaponData.weaponName : "None";
     public float Cooldown => weaponData != null ? weaponData.cooldown : 0f;
     public bool UsesRhythmGate => weaponData != null && weaponData.useRhythmGate;
 
@@ -28,17 +29,12 @@ public class WeaponBehaviour : MonoBehaviour
 
     private void Awake()
     {
-        SetupVisual();
+        EnsureVisualExists();
+        RefreshVisualFromData();
     }
 
-    private void SetupVisual()
+    private void EnsureVisualExists()
     {
-        if (weaponData == null)
-        {
-            Debug.LogError($"[{name}] WeaponData missing.", this);
-            return;
-        }
-
         if (weaponVisual == null)
             weaponVisual = GetComponentInChildren<SpriteRenderer>();
 
@@ -53,8 +49,21 @@ public class WeaponBehaviour : MonoBehaviour
             weaponVisual.sortingLayerName = "Default";
             weaponVisual.sortingOrder = 11;
         }
+    }
 
+    private void RefreshVisualFromData()
+    {
+        if (weaponData == null)
+        {
+            Debug.LogError($"[{name}] WeaponData missing.", this);
+            return;
+        }
+
+        EnsureVisualExists();
         weaponVisual.sprite = weaponData.weaponIcon;
+
+        if (debugLogs)
+            Debug.Log($"[WeaponBehaviour] Visual refreshed -> {weaponData.weaponName}", this);
     }
 
     public void SetAim(Vector2 direction)
@@ -118,13 +127,20 @@ public class WeaponBehaviour : MonoBehaviour
 
     public void SetWeaponData(WeaponDataSO newData)
     {
+        if (newData == null)
+        {
+            Debug.LogWarning($"[{name}] Tried to assign null WeaponData.", this);
+            return;
+        }
+
         weaponData = newData;
-        SetupVisual();
+        RefreshVisualFromData();
     }
 
     private void ApplyCameraShake()
     {
-        if (weaponData == null) return;
+        if (weaponData == null)
+            return;
 
         if (CameraShakeProvider.Instance != null)
         {

@@ -7,62 +7,87 @@ public class WeaponSlotsController : MonoBehaviour
     [SerializeField] private WeaponBehaviour secondaryWeapon;
     [SerializeField] private bool allowDualWield;
 
-    [Header("Rhythm System (Optional Master Switch)")]
+    [Header("Rhythm System")]
     [Tooltip("If false, ALL weapons fire in Normal mode regardless of WeaponDataSO settings.")]
     [SerializeField] private bool rhythmSystemEnabled = false;
-
     [SerializeField] private RhythmCombatController rhythmCombat;
 
     [Header("Combo")]
     [SerializeField] private PlayerActionRecorder actionRecorder;
 
+    [Header("Override")]
+    [SerializeField] private WeaponOverrideController overrideController;
+
     [Header("Debug")]
-    [SerializeField] private bool debugLogs = true;
+    [SerializeField] private bool debugLogs = false;
 
     private IWeaponState currentState;
     private SingleWieldState singleState;
     private DualWieldState dualState;
 
-    private Vector2 currentAim = Vector2.right;
-
     private IFireMode normalMode;
     private IFireMode rhythmMode;
 
-    // Override por munición
-    private bool overrideActive;
-    private WeaponSlotType overrideSlot;
-    private WeaponDataSO cachedOverrideOriginalData;
-    private WeaponDataSO activeOverrideData;
-    private int overrideAmmoRemaining;
+    private Vector2 currentAim = Vector2.right;
 
-
-    public System.Action<WeaponSlotType> OnWeaponOverrideEnded;
-
+    public WeaponBehaviour MainWeapon => mainWeapon;
+    public WeaponBehaviour SecondaryWeapon => secondaryWeapon;
+    public Vector2 CurrentAim => currentAim;
+    public WeaponOverrideController OverrideController => overrideController;
 
     private void Awake()
+    {
+        InitializeStates();
+        InitializeFireModes();
+        ResolveExtraRefs();
+    }
+
+    private void InitializeStates()
     {
         singleState = new SingleWieldState(this);
         dualState = new DualWieldState(this);
 
         currentState = allowDualWield ? dualState : singleState;
-
-        if (rhythmCombat == null)
-            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
-
-        if (actionRecorder == null)
-            actionRecorder = GetComponentInParent<PlayerActionRecorder>();
-
-        normalMode = new NormalFireMode();
-        rhythmMode = new RhythmFireMode(rhythmCombat);
-
         currentState.Enter();
     }
 
-    #region Public API (called from PlayerRoot)
+    private void InitializeFireModes()
+    {
+        if (rhythmCombat == null)
+            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
 
-    public void FirePrimary() => currentState.FirePrimary();
-    public void FireSecondary() => currentState.FireSecondary();
-    public void SwitchWeapon() => currentState.SwitchWeapon();
+        normalMode = new NormalFireMode();
+        rhythmMode = new RhythmFireMode(rhythmCombat);
+    }
+
+    private void ResolveExtraRefs()
+    {
+        if (actionRecorder == null)
+            actionRecorder = GetComponentInParent<PlayerActionRecorder>();
+
+        if (overrideController == null)
+            overrideController = GetComponent<WeaponOverrideController>();
+
+        if (overrideController == null)
+            overrideController = GetComponentInParent<WeaponOverrideController>();
+    }
+
+    #region Public API
+
+    public void FirePrimary()
+    {
+        currentState.FirePrimary();
+    }
+
+    public void FireSecondary()
+    {
+        currentState.FireSecondary();
+    }
+
+    public void SwitchWeapon()
+    {
+        currentState.SwitchWeapon();
+    }
 
     public void SetAim(Vector2 direction)
     {
@@ -80,12 +105,46 @@ public class WeaponSlotsController : MonoBehaviour
             Debug.Log($"[WeaponSlots] Rhythm system enabled = {rhythmSystemEnabled}", this);
     }
 
+    public WeaponDataSO GetCurrentWeaponData(WeaponSlotType slot)
+    {
+        WeaponBehaviour weapon = GetWeaponBySlot(slot);
+        return weapon != null ? weapon.WeaponData : null;
+    }
+
+    public void ApplyTemporaryWeaponOverride(WeaponSlotType slot, WeaponDataSO overrideWeaponData, int ammoCount)
+    {
+        overrideController?.ApplyTemporaryWeaponOverride(slot, overrideWeaponData, ammoCount);
+    }
+
+    public void ClearActiveOverride()
+    {
+        overrideController?.ClearActiveOverride();
+    }
+
+    public void CancelAllAttacks()
+    {
+        mainWeapon?.CancelAttack();
+        secondaryWeapon?.CancelAttack();
+    }
+
+    public WeaponBehaviour GetWeaponBySlot(WeaponSlotType slot)
+    {
+        return slot == WeaponSlotType.Main ? mainWeapon : secondaryWeapon;
+    }
+
     #endregion
 
-    #region Internal helpers used by states
+    #region State Helpers
 
-    public void FireMain() => TryFire(mainWeapon);
-    public void FireSecondaryWeapon() => TryFire(secondaryWeapon);
+    public void FireMain()
+    {
+        TryFireWeapon(mainWeapon);
+    }
+
+    public void FireSecondaryWeapon()
+    {
+        TryFireWeapon(secondaryWeapon);
+    }
 
     public void SwapWeapons()
     {
@@ -111,34 +170,28 @@ public class WeaponSlotsController : MonoBehaviour
 
     #endregion
 
-    #region Fire Routing (Per-weapon Rhythm Gate)
+    #region Fire
 
-    private void TryFire(WeaponBehaviour weapon)
+    private void TryFireWeapon(WeaponBehaviour weapon)
     {
         if (weapon == null || weapon.WeaponData == null)
             return;
 
-        CombatAction action = GetActionForWeapon(weapon);
+        CombatAction action = ResolveCombatAction(weapon);
+        IFireMode fireMode = ResolveFireMode(weapon);
 
-        IFireMode mode = (rhythmSystemEnabled && weapon.WeaponData.useRhythmGate)
-            ? rhythmMode
-            : normalMode;
-
-        bool didFire = mode.TryFire(weapon, action);
-
+        bool didFire = fireMode.TryFire(weapon, action);
         if (!didFire)
             return;
 
         RecordWeaponAction(weapon);
+        overrideController?.ConsumeAmmoIfNeeded(weapon);
 
-        if (overrideActive)
-            ConsumeOverrideAmmo(weapon);
-
-        if (debugLogs && rhythmSystemEnabled && weapon.WeaponData.useRhythmGate)
+        if (debugLogs && fireMode == rhythmMode)
             Debug.Log($"[WeaponSlots] Fired with RHYTHM mode: {weapon.name}", this);
     }
 
-    private CombatAction GetActionForWeapon(WeaponBehaviour weapon)
+    private CombatAction ResolveCombatAction(WeaponBehaviour weapon)
     {
         if (weapon == null || weapon.WeaponData == null)
             return CombatAction.Ranged;
@@ -148,9 +201,18 @@ public class WeaponSlotsController : MonoBehaviour
             : CombatAction.Ranged;
     }
 
+    private IFireMode ResolveFireMode(WeaponBehaviour weapon)
+    {
+        if (weapon == null || weapon.WeaponData == null)
+            return normalMode;
+
+        bool useRhythm = rhythmSystemEnabled && weapon.WeaponData.useRhythmGate;
+        return useRhythm ? rhythmMode : normalMode;
+    }
+
     #endregion
 
-    #region Combo Recording
+    #region Action Recording
 
     private void RecordWeaponAction(WeaponBehaviour weapon)
     {
@@ -158,7 +220,6 @@ public class WeaponSlotsController : MonoBehaviour
             return;
 
         PlayerActionType actionType = WeaponActionTypeResolver.Resolve(weapon.WeaponData);
-
         if (actionType == PlayerActionType.None)
             return;
 
@@ -191,137 +252,6 @@ public class WeaponSlotsController : MonoBehaviour
 
         if (debugLogs)
             Debug.Log("[WeaponSlots] Combo action recorded: SwitchWeapon", this);
-    }
-
-    #endregion
-
-    #region Temporary Override By Ammo
-
-    public void CancelAllAttacks()
-    {
-        mainWeapon?.CancelAttack();
-        secondaryWeapon?.CancelAttack();
-    }
-
-    public void ApplyTemporaryWeaponOverride(WeaponSlotType slot, WeaponDataSO overrideWeaponData, int ammoCount)
-    {
-        if (overrideWeaponData == null)
-        {
-            Debug.LogWarning("[WeaponSlots] Override data is null.", this);
-            return;
-        }
-
-        if (ammoCount <= 0)
-        {
-            Debug.LogWarning("[WeaponSlots] ammoCount must be > 0.", this);
-            return;
-        }
-
-        WeaponBehaviour targetWeapon = GetWeaponBySlot(slot);
-        if (targetWeapon == null || targetWeapon.WeaponData == null)
-        {
-            Debug.LogWarning($"[WeaponSlots] Target slot {slot} has no valid weapon.", this);
-            return;
-        }
-
-        WeaponDataSO currentData = targetWeapon.WeaponData;
-
-        bool currentIsRanged = WeaponDataTypeUtility.IsRanged(currentData);
-        bool currentIsMelee = WeaponDataTypeUtility.IsMelee(currentData);
-
-        bool overrideIsRanged = WeaponDataTypeUtility.IsRanged(overrideWeaponData);
-        bool overrideIsMelee = WeaponDataTypeUtility.IsMelee(overrideWeaponData);
-
-        bool compatibleType =
-            (currentIsRanged && overrideIsRanged) ||
-            (currentIsMelee && overrideIsMelee);
-
-        if (!compatibleType)
-        {
-            Debug.LogWarning(
-                $"[WeaponSlots] Override type mismatch. Slot={slot}, Current={currentData.GetType().Name}, Override={overrideWeaponData.GetType().Name}",
-                this);
-            return;
-        }
-
-        if (!overrideActive)
-        {
-            cachedOverrideOriginalData = currentData;
-        }
-        else if (overrideSlot != slot)
-        {
-            Debug.LogWarning("[WeaponSlots] Another override is already active on a different slot.", this);
-            return;
-        }
-
-        overrideActive = true;
-        overrideSlot = slot;
-        activeOverrideData = overrideWeaponData;
-        overrideAmmoRemaining = ammoCount;
-
-        targetWeapon.SetWeaponData(overrideWeaponData);
-        targetWeapon.SetAim(currentAim);
-
-        if (debugLogs)
-        {
-            Debug.Log(
-                $"[WeaponSlots] Override ON | Slot={slot} | Weapon={overrideWeaponData.weaponName} | Ammo={overrideAmmoRemaining}",
-                this);
-        }
-    }
-
-    private WeaponBehaviour GetWeaponBySlot(WeaponSlotType slot)
-    {
-        return slot == WeaponSlotType.Main ? mainWeapon : secondaryWeapon;
-    }
-
-    
-
-    private void ConsumeOverrideAmmo(WeaponBehaviour firedWeapon)
-    {
-        if (!overrideActive)
-            return;
-
-        WeaponBehaviour overrideWeapon = GetWeaponBySlot(overrideSlot);
-        if (firedWeapon != overrideWeapon)
-            return;
-
-        overrideAmmoRemaining--;
-        overrideAmmoRemaining = Mathf.Max(0, overrideAmmoRemaining);
-
-        if (debugLogs)
-            Debug.Log($"[WeaponSlots] Override ammo left: {overrideAmmoRemaining}", this);
-
-        if (overrideAmmoRemaining == 0)
-            EndWeaponOverride();
-    }
-
-    private void EndWeaponOverride()
-    {
-        if (!overrideActive)
-            return;
-
-        WeaponBehaviour targetWeapon = GetWeaponBySlot(overrideSlot);
-
-        if (targetWeapon != null && cachedOverrideOriginalData != null)
-        {
-            targetWeapon.SetWeaponData(cachedOverrideOriginalData);
-            targetWeapon.SetAim(currentAim);
-        }
-
-        if (debugLogs)
-        {
-            Debug.Log(
-                $"[WeaponSlots] Override OFF | Slot={overrideSlot} | Restored={(cachedOverrideOriginalData != null ? cachedOverrideOriginalData.weaponName : "null")}",
-                this);
-        }
-
-        OnWeaponOverrideEnded?.Invoke(overrideSlot);
-
-        overrideActive = false;
-        cachedOverrideOriginalData = null;
-        activeOverrideData = null;
-        overrideAmmoRemaining = 0;
     }
 
     #endregion

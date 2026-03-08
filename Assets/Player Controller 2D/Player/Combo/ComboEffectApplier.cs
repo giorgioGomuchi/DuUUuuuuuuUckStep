@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class ComboEffectApplier : MonoBehaviour
@@ -5,12 +6,10 @@ public class ComboEffectApplier : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private PlayerComboDetector comboDetector;
     [SerializeField] private WeaponSlotsController weaponSlots;
+    [SerializeField] private PlayerReferences playerReferences;
 
-    [Header("Shotgun Combo")]
-    [SerializeField] private PlayerComboRecipeSO shotgunComboRecipe;
-    [SerializeField] private WeaponDataSO shotgunWeaponData;
-    [SerializeField] private WeaponSlotType shotgunOverrideSlot = WeaponSlotType.Main;
-    [SerializeField] private int shotgunAmmo = 6;
+    [Header("Bindings")]
+    [SerializeField] private List<ComboEffectBinding> bindings = new();
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = true;
@@ -22,6 +21,9 @@ public class ComboEffectApplier : MonoBehaviour
 
         if (weaponSlots == null)
             weaponSlots = GetComponentInChildren<WeaponSlotsController>();
+
+        if (playerReferences == null)
+            playerReferences = GetComponentInParent<PlayerReferences>();
     }
 
     private void OnEnable()
@@ -41,31 +43,41 @@ public class ComboEffectApplier : MonoBehaviour
         if (recipe == null)
             return;
 
-        if (recipe != shotgunComboRecipe)
-            return;
-
-        if (weaponSlots == null)
+        ComboEffectSO effect = ResolveEffect(recipe);
+        if (effect == null)
         {
-            Debug.LogError("[ComboEffectApplier] weaponSlots not assigned.", this);
+            if (debugLogs)
+                Debug.LogWarning($"[ComboEffectApplier] No effect bound for recipe: {recipe.RecipeId}", this);
+
             return;
         }
 
-        if (shotgunWeaponData == null)
-        {
-            Debug.LogError("[ComboEffectApplier] shotgunWeaponData not assigned.", this);
-            return;
-        }
+        ComboEffectContext context = new ComboEffectContext(
+            recipe,
+            weaponSlots,
+            playerReferences);
 
-        weaponSlots.ApplyTemporaryWeaponOverride(
-            shotgunOverrideSlot,
-            shotgunWeaponData,
-            shotgunAmmo);
+        effect.Apply(context);
 
         if (debugLogs)
+            Debug.Log($"[ComboEffectApplier] Applied effect for recipe: {recipe.RecipeId}", this);
+    }
+
+    private ComboEffectSO ResolveEffect(PlayerComboRecipeSO recipe)
+    {
+        if (bindings == null || bindings.Count == 0)
+            return null;
+
+        for (int i = 0; i < bindings.Count; i++)
         {
-            Debug.Log(
-                $"[ComboEffectApplier] Shotgun override applied | Slot={shotgunOverrideSlot} | Ammo={shotgunAmmo}",
-                this);
+            ComboEffectBinding binding = bindings[i];
+            if (binding == null)
+                continue;
+
+            if (binding.Recipe == recipe)
+                return binding.Effect;
         }
+
+        return null;
     }
 }
