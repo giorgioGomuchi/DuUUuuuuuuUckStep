@@ -72,16 +72,14 @@ public class WeaponSlotsController : MonoBehaviour
             overrideController = GetComponentInParent<WeaponOverrideController>();
     }
 
-    #region Public API
-
-    public void FirePrimary()
+    public bool FirePrimary()
     {
-        currentState.FirePrimary();
+        return FireMain();
     }
 
-    public void FireSecondary()
+    public bool FireSecondary()
     {
-        currentState.FireSecondary();
+        return FireSecondaryWeapon();
     }
 
     public void SwitchWeapon()
@@ -116,6 +114,11 @@ public class WeaponSlotsController : MonoBehaviour
         overrideController?.ApplyTemporaryWeaponOverride(slot, overrideWeaponData, ammoCount);
     }
 
+    public void ApplyTemporaryWeaponOverrideForDuration(WeaponSlotType slot, WeaponDataSO overrideWeaponData, float duration)
+    {
+        overrideController?.ApplyTemporaryWeaponOverrideForDuration(slot, overrideWeaponData, duration);
+    }
+
     public void ClearActiveOverride()
     {
         overrideController?.ClearActiveOverride();
@@ -132,18 +135,14 @@ public class WeaponSlotsController : MonoBehaviour
         return slot == WeaponSlotType.Main ? mainWeapon : secondaryWeapon;
     }
 
-    #endregion
-
-    #region State Helpers
-
-    public void FireMain()
+    public bool FireMain()
     {
-        TryFireWeapon(mainWeapon);
+        return TryFireWeapon(mainWeapon);
     }
 
-    public void FireSecondaryWeapon()
+    public bool FireSecondaryWeapon()
     {
-        TryFireWeapon(secondaryWeapon);
+        return TryFireWeapon(secondaryWeapon);
     }
 
     public void SwapWeapons()
@@ -168,27 +167,25 @@ public class WeaponSlotsController : MonoBehaviour
         if (secondaryWeapon) secondaryWeapon.gameObject.SetActive(true);
     }
 
-    #endregion
-
-    #region Fire
-
-    private void TryFireWeapon(WeaponBehaviour weapon)
+    private bool TryFireWeapon(WeaponBehaviour weapon)
     {
         if (weapon == null || weapon.WeaponData == null)
-            return;
+            return false;
 
         CombatAction action = ResolveCombatAction(weapon);
         IFireMode fireMode = ResolveFireMode(weapon);
 
         bool didFire = fireMode.TryFire(weapon, action);
         if (!didFire)
-            return;
+            return false;
 
         RecordWeaponAction(weapon);
         overrideController?.ConsumeAmmoIfNeeded(weapon);
 
         if (debugLogs && fireMode == rhythmMode)
             Debug.Log($"[WeaponSlots] Fired with RHYTHM mode: {weapon.name}", this);
+
+        return true;
     }
 
     private CombatAction ResolveCombatAction(WeaponBehaviour weapon)
@@ -209,10 +206,6 @@ public class WeaponSlotsController : MonoBehaviour
         bool useRhythm = rhythmSystemEnabled && weapon.WeaponData.useRhythmGate;
         return useRhythm ? rhythmMode : normalMode;
     }
-
-    #endregion
-
-    #region Action Recording
 
     private void RecordWeaponAction(WeaponBehaviour weapon)
     {
@@ -253,6 +246,4 @@ public class WeaponSlotsController : MonoBehaviour
         if (debugLogs)
             Debug.Log("[WeaponSlots] Combo action recorded: SwitchWeapon", this);
     }
-
-    #endregion
 }

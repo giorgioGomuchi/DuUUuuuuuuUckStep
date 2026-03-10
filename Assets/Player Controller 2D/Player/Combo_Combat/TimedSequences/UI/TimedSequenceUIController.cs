@@ -1,0 +1,200 @@
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class TimedSequenceUIController : MonoBehaviour
+{
+    [Header("Refs")]
+    [SerializeField] private Canvas rootCanvas;
+    [SerializeField] private CanvasGroup canvasGroup;
+
+    [Header("Cursor UI")]
+    [SerializeField] private RectTransform cursorRoot;
+    [SerializeField] private Image cursorProgressImage;
+    [SerializeField] private Image cursorJudgementFlash;
+
+    [Header("Player UI")]
+    [SerializeField] private RectTransform playerRoot;
+    [SerializeField] private Image playerProgressImage;
+    [SerializeField] private Image playerJudgementFlash;
+
+    [Header("Text")]
+    [SerializeField] private TMP_Text progressText;
+
+    [Header("Behaviour")]
+    [SerializeField] private bool hideWhenInactive = true;
+
+    [Header("Flash")]
+    [SerializeField] private float flashDuration = 0.08f;
+
+    private PlayerReferences playerReferences;
+    private WeaponSequenceDefinitionSO activeDefinition;
+    private Camera worldCamera;
+    private bool visible;
+    private float flashEndTime;
+
+    private void Awake()
+    {
+        if (rootCanvas == null)
+            rootCanvas = GetComponentInParent<Canvas>();
+
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+
+        visible = false;
+        activeDefinition = null;
+        playerReferences = null;
+
+        ResetFlashVisuals();
+        SetCanvasVisible(false);
+    }
+
+    private void Update()
+    {
+        if (flashEndTime > 0f && Time.time >= flashEndTime)
+        {
+            flashEndTime = 0f;
+            ResetFlashVisuals();
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!visible || playerReferences == null || activeDefinition == null)
+            return;
+
+        UpdateCursorPosition();
+        UpdatePlayerBarPosition();
+    }
+
+    public void Show(WeaponSequenceDefinitionSO definition, PlayerReferences references)
+    {
+        activeDefinition = definition;
+        playerReferences = references;
+
+        if (references != null && references.Aim != null)
+            worldCamera = references.Aim.MainCamera;
+
+        visible = true;
+        SetCanvasVisible(true);
+        ResetFlashVisuals();
+        SetWindowProgress(0f, 0, definition != null ? definition.RequiredSuccessfulShots : 0);
+    }
+
+    public void Hide()
+    {
+        visible = false;
+        activeDefinition = null;
+        playerReferences = null;
+        flashEndTime = 0f;
+
+        ResetFlashVisuals();
+        SetCanvasVisible(!hideWhenInactive ? true : false);
+    }
+
+    public void SetWindowProgress(float normalizedTime, int currentShots, int requiredShots)
+    {
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+
+        if (cursorProgressImage != null)
+            cursorProgressImage.fillAmount = normalizedTime;
+
+        if (playerProgressImage != null)
+            playerProgressImage.fillAmount = normalizedTime;
+
+        if (progressText != null)
+            progressText.text = $"{currentShots}/{requiredShots}";
+    }
+
+    public void SetWaitingDashEnd(int currentShots, int requiredShots)
+    {
+        if (cursorProgressImage != null)
+            cursorProgressImage.fillAmount = 1f;
+
+        if (playerProgressImage != null)
+            playerProgressImage.fillAmount = 1f;
+
+        if (progressText != null)
+            progressText.text = $"{currentShots}/{requiredShots}";
+    }
+
+    public void FlashJudgement(TimingJudgement judgement)
+    {
+        Color color = judgement switch
+        {
+            TimingJudgement.Perfect => new Color(1f, 0.95f, 0.2f, 0.9f),
+            TimingJudgement.Good => new Color(0.9f, 1f, 0.9f, 0.85f),
+            _ => new Color(1f, 0.3f, 0.3f, 0.9f)
+        };
+
+        if (cursorJudgementFlash != null)
+        {
+            cursorJudgementFlash.color = color;
+            cursorJudgementFlash.enabled = true;
+        }
+
+        if (playerJudgementFlash != null)
+        {
+            playerJudgementFlash.color = color;
+            playerJudgementFlash.enabled = true;
+        }
+
+        flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
+    }
+
+    private void UpdateCursorPosition()
+    {
+        if (cursorRoot == null || playerReferences == null || playerReferences.Input == null)
+            return;
+
+        cursorRoot.position = playerReferences.Input.AimScreen;
+    }
+
+    private void UpdatePlayerBarPosition()
+    {
+        if (playerRoot == null || playerReferences == null || activeDefinition == null)
+            return;
+
+        Camera cam = worldCamera != null ? worldCamera : Camera.main;
+        if (cam == null)
+            return;
+
+        Vector3 worldPos = playerReferences.transform.position + activeDefinition.PlayerUIWorldOffset;
+        Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
+
+        playerRoot.position = screenPos;
+    }
+
+    private void ResetFlashVisuals()
+    {
+        if (cursorJudgementFlash != null)
+        {
+            cursorJudgementFlash.enabled = false;
+            Color c = cursorJudgementFlash.color;
+            c.a = 0f;
+            cursorJudgementFlash.color = c;
+        }
+
+        if (playerJudgementFlash != null)
+        {
+            playerJudgementFlash.enabled = false;
+            Color c = playerJudgementFlash.color;
+            c.a = 0f;
+            playerJudgementFlash.color = c;
+        }
+    }
+
+    private void SetCanvasVisible(bool isVisible)
+    {
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = isVisible ? 1f : 0f;
+            canvasGroup.interactable = isVisible;
+            canvasGroup.blocksRaycasts = isVisible;
+        }
+        else if (rootCanvas != null)
+        {
+            rootCanvas.enabled = isVisible;
+        }
+    }
+}

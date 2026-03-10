@@ -33,6 +33,8 @@ public class PlayerStateMachine : MonoBehaviour
         }
     }
 
+    public Vector2 LastNonZeroMoveDir { get; private set; } = Vector2.right;
+
     public void SetConfig(PlayerConfigSO playerConfig)
     {
         config = playerConfig;
@@ -87,18 +89,18 @@ public class PlayerStateMachine : MonoBehaviour
         SetState(move);
     }
 
-    public void TryDash(Vector2 dashDir)
+    public bool TryDash(Vector2 dashDir, bool ignoreCooldown = false, bool recordAction = true)
     {
-        if (!CanDash) return;
+        if (!ignoreCooldown && !CanDash)
+            return false;
 
         float cooldown = config != null ? config.dashCooldown : 0.45f;
         nextDashAllowedTime = Time.time + cooldown;
 
-        dash.SetDashDirection(dashDir);
+        dash.SetDashDirection(dashDir, recordAction);
         SetState(dash);
+        return true;
     }
-
-    public Vector2 LastNonZeroMoveDir { get; private set; } = Vector2.right;
 
     public void UpdateLastNonZeroMove(Vector2 moveInput)
     {

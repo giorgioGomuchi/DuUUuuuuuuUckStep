@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ebe8323a155a1994b872505663b94172, type: 3}
+  m_Name: SniperSequence
+  m_EditorClassIdentifier: 
+  sequenceId: SniperSequence
+  sequenceWeaponData: {fileID: 0}
+  targetSlot: 0
+  overrideAmmoCount: 0
+  requiredSuccessfulShots: 6
+  decisionWindowDuration: 0.9
+  shootRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.18
+    perfectHalfWindowNormalized: 0.06
+    allowPerfect: 1
+  dashRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.18
+    perfectHalfWindowNormalized: 0.06
+    allowPerfect: 1
+  failOnTimeout: 1
+  failOnSecondaryInput: 1
+  failOnSwitchWeaponInput: 1
+  playerUIWorldOffset: {x: 0, y: 1.5, z: 0}
+  completionReward: {fileID: 0}

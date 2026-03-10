@@ -3,12 +3,14 @@ using UnityEngine;
 public class PlayerDashState : PlayerState
 {
     private Vector2 dashDir = Vector2.right;
+    private bool recordDashAction = true;
 
     public PlayerDashState(PlayerStateMachine sm, PlayerContext ctx) : base(sm, ctx) { }
 
-    public void SetDashDirection(Vector2 dir)
+    public void SetDashDirection(Vector2 dir, bool shouldRecordAction = true)
     {
         dashDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
+        recordDashAction = shouldRecordAction;
     }
 
     public override void Enter()
@@ -18,7 +20,8 @@ public class PlayerDashState : PlayerState
         ctx.Combat.SetCombatBlocked(true);
         ctx.Combat.CancelAllAttacks();
 
-        RecordDashAction();
+        if (recordDashAction)
+            RecordDashAction();
     }
 
     public override void Exit()

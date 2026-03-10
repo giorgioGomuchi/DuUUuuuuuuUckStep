@@ -12,7 +12,9 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     public bool FirePrimaryHeld { get; private set; }
     public bool FireSecondaryHeld { get; private set; }
 
-    // Press (edge) para acciones que se consumen (dash, switch)
+    public bool FirePrimaryPressed { get; private set; }
+    public bool FireSecondaryPressed { get; private set; }
+
     public bool DashPressed { get; private set; }
     public bool SwitchWeaponPressed { get; private set; }
 
@@ -27,7 +29,20 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     private void OnEnable() => input.Player.Enable();
     private void OnDisable() => input.Player.Disable();
 
-    // --- Consumo ---
+    public bool ConsumeFirePrimaryPressed()
+    {
+        if (!FirePrimaryPressed) return false;
+        FirePrimaryPressed = false;
+        return true;
+    }
+
+    public bool ConsumeFireSecondaryPressed()
+    {
+        if (!FireSecondaryPressed) return false;
+        FireSecondaryPressed = false;
+        return true;
+    }
+
     public bool ConsumeDashPressed()
     {
         if (!DashPressed) return false;
@@ -42,7 +57,14 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         return true;
     }
 
-    // --- Callbacks ---
+    public void ClearBufferedInputs()
+    {
+        FirePrimaryPressed = false;
+        FireSecondaryPressed = false;
+        DashPressed = false;
+        SwitchWeaponPressed = false;
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         Move = context.ReadValue<Vector2>();
@@ -56,15 +78,26 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
     public void OnFirePrimary(InputAction.CallbackContext context)
     {
-        // Held para autofire (si tu arma lo permite por cooldown)
-        if (context.started) FirePrimaryHeld = true;
-        if (context.canceled) FirePrimaryHeld = false;
+        if (context.started)
+        {
+            FirePrimaryHeld = true;
+            FirePrimaryPressed = true;
+        }
+
+        if (context.canceled)
+            FirePrimaryHeld = false;
     }
 
     public void OnFireSecondary(InputAction.CallbackContext context)
     {
-        if (context.started) FireSecondaryHeld = true;
-        if (context.canceled) FireSecondaryHeld = false;
+        if (context.started)
+        {
+            FireSecondaryHeld = true;
+            FireSecondaryPressed = true;
+        }
+
+        if (context.canceled)
+            FireSecondaryHeld = false;
     }
 
     public void OnSwitchWeapon(InputAction.CallbackContext context)
@@ -73,14 +106,12 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
             SwitchWeaponPressed = true;
     }
 
-    // Jump = Dash
     public void OnJump(InputAction.CallbackContext context)
     {
         if (context.performed)
             DashPressed = true;
     }
 
-    // No usados ahora
     public void OnAttack(InputAction.CallbackContext context) { }
     public void OnInteract(InputAction.CallbackContext context) { }
     public void OnCrouch(InputAction.CallbackContext context) { }
