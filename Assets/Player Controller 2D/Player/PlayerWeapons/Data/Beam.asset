@@ -12,28 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77c3305b19b477f42bac36fe9d0ac9b4, type: 3}
   m_Name: Beam
   m_EditorClassIdentifier: 
-  attackModule: {fileID: 0}
+  attackModule: {fileID: 11400000, guid: 99b23d0867fdfd845899b187c9792d2f, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
-  weaponIcon: {fileID: 0}
+  weaponIcon: {fileID: 21300000, guid: 943670ac40781a44fb65a8a24913e56a, type: 3}
   damage: 1
   cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
   maxRange: 60
   blockingMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
   damageTickInterval: 0.12
   damagePerTick: 1
   maxTargetsPerTick: 16
   aimSmoothSpeed: 12
-  beamViewPrefab: {fileID: 0}
-  beamWidth: 0.18
-  beamEndWidth: 0.12
+  beamViewPrefab: {fileID: 4507787546940710573, guid: a77d1124e7059784ba9cd850dee3635c, type: 3}
+  beamWidth: 2
+  beamEndWidth: 3
+  visualSegments: 10
+  visualWaveAmplitude: 1
+  visualWaveFrequency: 10
+  visualWaveScrollSpeed: 8

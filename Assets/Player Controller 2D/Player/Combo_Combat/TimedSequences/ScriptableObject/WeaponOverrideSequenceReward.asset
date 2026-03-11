@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2716e7108592cc54ea9d2b8fdaa05694, type: 3}
   m_Name: WeaponOverrideSequenceReward
   m_EditorClassIdentifier: 
-  overrideWeaponData: {fileID: 11400000, guid: f37e165abc1028e44ae6d2494cf0073d, type: 2}
+  overrideWeaponData: {fileID: 11400000, guid: 01e7d0de8d24e534ab543d87fbe88efe, type: 2}
   targetSlot: 0
   rewardMode: 1
   baseAmmoCount: 3
@@ -25,4 +25,4 @@ MonoBehaviour:
   bonusAmmoPerUniqueTarget: 0
   maxDurationSeconds: 6
   maxAmmoCount: 12
-  debugLogs: 0
+  debugLogs: 1
