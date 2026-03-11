@@ -9,8 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 570ea3bb7172fb74e9d755eed96a9f0a, type: 3}
-  m_Name: StartWeaponSequenceComboEffect
+  m_Script: {fileID: 11500000, guid: 19cb50b9639478b47bc2c8019be82455, type: 3}
+  m_Name: Beam Attack Module SO
   m_EditorClassIdentifier: 
-  debugLogs: 1
-  sequenceDefinition: {fileID: 11400000, guid: b91032d884d92a0489d460a055505254, type: 2}
+  debugLogs: 0

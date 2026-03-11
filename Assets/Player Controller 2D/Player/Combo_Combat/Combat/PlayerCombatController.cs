@@ -39,8 +39,19 @@ public class PlayerCombatController : MonoBehaviour
         if (weapons == null) return;
         if (CombatBlocked) return;
 
-        if (input.FirePrimaryHeld)
-            weapons.FirePrimary();
+        WeaponDataSO mainData = weapons.GetCurrentWeaponData(WeaponSlotType.Main);
+        bool isBeamMain = mainData is BeamWeaponDataSO;
+
+        if (isBeamMain)
+        {
+            if (input.FirePrimaryHeld)
+                weapons.FirePrimary();
+        }
+        else
+        {
+            if (input.FirePrimaryHeld)
+                weapons.FirePrimary();
+        }
 
         if (input.FireSecondaryHeld)
             weapons.FireSecondary();

@@ -12,6 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 726c2970a57715a4fa728a7294d89b99, type: 3}
   m_Name: SniperComboRecipe
   m_EditorClassIdentifier: 
-  recipeId: NewCombo
+  recipeId: SNIPER
   consumeMatchedActions: 1
-  steps: []
+  steps:
+  - actionType: 3
+    actionVsAimRelation: 0
+    similarMinDot: 0
+    perpendicularMaxAbsDot: 0
+  - actionType: 3
+    actionVsAimRelation: 0
+    similarMinDot: 0
+    perpendicularMaxAbsDot: 0
+  - actionType: 1
+    actionVsAimRelation: 0
+    similarMinDot: 0
+    perpendicularMaxAbsDot: 0

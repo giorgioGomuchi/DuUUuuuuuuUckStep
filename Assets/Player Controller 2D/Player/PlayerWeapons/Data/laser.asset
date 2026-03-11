@@ -12,25 +12,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23ff9ff09b34c4743b1535f3585b8c1d, type: 3}
   m_Name: laser
   m_EditorClassIdentifier: 
-  attackModule: {fileID: 0}
+  attackModule: {fileID: 11400000, guid: e12c8ed074ec1d94293b6e062480a0a4, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
-  weaponName: 
-  weaponIcon: {fileID: 0}
+  weaponName: laser
+  weaponIcon: {fileID: 21300000, guid: 943670ac40781a44fb65a8a24913e56a, type: 3}
   damage: 1
   cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 850902145876461150, guid: b823d9cef5689dc418b53590deb20517, type: 3}
   projectileSpeed: 12
   range: 18
   maxTargets: 1
   stopAtFirstCollider: 1
-  tracerPrefab: {fileID: 0}
+  tracerPrefab: {fileID: 6326022493560843483, guid: cf9cd8ee441a4194880cc0f9043a05b5, type: 3}
   tracerDuration: 0.05
   tracerWidthMultiplier: 1.5

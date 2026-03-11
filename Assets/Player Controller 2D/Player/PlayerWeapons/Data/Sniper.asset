@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a285eacce858964da35e6bf546a6605, type: 3}
   m_Name: Sniper
   m_EditorClassIdentifier: 
-  attackModule: {fileID: 0}
+  attackModule: {fileID: 11400000, guid: e12c8ed074ec1d94293b6e062480a0a4, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
-  weaponName: 
-  weaponIcon: {fileID: 0}
+  weaponName: sniper
+  weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
   damage: 1
   cooldown: 0.5
   targetLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 850902145876461150, guid: b823d9cef5689dc418b53590deb20517, type: 3}
   projectileSpeed: 12
-  range: 18
+  range: 20
   maxTargets: 1
   stopAtFirstCollider: 1
   tracerPrefab: {fileID: 0}

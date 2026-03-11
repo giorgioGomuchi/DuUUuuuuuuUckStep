@@ -26,7 +26,13 @@ public class BeamWeaponDataSO : WeaponDataSO
     public float aimSmoothSpeed = 12f;
 
     [Header("Visual")]
-    public BeamView beamViewPrefab;
+    public GameObject beamViewPrefab;
     [Min(0.01f)] public float beamWidth = 0.18f;
     [Min(0.01f)] public float beamEndWidth = 0.12f;
+
+    [Header("Visual Sway")]
+    [Range(2, 32)] public int visualSegments = 10;
+    [Min(0f)] public float visualWaveAmplitude = 0.12f;
+    [Min(0f)] public float visualWaveFrequency = 10f;
+    [Min(0f)] public float visualWaveScrollSpeed = 8f;
 }

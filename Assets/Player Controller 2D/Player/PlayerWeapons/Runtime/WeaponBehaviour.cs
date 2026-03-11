@@ -82,9 +82,6 @@ public class WeaponBehaviour : MonoBehaviour
         if (weaponData == null || firePoint == null)
             return false;
 
-        if (Time.time < nextFireTime)
-            return false;
-
         if (attackLocked)
         {
             if (debugLogs)
@@ -93,6 +90,11 @@ public class WeaponBehaviour : MonoBehaviour
             return false;
         }
 
+        // Beam weapons are controlled by BeamController after validation.
+        bool isBeamWeapon = weaponData is BeamWeaponDataSO;
+        if (!isBeamWeapon && Time.time < nextFireTime)
+            return false;
+
         if (weaponData.attackModule == null)
         {
             Debug.LogError($"[{name}] WeaponData has no AttackModule assigned. weapon={weaponData.weaponName}", this);
@@ -100,11 +102,12 @@ public class WeaponBehaviour : MonoBehaviour
         }
 
         bool didFire = weaponData.attackModule.Execute(this, weaponData);
-
         if (!didFire)
             return false;
 
-        nextFireTime = Time.time + weaponData.cooldown;
+        if (!isBeamWeapon)
+            nextFireTime = Time.time + weaponData.cooldown;
+
         ApplyCameraShake();
 
         if (debugLogs)
