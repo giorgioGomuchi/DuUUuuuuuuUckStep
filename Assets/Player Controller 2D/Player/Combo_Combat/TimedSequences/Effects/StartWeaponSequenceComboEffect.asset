@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 570ea3bb7172fb74e9d755eed96a9f0a, type: 3}
   m_Name: StartWeaponSequenceComboEffect
   m_EditorClassIdentifier: 
-  debugLogs: 1
+  debugLogs: 0
   sequenceDefinition: {fileID: 11400000, guid: b91032d884d92a0489d460a055505254, type: 2}

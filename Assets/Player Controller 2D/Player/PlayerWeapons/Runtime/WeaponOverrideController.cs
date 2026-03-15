@@ -144,6 +144,9 @@ public class WeaponOverrideController : MonoBehaviour
 
     public void ClearActiveOverride()
     {
+        if (debugLogs)
+            Debug.Log("[WeaponOverrideController] ClearActiveOverride called.", this);
+
         EndWeaponOverride();
     }
 

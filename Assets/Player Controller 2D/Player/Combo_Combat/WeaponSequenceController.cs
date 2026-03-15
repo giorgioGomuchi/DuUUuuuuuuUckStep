@@ -64,6 +64,8 @@ public class WeaponSequenceController : MonoBehaviour
 
         playerReferences.Combat?.CancelAllAttacks();
         playerReferences.Input?.ClearBufferedInputs();
+        Debug.Log("[WeaponSequenceController] Clear override from StartSequence", this);
+        playerReferences.WeaponOverride?.ClearActiveOverride();
         playerReferences.WeaponOverride?.ClearActiveOverride();
 
         int initialAmmo = definition.ResolveInitialAmmo();
@@ -95,7 +97,8 @@ public class WeaponSequenceController : MonoBehaviour
             uiController?.SetWindowProgress(
                 0f,
                 activePerformance.SuccessfulShots,
-                activeDefinition.RequiredSuccessfulShots);
+                activeDefinition.RequiredSuccessfulShots,
+                activeDefinition);
 
             if (Time.time >= armUntilTime)
                 OpenNewDecisionWindow();
@@ -107,7 +110,8 @@ public class WeaponSequenceController : MonoBehaviour
         {
             uiController?.SetWaitingDashEnd(
                 activePerformance.SuccessfulShots,
-                activeDefinition.RequiredSuccessfulShots);
+                activeDefinition.RequiredSuccessfulShots,
+                activeDefinition);
 
             if (!playerReferences.DashController.IsDashing)
             {
@@ -126,7 +130,8 @@ public class WeaponSequenceController : MonoBehaviour
         uiController?.SetWindowProgress(
             normalizedTime,
             activePerformance.SuccessfulShots,
-            activeDefinition.RequiredSuccessfulShots);
+            activeDefinition.RequiredSuccessfulShots,
+            activeDefinition);
 
         if (Time.time >= windowEndTime)
         {
@@ -186,7 +191,22 @@ public class WeaponSequenceController : MonoBehaviour
             return;
         }
 
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Shoot input debug -> {activeDefinition.ShootRule.GetDebugSummary(normalizedTime)}",
+                this);
+        }
+
         TimingJudgement judgement = activeDefinition.ShootRule.Evaluate(normalizedTime);
+
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Shoot judgement -> {judgement}",
+                this);
+        }
+
         if (judgement == TimingJudgement.Fail)
         {
             FailSequence("Shoot timing failed.");
@@ -225,7 +245,22 @@ public class WeaponSequenceController : MonoBehaviour
             return;
         }
 
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Dash input debug -> {activeDefinition.DashRule.GetDebugSummary(normalizedTime)}",
+                this);
+        }
+
         TimingJudgement judgement = activeDefinition.DashRule.Evaluate(normalizedTime);
+
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Dash judgement -> {judgement}",
+                this);
+        }
+
         if (judgement == TimingJudgement.Fail)
         {
             FailSequence("Dash timing failed.");
@@ -277,7 +312,8 @@ public class WeaponSequenceController : MonoBehaviour
         uiController?.SetWindowProgress(
             0f,
             activePerformance.SuccessfulShots,
-            activeDefinition.RequiredSuccessfulShots);
+            activeDefinition.RequiredSuccessfulShots,
+            activeDefinition);
 
         if (debugLogs)
             Debug.Log("[WeaponSequenceController] New decision window opened.", this);
@@ -302,6 +338,8 @@ public class WeaponSequenceController : MonoBehaviour
             playerReferences);
 
         playerReferences.Combat?.CancelAllAttacks();
+        Debug.Log("[WeaponSequenceController] Clear override from CompleteSequence", this);
+        playerReferences.WeaponOverride?.ClearActiveOverride();
         playerReferences.WeaponOverride?.ClearActiveOverride();
         uiController?.Hide();
         aimGuideController?.HideGuide();
@@ -333,7 +371,9 @@ public class WeaponSequenceController : MonoBehaviour
             Debug.Log($"[WeaponSequenceController] Sequence cancelled -> {activeDefinition.SequenceId}", this);
 
         if (clearOverride)
-            playerReferences?.WeaponOverride?.ClearActiveOverride();
+            Debug.Log("[WeaponSequenceController] Clear override from CancelSequenceInternal", this);
+        playerReferences.WeaponOverride?.ClearActiveOverride();
+        playerReferences?.WeaponOverride?.ClearActiveOverride();
 
         if (hideUI)
             uiController?.Hide();

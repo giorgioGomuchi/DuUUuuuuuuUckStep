@@ -10,13 +10,13 @@ public class TimedSequenceUIController : MonoBehaviour
 
     [Header("Cursor UI")]
     [SerializeField] private RectTransform cursorRoot;
-    [SerializeField] private Image cursorProgressImage;
     [SerializeField] private Image cursorJudgementFlash;
+    [SerializeField] private TimedSequenceCursorRingView cursorRingView;
 
     [Header("Player UI")]
     [SerializeField] private RectTransform playerRoot;
-    [SerializeField] private Image playerProgressImage;
     [SerializeField] private Image playerJudgementFlash;
+    [SerializeField] private TimedSequencePlayerBarView playerBarView;
 
     [Header("Text")]
     [SerializeField] private TMP_Text progressText;
@@ -78,7 +78,7 @@ public class TimedSequenceUIController : MonoBehaviour
         visible = true;
         SetCanvasVisible(true);
         ResetFlashVisuals();
-        SetWindowProgress(0f, 0, definition != null ? definition.RequiredSuccessfulShots : 0);
+        SetWindowProgress(0f, 0, definition != null ? definition.RequiredSuccessfulShots : 0, definition);
     }
 
     public void Hide()
@@ -89,30 +89,42 @@ public class TimedSequenceUIController : MonoBehaviour
         flashEndTime = 0f;
 
         ResetFlashVisuals();
-        SetCanvasVisible(!hideWhenInactive ? true : false);
+        SetCanvasVisible(!hideWhenInactive);
     }
 
-    public void SetWindowProgress(float normalizedTime, int currentShots, int requiredShots)
+    public void SetWindowProgress(float normalizedTime, int currentShots, int requiredShots, WeaponSequenceDefinitionSO definition)
     {
         normalizedTime = Mathf.Clamp01(normalizedTime);
 
-        if (cursorProgressImage != null)
-            cursorProgressImage.fillAmount = normalizedTime;
+        if (cursorRingView != null)
+        {
+            cursorRingView.SetDefinition(definition);
+            cursorRingView.SetMarker(normalizedTime);
+        }
 
-        if (playerProgressImage != null)
-            playerProgressImage.fillAmount = normalizedTime;
+        if (playerBarView != null)
+        {
+            playerBarView.SetDefinition(definition);
+            playerBarView.SetMarker(normalizedTime);
+        }
 
         if (progressText != null)
             progressText.text = $"{currentShots}/{requiredShots}";
     }
 
-    public void SetWaitingDashEnd(int currentShots, int requiredShots)
+    public void SetWaitingDashEnd(int currentShots, int requiredShots, WeaponSequenceDefinitionSO definition)
     {
-        if (cursorProgressImage != null)
-            cursorProgressImage.fillAmount = 1f;
+        if (cursorRingView != null)
+        {
+            cursorRingView.SetDefinition(definition);
+            cursorRingView.SetMarker(1f);
+        }
 
-        if (playerProgressImage != null)
-            playerProgressImage.fillAmount = 1f;
+        if (playerBarView != null)
+        {
+            playerBarView.SetDefinition(definition);
+            playerBarView.SetMarker(1f);
+        }
 
         if (progressText != null)
             progressText.text = $"{currentShots}/{requiredShots}";

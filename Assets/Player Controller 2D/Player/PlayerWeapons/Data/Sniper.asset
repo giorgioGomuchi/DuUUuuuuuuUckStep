@@ -19,7 +19,7 @@ MonoBehaviour:
   weaponName: sniper
   weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
   damage: 1
-  cooldown: 0.5
+  cooldown: 0.1
   targetLayer:
     serializedVersion: 2
     m_Bits: 128

@@ -19,6 +19,11 @@ public class TimedSequenceActionRule
     public float PerfectHalfWindowNormalized => perfectHalfWindowNormalized;
     public bool AllowPerfect => allowPerfect;
 
+    public float GoodMin => 0.5f - goodHalfWindowNormalized;
+    public float GoodMax => 0.5f + goodHalfWindowNormalized;
+    public float PerfectMin => 0.5f - perfectHalfWindowNormalized;
+    public float PerfectMax => 0.5f + perfectHalfWindowNormalized;
+
     public TimingJudgement Evaluate(float normalizedTime)
     {
         if (!enabled)
@@ -33,5 +38,14 @@ public class TimedSequenceActionRule
             return TimingJudgement.Good;
 
         return TimingJudgement.Fail;
+    }
+
+    public string GetDebugSummary(float normalizedTime)
+    {
+        return
+            $"t={normalizedTime:F3} | " +
+            $"Good=[{GoodMin:F3}, {GoodMax:F3}] | " +
+            $"Perfect=[{PerfectMin:F3}, {PerfectMax:F3}] | " +
+            $"AllowPerfect={allowPerfect}";
     }
 }
