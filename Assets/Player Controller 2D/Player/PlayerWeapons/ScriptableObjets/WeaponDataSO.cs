@@ -33,4 +33,9 @@ public class WeaponDataSO : ScriptableObject
 
     [Header("knockback Force")]
     public float knockbackForce = 2.5f;
+
+    [Header("Input")]
+    [SerializeField] private FireInputMode preferredFireInputMode = FireInputMode.SinglePress;
+    public FireInputMode PreferredFireInputMode => preferredFireInputMode;
+
 }

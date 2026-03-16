@@ -19,13 +19,14 @@ MonoBehaviour:
   weaponName: sniper
   weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
   damage: 1
-  cooldown: 0.1
+  cooldown: 0.2
   targetLayer:
     serializedVersion: 2
     m_Bits: 128
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
+  preferredFireInputMode: 0
   projectilePrefab: {fileID: 850902145876461150, guid: b823d9cef5689dc418b53590deb20517, type: 3}
   projectileSpeed: 12
   range: 20

@@ -26,6 +26,7 @@ MonoBehaviour:
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
+  preferredFireInputMode: 1
   maxRange: 60
   blockingMask:
     serializedVersion: 2

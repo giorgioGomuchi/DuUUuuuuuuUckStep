@@ -55,7 +55,10 @@ public class PlayerRoot : MonoBehaviour
     private void WireEvents()
     {
         if (references.Input != null && references.Aim != null)
+        {
             references.Input.OnAimScreen += references.Aim.SetAim;
+            references.Input.OnAimStick += references.Aim.SetAimFromStick;
+        }
 
         if (references.Aim != null && references.Visual != null)
             references.Aim.OnAimChanged += references.Visual.SetAim;

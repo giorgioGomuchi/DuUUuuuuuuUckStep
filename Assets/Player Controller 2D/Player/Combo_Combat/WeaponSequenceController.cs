@@ -15,6 +15,10 @@ public class WeaponSequenceController : MonoBehaviour
     [SerializeField] private TimedSequenceUIController uiController;
     [SerializeField] private WeaponAimGuideController aimGuideController;
 
+    [Header("Input During Sequence")]
+    [SerializeField] private bool forcePrimarySinglePress = true;
+    [SerializeField] private bool forceSecondarySinglePress = false;
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -56,23 +60,21 @@ public class WeaponSequenceController : MonoBehaviour
             return false;
         }
 
-        CancelSequenceInternal(clearOverride: false, hideUI: true, hideAimGuide: true, logReason: false);
+        CancelSequenceInternal(
+            clearOverride: false,
+            hideUI: true,
+            hideAimGuide: true,
+            logReason: false,
+            restoreInputState: true);
 
         activeDefinition = definition;
         activePerformance = new WeaponSequencePerformance();
         runtimeState = RuntimeState.Arming;
 
         playerReferences.Combat?.CancelAllAttacks();
-        playerReferences.Input?.ClearBufferedInputs();
-        Debug.Log("[WeaponSequenceController] Clear override from StartSequence", this);
-        playerReferences.WeaponOverride?.ClearActiveOverride();
-        playerReferences.WeaponOverride?.ClearActiveOverride();
 
-        int initialAmmo = definition.ResolveInitialAmmo();
-        playerReferences.WeaponOverride?.ApplyTemporaryWeaponOverride(
-            definition.TargetSlot,
-            definition.SequenceWeaponData,
-            initialAmmo);
+        PrepareSequenceInput();
+        PrepareSequenceWeapon();
 
         armUntilTime = Time.time + Mathf.Max(0f, definition.StartupDelay);
 
@@ -180,7 +182,50 @@ public class WeaponSequenceController : MonoBehaviour
 
     public void CancelSequence()
     {
-        CancelSequenceInternal(clearOverride: true, hideUI: true, hideAimGuide: true, logReason: true);
+        CancelSequenceInternal(
+            clearOverride: true,
+            hideUI: true,
+            hideAimGuide: true,
+            logReason: true,
+            restoreInputState: true);
+    }
+
+    private void PrepareSequenceInput()
+    {
+        playerReferences.Input?.BeginSequenceInputOverride(
+            forcePrimarySinglePress,
+            forceSecondarySinglePress);
+
+        if (debugLogs && playerReferences.Input != null)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Input override prepared -> Primary={playerReferences.Input.PrimaryFireMode} Secondary={playerReferences.Input.SecondaryFireMode}",
+                this);
+        }
+    }
+
+    private void PrepareSequenceWeapon()
+    {
+        playerReferences.WeaponOverride?.ClearActiveOverride();
+
+        int initialAmmo = activeDefinition.ResolveInitialAmmo();
+        playerReferences.WeaponOverride?.ApplyTemporaryWeaponOverride(
+            activeDefinition.TargetSlot,
+            activeDefinition.SequenceWeaponData,
+            initialAmmo);
+    }
+
+    private void RestorePostSequenceInput()
+    {
+        playerReferences.Input?.EndSequenceInputOverride();
+        playerReferences.WeaponSlots?.RefreshResolvedFireModes(forceRelease: false);
+
+        if (debugLogs && playerReferences.Input != null)
+        {
+            Debug.Log(
+                $"[WeaponSequenceController] Input override restored -> Primary={playerReferences.Input.PrimaryFireMode} Secondary={playerReferences.Input.SecondaryFireMode}",
+                this);
+        }
     }
 
     private void HandleShootInput(float normalizedTime)
@@ -338,11 +383,12 @@ public class WeaponSequenceController : MonoBehaviour
             playerReferences);
 
         playerReferences.Combat?.CancelAllAttacks();
-        Debug.Log("[WeaponSequenceController] Clear override from CompleteSequence", this);
         playerReferences.WeaponOverride?.ClearActiveOverride();
-        playerReferences.WeaponOverride?.ClearActiveOverride();
+
         uiController?.Hide();
         aimGuideController?.HideGuide();
+
+        RestorePostSequenceInput();
 
         SequenceRewardSO reward = activeDefinition.CompletionReward;
 
@@ -362,18 +408,30 @@ public class WeaponSequenceController : MonoBehaviour
             Debug.LogWarning($"[WeaponSequenceController] Sequence failed -> {reason}", this);
 
         playerReferences.Combat?.CancelAllAttacks();
-        CancelSequenceInternal(clearOverride: true, hideUI: true, hideAimGuide: true, logReason: false);
+
+        CancelSequenceInternal(
+            clearOverride: true,
+            hideUI: true,
+            hideAimGuide: true,
+            logReason: false,
+            restoreInputState: true);
     }
 
-    private void CancelSequenceInternal(bool clearOverride, bool hideUI, bool hideAimGuide, bool logReason)
+    private void CancelSequenceInternal(
+        bool clearOverride,
+        bool hideUI,
+        bool hideAimGuide,
+        bool logReason,
+        bool restoreInputState)
     {
         if (logReason && debugLogs && activeDefinition != null)
             Debug.Log($"[WeaponSequenceController] Sequence cancelled -> {activeDefinition.SequenceId}", this);
 
         if (clearOverride)
-            Debug.Log("[WeaponSequenceController] Clear override from CancelSequenceInternal", this);
-        playerReferences.WeaponOverride?.ClearActiveOverride();
-        playerReferences?.WeaponOverride?.ClearActiveOverride();
+            playerReferences.WeaponOverride?.ClearActiveOverride();
+
+        if (restoreInputState)
+            RestorePostSequenceInput();
 
         if (hideUI)
             uiController?.Hide();

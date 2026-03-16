@@ -99,9 +99,6 @@ public class WeaponOverrideController : MonoBehaviour
         lifetimeMode = OverrideLifetimeMode.Duration;
         overrideAmmoRemaining = 0;
         overrideRemainingDuration = durationSeconds;
-
-        // Default behavior: duration overrides consume immediately,
-        // unless another system (BeamController) pauses/resumes consumption.
         durationConsumptionActive = true;
 
         if (debugLogs)
@@ -215,6 +212,8 @@ public class WeaponOverrideController : MonoBehaviour
         targetWeapon.SetWeaponData(overrideWeaponData);
         targetWeapon.SetAim(weaponSlots.CurrentAim);
 
+        weaponSlots.RefreshResolvedFireModes(forceRelease: true);
+
         OnWeaponOverrideStarted?.Invoke(slot);
     }
 
@@ -251,6 +250,8 @@ public class WeaponOverrideController : MonoBehaviour
         overrideRemainingDuration = 0f;
         durationConsumptionActive = false;
         lifetimeMode = OverrideLifetimeMode.None;
+
+        weaponSlots.RefreshResolvedFireModes(forceRelease: true);
 
         OnWeaponOverrideEnded?.Invoke(endedSlot);
     }

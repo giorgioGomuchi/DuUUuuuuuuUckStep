@@ -26,5 +26,6 @@ MonoBehaviour:
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
+  preferredFireInputMode: 1
   projectilePrefab: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
   projectileSpeed: 12

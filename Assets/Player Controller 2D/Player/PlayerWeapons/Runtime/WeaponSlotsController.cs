@@ -18,6 +18,9 @@ public class WeaponSlotsController : MonoBehaviour
     [Header("Override")]
     [SerializeField] private WeaponOverrideController overrideController;
 
+    [Header("Player")]
+    [SerializeField] private PlayerReferences playerReferences;
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -31,15 +34,39 @@ public class WeaponSlotsController : MonoBehaviour
     private Vector2 currentAim = Vector2.right;
 
     public WeaponBehaviour MainWeapon => mainWeapon;
-    public WeaponBehaviour SecondaryWeapon => secondaryWeapon;
     public Vector2 CurrentAim => currentAim;
     public WeaponOverrideController OverrideController => overrideController;
 
     private void Awake()
     {
+        ResolveRefs();
         InitializeStates();
         InitializeFireModes();
-        ResolveExtraRefs();
+        SubscribeWeaponEvents();
+        RefreshResolvedFireModes(forceRelease: false);
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeWeaponEvents();
+    }
+
+    private void ResolveRefs()
+    {
+        if (actionRecorder == null)
+            actionRecorder = GetComponentInParent<PlayerActionRecorder>();
+
+        if (overrideController == null)
+            overrideController = GetComponent<WeaponOverrideController>();
+
+        if (overrideController == null)
+            overrideController = GetComponentInParent<WeaponOverrideController>();
+
+        if (playerReferences == null)
+            playerReferences = GetComponentInParent<PlayerReferences>();
+
+        if (rhythmCombat == null)
+            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
     }
 
     private void InitializeStates()
@@ -53,23 +80,57 @@ public class WeaponSlotsController : MonoBehaviour
 
     private void InitializeFireModes()
     {
-        if (rhythmCombat == null)
-            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
-
         normalMode = new NormalFireMode();
         rhythmMode = new RhythmFireMode(rhythmCombat);
     }
 
-    private void ResolveExtraRefs()
+    private void SubscribeWeaponEvents()
     {
-        if (actionRecorder == null)
-            actionRecorder = GetComponentInParent<PlayerActionRecorder>();
+        if (mainWeapon != null)
+            mainWeapon.OnWeaponDataChanged += HandleWeaponDataChanged;
 
-        if (overrideController == null)
-            overrideController = GetComponent<WeaponOverrideController>();
+        if (secondaryWeapon != null)
+            secondaryWeapon.OnWeaponDataChanged += HandleWeaponDataChanged;
+    }
 
-        if (overrideController == null)
-            overrideController = GetComponentInParent<WeaponOverrideController>();
+    private void UnsubscribeWeaponEvents()
+    {
+        if (mainWeapon != null)
+            mainWeapon.OnWeaponDataChanged -= HandleWeaponDataChanged;
+
+        if (secondaryWeapon != null)
+            secondaryWeapon.OnWeaponDataChanged -= HandleWeaponDataChanged;
+    }
+
+    private void HandleWeaponDataChanged(WeaponBehaviour _, WeaponDataSO __)
+    {
+        RefreshResolvedFireModes(forceRelease: false);
+    }
+
+    public void RefreshResolvedFireModes(bool forceRelease)
+    {
+        if (playerReferences == null || playerReferences.Input == null)
+            return;
+
+        FireInputMode primaryMode = WeaponFireModeResolver.Resolve(mainWeapon != null ? mainWeapon.WeaponData : null);
+        FireInputMode secondaryMode = WeaponFireModeResolver.Resolve(secondaryWeapon != null ? secondaryWeapon.WeaponData : null);
+
+        playerReferences.Input.ApplyWeaponResolvedFireModes(primaryMode, secondaryMode, forceRelease);
+
+        if (debugLogs)
+        {
+            string primaryWeapon = mainWeapon != null && mainWeapon.WeaponData != null
+                ? mainWeapon.WeaponData.weaponName
+                : "NULL";
+
+            string secondaryWeapon_ = secondaryWeapon != null && secondaryWeapon.WeaponData != null
+                ? secondaryWeapon.WeaponData.weaponName
+                : "NULL";
+
+            Debug.Log(
+                $"[WeaponSlots] RefreshResolvedFireModes -> PrimaryWeapon={primaryWeapon} PrimaryMode={primaryMode} | SecondaryWeapon={secondaryWeapon} SecondaryMode={secondaryMode}",
+                this);
+        }
     }
 
     public bool FirePrimary()
@@ -147,12 +208,17 @@ public class WeaponSlotsController : MonoBehaviour
 
     public void SwapWeapons()
     {
-        var temp = mainWeapon;
+        UnsubscribeWeaponEvents();
+
+        WeaponBehaviour temp = mainWeapon;
         mainWeapon = secondaryWeapon;
         secondaryWeapon = temp;
 
+        SubscribeWeaponEvents();
+
         SetAim(currentAim);
         RecordSwitchWeaponAction();
+        RefreshResolvedFireModes(forceRelease: false);
     }
 
     public void ShowMainOnly()
@@ -182,8 +248,12 @@ public class WeaponSlotsController : MonoBehaviour
         RecordWeaponAction(weapon);
         overrideController?.ConsumeAmmoIfNeeded(weapon);
 
-        if (debugLogs && fireMode == rhythmMode)
-            Debug.Log($"[WeaponSlots] Fired with RHYTHM mode: {weapon.name}", this);
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponSlots] Fire success -> weapon={weapon.WeaponName} action={action} fireMode={fireMode.GetType().Name}",
+                this);
+        }
 
         return true;
     }

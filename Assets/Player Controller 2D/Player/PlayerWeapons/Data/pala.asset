@@ -26,6 +26,7 @@ MonoBehaviour:
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 8
+  preferredFireInputMode: 1
   swingAngle: 120
   swingDuration: 0.15
   hitPrefab: {fileID: 5479714505732433738, guid: 9897fbf55ac55ba4bb043f3c5af50570, type: 3}

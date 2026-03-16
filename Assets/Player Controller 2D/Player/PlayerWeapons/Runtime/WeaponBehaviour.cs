@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 [RequireComponent(typeof(Transform))]
 public class WeaponBehaviour : MonoBehaviour
@@ -17,6 +18,8 @@ public class WeaponBehaviour : MonoBehaviour
     private float nextFireTime;
     private float pendingDamageMultiplier = 1f;
     private bool attackLocked;
+
+    public event Action<WeaponBehaviour, WeaponDataSO> OnWeaponDataChanged;
 
     public WeaponDataSO WeaponData => weaponData;
     public string WeaponName => weaponData != null ? weaponData.weaponName : "None";
@@ -82,6 +85,17 @@ public class WeaponBehaviour : MonoBehaviour
         if (weaponData == null || firePoint == null)
             return false;
 
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[WeaponBehaviour] TryFire START | weapon={WeaponName} " +
+                $"locked={attackLocked} " +
+                $"isBeam={(weaponData is BeamWeaponDataSO)} " +
+                $"time={Time.time:F3} " +
+                $"nextFireTime={nextFireTime:F3}",
+                this);
+        }
+
         if (attackLocked)
         {
             if (debugLogs)
@@ -90,7 +104,6 @@ public class WeaponBehaviour : MonoBehaviour
             return false;
         }
 
-        // Beam weapons are controlled by BeamController after validation.
         bool isBeamWeapon = weaponData is BeamWeaponDataSO;
         if (!isBeamWeapon && Time.time < nextFireTime)
             return false;
@@ -138,6 +151,7 @@ public class WeaponBehaviour : MonoBehaviour
 
         weaponData = newData;
         RefreshVisualFromData();
+        OnWeaponDataChanged?.Invoke(this, weaponData);
     }
 
     private void ApplyCameraShake()

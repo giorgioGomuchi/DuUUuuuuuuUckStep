@@ -23,6 +23,7 @@ public class TimedSequenceUIController : MonoBehaviour
 
     [Header("Behaviour")]
     [SerializeField] private bool hideWhenInactive = true;
+    [SerializeField] private bool cursorUIOnlyForScreenAim = true;
 
     [Header("Flash")]
     [SerializeField] private float flashDuration = 0.08f;
@@ -63,7 +64,7 @@ public class TimedSequenceUIController : MonoBehaviour
         if (!visible || playerReferences == null || activeDefinition == null)
             return;
 
-        UpdateCursorPosition();
+
         UpdatePlayerBarPosition();
     }
 
@@ -142,7 +143,6 @@ public class TimedSequenceUIController : MonoBehaviour
         if (cursorJudgementFlash != null)
         {
             cursorJudgementFlash.color = color;
-            cursorJudgementFlash.enabled = true;
         }
 
         if (playerJudgementFlash != null)
@@ -153,6 +153,8 @@ public class TimedSequenceUIController : MonoBehaviour
 
         flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
     }
+
+   
 
     private void UpdateCursorPosition()
     {
