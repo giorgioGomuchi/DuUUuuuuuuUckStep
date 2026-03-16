@@ -36,6 +36,9 @@ public class WeaponDataSO : ScriptableObject
 
     [Header("Input")]
     [SerializeField] private FireInputMode preferredFireInputMode = FireInputMode.SinglePress;
+
+    [Header("Fire Cadence")]
+    public WeaponCadenceMode cadenceMode = WeaponCadenceMode.InternalCooldown;
     public FireInputMode PreferredFireInputMode => preferredFireInputMode;
 
 }

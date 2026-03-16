@@ -32,9 +32,6 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     public bool FirePrimaryHeld => primaryTriggerGate.IsHeld;
     public bool FireSecondaryHeld => secondaryTriggerGate.IsHeld;
 
-    public bool FirePrimaryPressed => firePrimaryPressed;
-    public bool FireSecondaryPressed => fireSecondaryPressed;
-
     public bool DashPressed { get; private set; }
     public bool SwitchWeaponPressed { get; private set; }
 
@@ -101,14 +98,14 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         if (debugFireInputLogs && firePrimaryPressed)
         {
             Debug.Log(
-                $"[InputReader] FirePrimaryPressed TRUE | mode={primaryFireMode} | held={primaryTriggerGate.IsHeld}",
+                $"[InputReader] Primary fire request | mode={primaryFireMode} | held={primaryTriggerGate.IsHeld}",
                 this);
         }
 
         if (debugFireInputLogs && fireSecondaryPressed)
         {
             Debug.Log(
-                $"[InputReader] FireSecondaryPressed TRUE | mode={secondaryFireMode} | held={secondaryTriggerGate.IsHeld}",
+                $"[InputReader] Secondary fire request | mode={secondaryFireMode} | held={secondaryTriggerGate.IsHeld}",
                 this);
         }
 
@@ -151,6 +148,18 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         }
     }
 
+    public void ApplyWeaponResolvedFireModes(FireInputMode primaryMode, FireInputMode secondaryMode, bool forceRelease = false)
+    {
+        if (!hasForcedPrimaryMode)
+            primaryFireMode = primaryMode;
+
+        if (!hasForcedSecondaryMode)
+            secondaryFireMode = secondaryMode;
+
+        if (forceRelease)
+            ForceReleaseFireInputs();
+    }
+
     public void ForcePrimaryFireMode(FireInputMode mode, bool forceRelease = false)
     {
         hasForcedPrimaryMode = true;
@@ -186,18 +195,6 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
         primaryFireMode = defaultPrimaryFireMode;
         secondaryFireMode = defaultSecondaryFireMode;
-
-        if (forceRelease)
-            ForceReleaseFireInputs();
-    }
-
-    public void ApplyWeaponResolvedFireModes(FireInputMode primaryMode, FireInputMode secondaryMode, bool forceRelease = false)
-    {
-        if (!hasForcedPrimaryMode)
-            primaryFireMode = primaryMode;
-
-        if (!hasForcedSecondaryMode)
-            secondaryFireMode = secondaryMode;
 
         if (forceRelease)
             ForceReleaseFireInputs();
@@ -249,6 +246,7 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
         primaryHeldTime = 0f;
         secondaryHeldTime = 0f;
+
         nextPrimaryRepeatTime = Mathf.Max(0.01f, primaryHoldRepeatInterval);
         nextSecondaryRepeatTime = Mathf.Max(0.01f, secondaryHoldRepeatInterval);
 
@@ -261,30 +259,38 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         secondaryFireMode = defaultSecondaryFireMode;
     }
 
-    public bool ConsumeFirePrimaryPressed()
+    public bool ConsumePrimaryFireRequest()
     {
-        if (!firePrimaryPressed) return false;
+        if (!firePrimaryPressed)
+            return false;
+
         firePrimaryPressed = false;
         return true;
     }
 
-    public bool ConsumeFireSecondaryPressed()
+    public bool ConsumeSecondaryFireRequest()
     {
-        if (!fireSecondaryPressed) return false;
+        if (!fireSecondaryPressed)
+            return false;
+
         fireSecondaryPressed = false;
         return true;
     }
 
     public bool ConsumeDashPressed()
     {
-        if (!DashPressed) return false;
+        if (!DashPressed)
+            return false;
+
         DashPressed = false;
         return true;
     }
 
     public bool ConsumeSwitchWeaponPressed()
     {
-        if (!SwitchWeaponPressed) return false;
+        if (!SwitchWeaponPressed)
+            return false;
+
         SwitchWeaponPressed = false;
         return true;
     }
@@ -316,8 +322,15 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
         if (device is Gamepad || device is Joystick)
         {
-            AimStickValue = value;
-            OnAimStick?.Invoke(AimStickValue);
+            if (value.sqrMagnitude >= stickDeadzone * stickDeadzone)
+            {
+                AimStickValue = value;
+                OnAimStick?.Invoke(AimStickValue);
+            }
+            else
+            {
+                AimStickValue = Vector2.zero;
+            }
         }
     }
 
@@ -329,10 +342,8 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         if (debugFireInputLogs)
         {
             Debug.Log(
-                $"[InputReader] Primary raw={rawValue:F3} " +
-                $"held={primaryTriggerGate.IsHeld} " +
-                $"pressedFrame={primaryTriggerGate.PressedThisFrame} " +
-                $"releasedFrame={primaryTriggerGate.ReleasedThisFrame} " +
+                $"[InputReader] Primary raw={rawValue:F3} held={primaryTriggerGate.IsHeld} " +
+                $"pressedFrame={primaryTriggerGate.PressedThisFrame} releasedFrame={primaryTriggerGate.ReleasedThisFrame} " +
                 $"mode={primaryFireMode}",
                 this);
         }
@@ -346,10 +357,8 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         if (debugFireInputLogs)
         {
             Debug.Log(
-                $"[InputReader] Secondary raw={rawValue:F3} " +
-                $"held={secondaryTriggerGate.IsHeld} " +
-                $"pressedFrame={secondaryTriggerGate.PressedThisFrame} " +
-                $"releasedFrame={secondaryTriggerGate.ReleasedThisFrame} " +
+                $"[InputReader] Secondary raw={rawValue:F3} held={secondaryTriggerGate.IsHeld} " +
+                $"pressedFrame={secondaryTriggerGate.PressedThisFrame} releasedFrame={secondaryTriggerGate.ReleasedThisFrame} " +
                 $"mode={secondaryFireMode}",
                 this);
         }

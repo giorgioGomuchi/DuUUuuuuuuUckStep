@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class PlayerCombatController : MonoBehaviour
 {
+    [Header("Refs")]
     [SerializeField] private WeaponSlotsController weapons;
     [SerializeField] private WeaponSequenceController weaponSequence;
 
@@ -16,11 +17,15 @@ public class PlayerCombatController : MonoBehaviour
             weaponSequence = GetComponentInChildren<WeaponSequenceController>();
     }
 
-    public void SetAim(Vector2 dir) => weapons?.SetAim(dir);
+    public void SetAim(Vector2 dir)
+    {
+        weapons?.SetAim(dir);
+    }
 
     public void SetCombatBlocked(bool blocked)
     {
         CombatBlocked = blocked;
+
         if (blocked)
             CancelAllAttacks();
     }
@@ -36,26 +41,36 @@ public class PlayerCombatController : MonoBehaviour
             return;
         }
 
-        if (weapons == null) return;
-        if (CombatBlocked) return;
+        if (weapons == null || CombatBlocked)
+            return;
 
+        HandlePrimary(input);
+        HandleSecondary(input);
+        HandleSwitch(input);
+    }
+
+    private void HandlePrimary(PlayerInputReader input)
+    {
         WeaponDataSO mainData = weapons.GetCurrentWeaponData(WeaponSlotType.Main);
-        bool isBeamMain = mainData is BeamWeaponDataSO;
+        if (mainData == null)
+            return;
 
-        if (isBeamMain)
-        {
-            if (input.FirePrimaryHeld)
-                weapons.FirePrimary();
-        }
-        else
-        {
-            if (input.FirePrimaryHeld)
-                weapons.FirePrimary();
-        }
+        if (WeaponFireRequestUtility.ShouldFirePrimaryThisFrame(input, mainData))
+            weapons.FirePrimary();
+    }
 
-        if (input.FireSecondaryHeld)
+    private void HandleSecondary(PlayerInputReader input)
+    {
+        WeaponDataSO secondaryData = weapons.GetCurrentWeaponData(WeaponSlotType.Secondary);
+        if (secondaryData == null)
+            return;
+
+        if (WeaponFireRequestUtility.ShouldFireSecondaryThisFrame(input, secondaryData))
             weapons.FireSecondary();
+    }
 
+    private void HandleSwitch(PlayerInputReader input)
+    {
         if (input.ConsumeSwitchWeaponPressed())
             weapons.SwitchWeapon();
     }

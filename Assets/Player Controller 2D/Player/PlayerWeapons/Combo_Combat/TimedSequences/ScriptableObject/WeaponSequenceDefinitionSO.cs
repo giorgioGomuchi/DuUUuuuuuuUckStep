@@ -41,6 +41,9 @@ public class WeaponSequenceDefinitionSO : ScriptableObject
     [Header("Reward")]
     [SerializeField] private SequenceRewardSO completionReward;
 
+    [Min(0f)]
+    [SerializeField] private float completionRewardDelay = 0.05f;
+
     public string SequenceId => sequenceId;
     public WeaponDataSO SequenceWeaponData => sequenceWeaponData;
     public WeaponSlotType TargetSlot => targetSlot;
@@ -56,6 +59,7 @@ public class WeaponSequenceDefinitionSO : ScriptableObject
     public bool ShowAimGuide => showAimGuide;
     public Vector3 PlayerUIWorldOffset => playerUIWorldOffset;
     public SequenceRewardSO CompletionReward => completionReward;
+    public float CompletionRewardDelay => completionRewardDelay;
 
     public int ResolveInitialAmmo()
     {

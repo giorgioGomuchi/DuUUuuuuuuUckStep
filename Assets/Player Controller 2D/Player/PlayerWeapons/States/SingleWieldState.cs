@@ -1,6 +1,6 @@
 public class SingleWieldState : IWeaponState
 {
-    private WeaponSlotsController controller;
+    private readonly WeaponSlotsController controller;
 
     public SingleWieldState(WeaponSlotsController controller)
     {
@@ -9,24 +9,28 @@ public class SingleWieldState : IWeaponState
 
     public void Enter()
     {
-        controller.ShowMainOnly();
+        controller.SetSlotVisualVisible(WeaponSlotType.Main, true);
+        controller.SetSlotVisualVisible(WeaponSlotType.Secondary, false);
     }
 
-    public void Exit() { }
+    public void Exit()
+    {
+    }
 
     public void FirePrimary()
     {
-        controller.FireMain();
+        controller.TryFireSlot(WeaponSlotType.Main);
     }
 
     public void FireSecondary()
     {
-        // No hace nada en single
+        // Intentionally disabled in single wield mode.
     }
 
     public void SwitchWeapon()
     {
-        controller.SwapWeapons();
-        controller.ShowMainOnly();
+        controller.PerformWeaponSwap();
+        controller.SetSlotVisualVisible(WeaponSlotType.Main, true);
+        controller.SetSlotVisualVisible(WeaponSlotType.Secondary, false);
     }
 }

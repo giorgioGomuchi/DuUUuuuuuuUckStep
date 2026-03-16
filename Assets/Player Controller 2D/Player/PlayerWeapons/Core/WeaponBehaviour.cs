@@ -23,9 +23,6 @@ public class WeaponBehaviour : MonoBehaviour
 
     public WeaponDataSO WeaponData => weaponData;
     public string WeaponName => weaponData != null ? weaponData.weaponName : "None";
-    public float Cooldown => weaponData != null ? weaponData.cooldown : 0f;
-    public bool UsesRhythmGate => weaponData != null && weaponData.useRhythmGate;
-
     public Transform FirePoint => firePoint;
     public Vector2 CurrentAim => currentAim;
     public bool IsAttackLocked => attackLocked;
@@ -85,27 +82,10 @@ public class WeaponBehaviour : MonoBehaviour
         if (weaponData == null || firePoint == null)
             return false;
 
-        if (debugLogs)
-        {
-            Debug.Log(
-                $"[WeaponBehaviour] TryFire START | weapon={WeaponName} " +
-                $"locked={attackLocked} " +
-                $"isBeam={(weaponData is BeamWeaponDataSO)} " +
-                $"time={Time.time:F3} " +
-                $"nextFireTime={nextFireTime:F3}",
-                this);
-        }
-
         if (attackLocked)
-        {
-            if (debugLogs)
-                Debug.Log("[WeaponBehaviour] Fire blocked: attack is locked.", this);
-
             return false;
-        }
 
-        bool isBeamWeapon = weaponData is BeamWeaponDataSO;
-        if (!isBeamWeapon && Time.time < nextFireTime)
+        if (!CanFireByCadence())
             return false;
 
         if (weaponData.attackModule == null)
@@ -118,15 +98,42 @@ public class WeaponBehaviour : MonoBehaviour
         if (!didFire)
             return false;
 
-        if (!isBeamWeapon)
-            nextFireTime = Time.time + weaponData.cooldown;
-
+        CommitCadenceAfterFire();
         ApplyCameraShake();
-
-        if (debugLogs)
-            Debug.Log($"[WeaponBehaviour] Fired using module={weaponData.attackModule.name} weapon={weaponData.weaponName}", this);
-
         return true;
+    }
+
+    private bool CanFireByCadence()
+    {
+        if (weaponData == null)
+            return false;
+
+        switch (weaponData.cadenceMode)
+        {
+            case WeaponCadenceMode.Continuous:
+                return true;
+
+            case WeaponCadenceMode.ExternalCadence:
+                return true;
+
+            case WeaponCadenceMode.InternalCooldown:
+            default:
+                return Time.time >= nextFireTime;
+        }
+    }
+
+    private void CommitCadenceAfterFire()
+    {
+        if (weaponData == null)
+            return;
+
+        if (weaponData.cadenceMode == WeaponCadenceMode.InternalCooldown)
+            nextFireTime = Time.time + weaponData.cooldown;
+    }
+
+    public void ResetInternalCooldown()
+    {
+        nextFireTime = 0f;
     }
 
     public void SetNextAttackDamageMultiplier(float multiplier)
@@ -150,6 +157,7 @@ public class WeaponBehaviour : MonoBehaviour
         }
 
         weaponData = newData;
+        ResetInternalCooldown();
         RefreshVisualFromData();
         OnWeaponDataChanged?.Invoke(this, weaponData);
     }

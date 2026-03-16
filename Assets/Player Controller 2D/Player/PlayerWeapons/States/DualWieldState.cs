@@ -1,6 +1,6 @@
 public class DualWieldState : IWeaponState
 {
-    private WeaponSlotsController controller;
+    private readonly WeaponSlotsController controller;
 
     public DualWieldState(WeaponSlotsController controller)
     {
@@ -9,23 +9,25 @@ public class DualWieldState : IWeaponState
 
     public void Enter()
     {
-        controller.ShowBoth();
+        controller.SetAllSlotVisualsVisible(true);
     }
 
-    public void Exit() { }
+    public void Exit()
+    {
+    }
 
     public void FirePrimary()
     {
-        controller.FireMain();
+        controller.TryFireSlot(WeaponSlotType.Main);
     }
 
     public void FireSecondary()
     {
-        controller.FireSecondaryWeapon();
+        controller.TryFireSlot(WeaponSlotType.Secondary);
     }
 
     public void SwitchWeapon()
     {
-        controller.SwapWeapons();
+        controller.PerformWeaponSwap();
     }
 }
