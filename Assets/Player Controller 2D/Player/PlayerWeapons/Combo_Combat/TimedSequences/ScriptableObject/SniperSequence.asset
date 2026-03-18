@@ -35,3 +35,4 @@ MonoBehaviour:
   showAimGuide: 1
   playerUIWorldOffset: {x: 0, y: 1.5, z: 0}
   completionReward: {fileID: 11400000, guid: eb8ead3ce74328d4bb1e65e22e4605b8, type: 2}
+  completionRewardDelay: 0.1

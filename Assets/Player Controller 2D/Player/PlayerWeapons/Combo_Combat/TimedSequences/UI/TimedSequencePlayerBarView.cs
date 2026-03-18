@@ -11,27 +11,20 @@ public class TimedSequencePlayerBarView : MonoBehaviour
     [SerializeField] private RectTransform failRightZone;
     [SerializeField] private RectTransform marker;
 
-    [Header("Layout")]
-    [SerializeField] private bool useShootRuleForBar = true;
-
     public void SetDefinition(WeaponSequenceDefinitionSO definition)
     {
         if (definition == null || barArea == null)
             return;
 
-        TimedSequenceActionRule rule = useShootRuleForBar
-            ? definition.ShootRule
-            : definition.DashRule;
+        ApplyRule(definition.ShootRule);
+    }
 
-        TimedSequenceVisualSegments.SegmentSet segments = TimedSequenceVisualSegments.Build(rule);
+    public void SetRule(TimedSequenceActionRule rule)
+    {
+        if (rule == null || barArea == null)
+            return;
 
-        float width = barArea.rect.width;
-
-        SetZone(failLeftZone, width, segments.FailLeft);
-        SetZone(goodLeftZone, width, segments.GoodLeft);
-        SetZone(perfectZone, width, segments.Perfect);
-        SetZone(goodRightZone, width, segments.GoodRight);
-        SetZone(failRightZone, width, segments.FailRight);
+        ApplyRule(rule);
     }
 
     public void SetMarker(float normalizedTime)
@@ -49,6 +42,18 @@ public class TimedSequencePlayerBarView : MonoBehaviour
         Vector2 pos = marker.anchoredPosition;
         pos.x = x;
         marker.anchoredPosition = pos;
+    }
+
+    private void ApplyRule(TimedSequenceActionRule rule)
+    {
+        TimedSequenceVisualSegments.SegmentSet segments = TimedSequenceVisualSegments.Build(rule);
+        float width = barArea.rect.width;
+
+        SetZone(failLeftZone, width, segments.FailLeft);
+        SetZone(goodLeftZone, width, segments.GoodLeft);
+        SetZone(perfectZone, width, segments.Perfect);
+        SetZone(goodRightZone, width, segments.GoodRight);
+        SetZone(failRightZone, width, segments.FailRight);
     }
 
     private void SetZone(RectTransform zone, float totalWidth, TimedSequenceVisualSegments.SegmentRange range)

@@ -5,8 +5,11 @@ public class PlayerCombatController : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private WeaponSlotsController weapons;
     [SerializeField] private WeaponSequenceController weaponSequence;
+    [SerializeField] private BoomerangSequenceBridge boomerangSequence;
 
     public bool CombatBlocked { get; private set; }
+
+    public BoomerangSequenceBridge BoomerangSequence => boomerangSequence;
 
     private void Awake()
     {
@@ -15,6 +18,9 @@ public class PlayerCombatController : MonoBehaviour
 
         if (weaponSequence == null)
             weaponSequence = GetComponentInChildren<WeaponSequenceController>();
+
+        if (boomerangSequence == null)
+            boomerangSequence = GetComponentInChildren<BoomerangSequenceBridge>();
     }
 
     public void SetAim(Vector2 dir)
@@ -35,14 +41,26 @@ public class PlayerCombatController : MonoBehaviour
         if (input == null)
             return;
 
+        if (weapons == null || CombatBlocked)
+            return;
+
+        // Sniper / secuencias lineales antiguas: se quedan exclusivas.
         if (weaponSequence != null && weaponSequence.IsSequenceActive)
         {
             weaponSequence.TickSequence(input);
             return;
         }
 
-        if (weapons == null || CombatBlocked)
+        // Boomerang:
+        // - la secuencia sigue controlando Primary/Dash/estado
+        // - PERO dejamos pasar el Secondary real para que el melee pueda golpear el boomerang.
+        if (boomerangSequence != null && boomerangSequence.IsSequenceActive)
+        {
+            boomerangSequence.TickSequence(input);
+
+            HandleSecondary(input);
             return;
+        }
 
         HandlePrimary(input);
         HandleSecondary(input);

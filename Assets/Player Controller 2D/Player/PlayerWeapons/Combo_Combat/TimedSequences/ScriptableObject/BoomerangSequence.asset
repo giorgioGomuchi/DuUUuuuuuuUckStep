@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 162c4544c06ec9b49990555d80c3df24, type: 3}
+  m_Name: BoomerangSequence
+  m_EditorClassIdentifier: 
+  sequenceId: BoomerangSequence
+  recallRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.284
+    perfectHalfWindowNormalized: 0.11
+    allowPerfect: 1
+  reflectRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.312
+    perfectHalfWindowNormalized: 0.146
+    allowPerfect: 1
+  dashRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.323
+    perfectHalfWindowNormalized: 0.111
+    allowPerfect: 1
+  recallWindowDuration: 0.9
+  reflectWindowDuration: 0.9
+  reflectActivationNormalized: 0.42
+  requiredSuccessfulCycles: 3
+  allowDashDuringRecall: 1
+  allowDashDuringReflect: 1
+  failOnBadDash: 0
+  failOnSwitchWeaponInput: 1
+  clearWeaponOverrideOnFail: 1
+  playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
+  completionRewardWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  completionRewardSlot: 0
+  completionRewardAmmo: 2

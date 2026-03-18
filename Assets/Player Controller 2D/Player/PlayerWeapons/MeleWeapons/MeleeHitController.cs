@@ -70,9 +70,9 @@ public class MeleeHitController : MonoBehaviour
 
             if (deflectable != null && deflectable.CanBeDeflected)
             {
-                var boomerang = other.GetComponent<BoomerangProjectile2D>();
+                var boomerang = other.GetComponent<BoomerangProjectile2DNormal>();
                 if (boomerang == null)
-                    boomerang = other.GetComponentInParent<BoomerangProjectile2D>();
+                    boomerang = other.GetComponentInParent<BoomerangProjectile2DNormal>();
 
                 Vector2 forward = transform.right;
 

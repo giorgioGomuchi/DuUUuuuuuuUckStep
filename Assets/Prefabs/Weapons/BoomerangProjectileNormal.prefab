@@ -12,10 +12,10 @@ GameObject:
   - component: {fileID: 6909631245269056044}
   - component: {fileID: 288414074300118744}
   - component: {fileID: 5641371957355748568}
+  - component: {fileID: 7868648901545767540}
   - component: {fileID: 7229750255448800791}
-  - component: {fileID: -5586635616111229935}
   m_Layer: 12
-  m_Name: BoomerangProjectile
+  m_Name: BoomerangProjectileNormal
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,6 +160,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &7868648901545767540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828991490477125810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf311a4bf1e7c8d409b43e1d0ab41190, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lifetime: 10
+  debugLogs: 1
+  outboundDistance: 6
+  returnSpeedMultiplier: 1.15
+  deflectOnlyWhileReturning: 1
+  outboundDistanceAfterDeflect: 4.5
+  spinSpeed: 720
+  owner: {fileID: 5268722050993420848}
+  returnWindowVfxRoot: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
+  trail: {fileID: 7229750255448800791}
+  spriteRenderer: {fileID: 5641371957355748568}
+  returningColor: {r: 0.8301887, g: 0.7563303, b: 0.21537916, a: 0.7176471}
+  enableSpin: 1
+  spinDegPerSec: 720
 --- !u!96 &7229750255448800791
 TrailRenderer:
   serializedVersion: 3
@@ -264,34 +290,3 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 1
   m_ApplyActiveColorSpace: 1
---- !u!114 &-5586635616111229935
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 828991490477125810}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe246e1661a8ea544992728274e54a05, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lifetime: 10
-  debugLogs: 1
-  outboundDistance: 6
-  returnSpeedMultiplier: 1.15
-  deflectOnlyWhileReturning: 1
-  outboundDistanceAfterDeflect: 4.5
-  returnSteering: 8
-  reflectableDistance: 1.15
-  catchDistance: 0.25
-  driftDeceleration: 18
-  enableSpin: 1
-  spinDegPerSec: 720
-  owner: {fileID: 0}
-  returnWindowVfxRoot: {fileID: 0}
-  trail: {fileID: 0}
-  spriteRenderer: {fileID: 0}
-  returningColor: {r: 0, g: 0, b: 0, a: 1}
-  timedReturnArcStrength: 0.08
-  timedReturnCatchBias: 0.92

@@ -24,6 +24,6 @@ MonoBehaviour:
     similarMinDot: 0
     perpendicularMaxAbsDot: 0
   - actionType: 1
-    actionVsAimRelation: 0
-    similarMinDot: 0
-    perpendicularMaxAbsDot: 0
+    actionVsAimRelation: 2
+    similarMinDot: 0.445
+    perpendicularMaxAbsDot: 0.429

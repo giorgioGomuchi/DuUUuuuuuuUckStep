@@ -20,6 +20,7 @@ public class TimedSequenceUIController : MonoBehaviour
 
     [Header("Text")]
     [SerializeField] private TMP_Text progressText;
+    [SerializeField] private TMP_Text phaseText;
 
     [Header("Behaviour")]
     [SerializeField] private bool hideWhenInactive = true;
@@ -30,9 +31,11 @@ public class TimedSequenceUIController : MonoBehaviour
 
     private PlayerReferences playerReferences;
     private WeaponSequenceDefinitionSO activeDefinition;
+    private BoomerangSequenceDefinitionSO activeBoomerangDefinition;
     private Camera worldCamera;
     private bool visible;
     private float flashEndTime;
+    private Vector3 activePlayerUIWorldOffset;
 
     private void Awake()
     {
@@ -44,7 +47,9 @@ public class TimedSequenceUIController : MonoBehaviour
 
         visible = false;
         activeDefinition = null;
+        activeBoomerangDefinition = null;
         playerReferences = null;
+        activePlayerUIWorldOffset = Vector3.zero;
 
         ResetFlashVisuals();
         SetCanvasVisible(false);
@@ -61,17 +66,19 @@ public class TimedSequenceUIController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!visible || playerReferences == null || activeDefinition == null)
+        if (!visible || playerReferences == null)
             return;
 
-
+        UpdateCursorPosition();
         UpdatePlayerBarPosition();
     }
 
     public void Show(WeaponSequenceDefinitionSO definition, PlayerReferences references)
     {
         activeDefinition = definition;
+        activeBoomerangDefinition = null;
         playerReferences = references;
+        activePlayerUIWorldOffset = definition != null ? definition.PlayerUIWorldOffset : Vector3.zero;
 
         if (references != null && references.Aim != null)
             worldCamera = references.Aim.MainCamera;
@@ -82,11 +89,35 @@ public class TimedSequenceUIController : MonoBehaviour
         SetWindowProgress(0f, 0, definition != null ? definition.RequiredSuccessfulShots : 0, definition);
     }
 
+    public void ShowBoomerang(BoomerangSequenceDefinitionSO definition, PlayerReferences references)
+    {
+        activeDefinition = null;
+        activeBoomerangDefinition = definition;
+        playerReferences = references;
+        activePlayerUIWorldOffset = definition != null ? definition.PlayerUIWorldOffset : Vector3.zero;
+
+        if (references != null && references.Aim != null)
+            worldCamera = references.Aim.MainCamera;
+
+        visible = true;
+        SetCanvasVisible(true);
+        ResetFlashVisuals();
+
+        SetBoomerangWindowProgress(
+            normalizedTime: 0f,
+            currentCycles: 0,
+            requiredCycles: definition != null ? definition.RequiredSuccessfulCycles : 0,
+            activeRule: definition != null ? definition.RecallRule : null,
+            phaseLabel: "Recall");
+    }
+
     public void Hide()
     {
         visible = false;
         activeDefinition = null;
+        activeBoomerangDefinition = null;
         playerReferences = null;
+        activePlayerUIWorldOffset = Vector3.zero;
         flashEndTime = 0f;
 
         ResetFlashVisuals();
@@ -111,6 +142,31 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (progressText != null)
             progressText.text = $"{currentShots}/{requiredShots}";
+
+        if (phaseText != null)
+            phaseText.text = "Sequence";
+    }
+
+    public void SetBoomerangWindowProgress(
+        float normalizedTime,
+        int currentCycles,
+        int requiredCycles,
+        TimedSequenceActionRule activeRule,
+        string phaseLabel)
+    {
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+
+        if (playerBarView != null)
+        {
+            playerBarView.SetRule(activeRule);
+            playerBarView.SetMarker(normalizedTime);
+        }
+
+        if (progressText != null)
+            progressText.text = $"{currentCycles}/{requiredCycles}";
+
+        if (phaseText != null)
+            phaseText.text = phaseLabel;
     }
 
     public void SetWaitingDashEnd(int currentShots, int requiredShots, WeaponSequenceDefinitionSO definition)
@@ -129,6 +185,9 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (progressText != null)
             progressText.text = $"{currentShots}/{requiredShots}";
+
+        if (phaseText != null)
+            phaseText.text = "Dash";
     }
 
     public void FlashJudgement(TimingJudgement judgement)
@@ -143,6 +202,7 @@ public class TimedSequenceUIController : MonoBehaviour
         if (cursorJudgementFlash != null)
         {
             cursorJudgementFlash.color = color;
+            cursorJudgementFlash.enabled = true;
         }
 
         if (playerJudgementFlash != null)
@@ -154,11 +214,12 @@ public class TimedSequenceUIController : MonoBehaviour
         flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
     }
 
-   
-
     private void UpdateCursorPosition()
     {
         if (cursorRoot == null || playerReferences == null || playerReferences.Input == null)
+            return;
+
+        if (cursorUIOnlyForScreenAim && playerReferences.Input.AimScreen == Vector2.zero)
             return;
 
         cursorRoot.position = playerReferences.Input.AimScreen;
@@ -166,14 +227,14 @@ public class TimedSequenceUIController : MonoBehaviour
 
     private void UpdatePlayerBarPosition()
     {
-        if (playerRoot == null || playerReferences == null || activeDefinition == null)
+        if (playerRoot == null || playerReferences == null)
             return;
 
         Camera cam = worldCamera != null ? worldCamera : Camera.main;
         if (cam == null)
             return;
 
-        Vector3 worldPos = playerReferences.transform.position + activeDefinition.PlayerUIWorldOffset;
+        Vector3 worldPos = playerReferences.transform.position + activePlayerUIWorldOffset;
         Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
 
         playerRoot.position = screenPos;
