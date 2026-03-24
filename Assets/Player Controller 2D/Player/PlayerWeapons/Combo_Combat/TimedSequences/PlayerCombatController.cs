@@ -44,20 +44,28 @@ public class PlayerCombatController : MonoBehaviour
         if (weapons == null || CombatBlocked)
             return;
 
-        // Sniper / secuencias lineales antiguas: se quedan exclusivas.
+        // Sniper / secuencias lineales antiguas: exclusivas.
         if (weaponSequence != null && weaponSequence.IsSequenceActive)
         {
             weaponSequence.TickSequence(input);
             return;
         }
 
-        // Boomerang:
-        // - la secuencia sigue controlando Primary/Dash/estado
-        // - PERO dejamos pasar el Secondary real para que el melee pueda golpear el boomerang.
         if (boomerangSequence != null && boomerangSequence.IsSequenceActive)
         {
             boomerangSequence.TickSequence(input);
 
+            // Si está en órbita reward, el boomerang ya es autónomo:
+            // dejamos volver a usar armas normales.
+            if (boomerangSequence.IsInOrbitReward)
+            {
+                HandlePrimary(input);
+                HandleSecondary(input);
+                HandleSwitch(input);
+                return;
+            }
+
+            // Durante recall/return/reflect dejamos pasar solo melee real.
             HandleSecondary(input);
             return;
         }

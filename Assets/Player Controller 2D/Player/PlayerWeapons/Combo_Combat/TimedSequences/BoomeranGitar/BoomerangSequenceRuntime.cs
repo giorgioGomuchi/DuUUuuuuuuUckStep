@@ -18,6 +18,7 @@ public sealed class BoomerangSequenceRuntime
     public bool IsRunning { get; private set; }
     public bool IsCompleted => Phase == BoomerangSequencePhase.Completed;
     public bool IsFailed => Phase == BoomerangSequencePhase.Failed;
+    public bool IsInOrbitReward => Phase == BoomerangSequencePhase.OrbitReward;
 
     public void BeginRecallWindow(float duration)
     {
@@ -31,9 +32,16 @@ public sealed class BoomerangSequenceRuntime
     public void CompleteRecall()
     {
         SuccessfulRecalls++;
+    }
+
+    public void BeginReturnToReflectZone(float duration)
+    {
+        if (!IsRunning)
+            return;
+
         Phase = BoomerangSequencePhase.ReturningToReflectZone;
-        WindowStartTime = 0f;
-        WindowEndTime = 0f;
+        ReflectDashSucceededThisWindow = false;
+        OpenWindow(duration);
     }
 
     public void BeginReflectWindow(float duration)
@@ -44,6 +52,18 @@ public sealed class BoomerangSequenceRuntime
         Phase = BoomerangSequencePhase.ReflectWindow;
         ReflectDashSucceededThisWindow = false;
         OpenWindow(duration);
+    }
+
+    public void BeginOrbitReward()
+    {
+        if (!IsRunning)
+            return;
+
+        Phase = BoomerangSequencePhase.OrbitReward;
+        WindowStartTime = 0f;
+        WindowEndTime = 0f;
+        RecallDashSucceededThisWindow = false;
+        ReflectDashSucceededThisWindow = false;
     }
 
     public void RegisterRecallDashSuccess()

@@ -5,7 +5,6 @@ public class BoomerangAttackModuleSO : AttackModuleSO
 {
     public override bool Execute(WeaponBehaviour weapon, WeaponDataSO data)
     {
-
         Debug.Log("[BoomerangAttackModuleSO] Execute ENTER", weapon);
 
         if (weapon == null || data == null)
@@ -39,23 +38,9 @@ public class BoomerangAttackModuleSO : AttackModuleSO
 
         PlayerReferences playerRefs = weapon.GetComponentInParent<PlayerReferences>(true);
         BoomerangSequenceBridge bridge =
-            playerRefs != null &&
-            playerRefs.Combat != null
+            playerRefs != null && playerRefs.Combat != null
                 ? playerRefs.Combat.BoomerangSequence
                 : null;
-
-        Debug.Log($"[BoomerangAttackModuleSO] Bridge via PlayerReferences/Combat? {bridge != null}", weapon);
-
-        if (bridge != null)
-        {
-            proj.SetSequenceBridge(bridge);
-            bool started = bridge.BeginSequence(proj, weapon, boom);
-            Debug.Log($"[BoomerangAttackModuleSO] BeginSequence returned {started}", weapon);
-        }
-        else
-        {
-            Debug.LogWarning("[BoomerangAttackModuleSO] No BoomerangSequenceBridge found via PlayerReferences/Combat.", weapon);
-        }
 
         int finalDamage = weapon.ConsumeFinalDamage(boom.damage);
 
@@ -79,11 +64,21 @@ public class BoomerangAttackModuleSO : AttackModuleSO
             reflectableColor: boom.reflectableColor,
             reflectableFlashDuration: boom.reflectableFlashDuration,
             timedReturnArcStrength: boom.timedReturnArcStrength,
-            timedReturnCatchBias: boom.timedReturnCatchBias
-        );
-
-
-        Debug.Log($"[BoomerangAttackModuleSO] Bridge found robust search? {bridge != null}", weapon);
+            timedReturnPresentationDistance: boom.timedReturnPresentationDistance,
+            timedReturnMinSpeedMultiplier: boom.timedReturnMinSpeedMultiplier,
+            timedReturnMaxSpeedMultiplier: boom.timedReturnMaxSpeedMultiplier,
+            timedReturnSpeedSmoothing: boom.timedReturnSpeedSmoothing,
+            timedReturnHoldRadius: boom.timedReturnHoldRadius,
+            timedReturnReflectableRadius: boom.timedReturnReflectableRadius,
+            destroyEnemyProjectileMask: boom.destroyEnemyProjectileMask,
+            orbitStartRadius: boom.orbitStartRadius,
+            orbitRadiusGrowthPerSecond: boom.orbitRadiusGrowthPerSecond,
+            orbitMaxRadius: boom.orbitMaxRadius,
+            orbitAngularSpeedDegPerSec: boom.orbitAngularSpeedDegPerSec,
+            orbitSpeedMultiplier: boom.orbitSpeedMultiplier,
+            orbitClockwise: boom.orbitClockwise,
+            orbitContactDamageInterval: boom.orbitContactDamageInterval
+);
 
         if (bridge != null)
         {
@@ -93,7 +88,7 @@ public class BoomerangAttackModuleSO : AttackModuleSO
         }
         else
         {
-            Debug.LogWarning("[BoomerangAttackModuleSO] No BoomerangSequenceBridge found anywhere in hierarchy.", weapon);
+            Debug.LogWarning("[BoomerangAttackModuleSO] No BoomerangSequenceBridge found.", weapon);
         }
 
         weapon.SetVisualVisible(false);
@@ -107,6 +102,4 @@ public class BoomerangAttackModuleSO : AttackModuleSO
 
         return true;
     }
-
-    
 }

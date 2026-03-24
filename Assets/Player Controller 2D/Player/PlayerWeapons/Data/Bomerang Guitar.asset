@@ -32,11 +32,18 @@ MonoBehaviour:
   projectileSpeed: 12
   sequenceDefinition: {fileID: 11400000, guid: c48cf1b05cd9faf46af53c16eff348a6, type: 2}
   outboundDistance: 6
-  returnSpeedMultiplier: 1.15
-  returnSteering: 8
-  reflectableDistance: 2
-  catchDistance: 0.35
+  returnSpeedMultiplier: 1.4
+  returnSteering: 13
+  reflectableDistance: 1.15
+  catchDistance: 0.4
   driftDeceleration: 18
+  timedReturnArcStrength: 0.08
+  timedReturnPresentationDistance: 0.55
+  timedReturnMinSpeedMultiplier: 1.15
+  timedReturnMaxSpeedMultiplier: 3.4
+  timedReturnSpeedSmoothing: 24
+  timedReturnHoldRadius: 0.9
+  timedReturnReflectableRadius: 1.35
   deflectOnlyWhileReturning: 1
   outboundDistanceAfterDeflect: 4.5
   spinDegPerSec: 720

@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 5268722050993420848}
   - component: {fileID: 6909631245269056044}
-  - component: {fileID: 288414074300118744}
   - component: {fileID: 5641371957355748568}
   - component: {fileID: 7229750255448800791}
   - component: {fileID: -5586635616111229935}
+  - component: {fileID: 582956107514684671}
   m_Layer: 12
   m_Name: BoomerangProjectile
   m_TagString: Untagged
@@ -63,51 +63,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!61 &288414074300118744
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 828991490477125810}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 2.125, y: 0.9375}
-    newSize: {x: 2.125, y: 0.9375}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  serializedVersion: 2
-  m_Size: {x: 1.19, y: 0.61}
-  m_EdgeRadius: 0
 --- !u!212 &5641371957355748568
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -285,6 +240,13 @@ MonoBehaviour:
   returnSteering: 8
   reflectableDistance: 1.15
   catchDistance: 0.25
+  timedReturnArcStrength: 0.08
+  timedReturnPresentationDistance: 0.95
+  timedReturnMinSpeedMultiplier: 0.85
+  timedReturnMaxSpeedMultiplier: 2.75
+  timedReturnSpeedSmoothing: 18
+  timedReturnHoldRadius: 0.55
+  timedReturnReflectableRadius: 0.95
   driftDeceleration: 18
   enableSpin: 1
   spinDegPerSec: 720
@@ -293,5 +255,38 @@ MonoBehaviour:
   trail: {fileID: 0}
   spriteRenderer: {fileID: 0}
   returningColor: {r: 0, g: 0, b: 0, a: 1}
-  timedReturnArcStrength: 0.08
-  timedReturnCatchBias: 0.92
+--- !u!58 &582956107514684671
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828991490477125810}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 0.7

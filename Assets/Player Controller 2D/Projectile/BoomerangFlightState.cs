@@ -4,6 +4,7 @@ public enum BoomerangFlightState
     ReturningCurved = 1,
     ReflectableReturning = 2,
     ReflectedOutbound = 3,
-    DriftingLost = 4,
-    Finished = 5
+    OrbitingExpanding = 4,
+    DriftingLost = 5,
+    Finished = 6
 }

@@ -155,4 +155,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31cf7e01fb301644c99c71ba7ef948a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  knockbackForce: 2
+  enableDeflect: 1
+  deflectDotThreshold: -1
+  deflectSpeedMultiplier: 1
+  disableColliderAfterDeflect: 1
+  useRhythmForBoomerangRebound: 1
+  boomerangMusic: {fileID: 0}
+  debugLogs: 1

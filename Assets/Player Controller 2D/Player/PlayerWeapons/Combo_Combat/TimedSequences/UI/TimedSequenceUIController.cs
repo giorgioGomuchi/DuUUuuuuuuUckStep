@@ -73,6 +73,10 @@ public class TimedSequenceUIController : MonoBehaviour
         UpdatePlayerBarPosition();
     }
 
+    // ---------------------------------------------------------------------
+    // SECUENCIAS ANTIGUAS / FRANCOTIRADOR
+    // ---------------------------------------------------------------------
+
     public void Show(WeaponSequenceDefinitionSO definition, PlayerReferences references)
     {
         activeDefinition = definition;
@@ -86,8 +90,70 @@ public class TimedSequenceUIController : MonoBehaviour
         visible = true;
         SetCanvasVisible(true);
         ResetFlashVisuals();
-        SetWindowProgress(0f, 0, definition != null ? definition.RequiredSuccessfulShots : 0, definition);
+
+        SetWindowProgress(
+            normalizedTime: 0f,
+            currentShots: 0,
+            requiredShots: definition != null ? definition.RequiredSuccessfulShots : 0,
+            definition: definition);
     }
+
+    public void SetWindowProgress(
+        float normalizedTime,
+        int currentShots,
+        int requiredShots,
+        WeaponSequenceDefinitionSO definition)
+    {
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+
+        if (cursorRingView != null)
+        {
+            cursorRingView.SetDefinition(definition);
+            cursorRingView.SetMarker(normalizedTime);
+        }
+
+        if (playerBarView != null)
+        {
+            playerBarView.SetNeutralMode(false);
+            playerBarView.SetDefinition(definition);
+            playerBarView.SetMarker(normalizedTime);
+        }
+
+        if (progressText != null)
+            progressText.text = $"{currentShots}/{requiredShots}";
+
+        if (phaseText != null)
+            phaseText.text = "Sequence";
+    }
+
+    public void SetWaitingDashEnd(
+        int currentShots,
+        int requiredShots,
+        WeaponSequenceDefinitionSO definition)
+    {
+        if (cursorRingView != null)
+        {
+            cursorRingView.SetDefinition(definition);
+            cursorRingView.SetMarker(1f);
+        }
+
+        if (playerBarView != null)
+        {
+            playerBarView.SetNeutralMode(false);
+            playerBarView.SetDefinition(definition);
+            playerBarView.SetMarker(1f);
+        }
+
+        if (progressText != null)
+            progressText.text = $"{currentShots}/{requiredShots}";
+
+        if (phaseText != null)
+            phaseText.text = "Dash";
+    }
+
+    // ---------------------------------------------------------------------
+    // BOOMERANG
+    // ---------------------------------------------------------------------
 
     public void ShowBoomerang(BoomerangSequenceDefinitionSO definition, PlayerReferences references)
     {
@@ -108,8 +174,53 @@ public class TimedSequenceUIController : MonoBehaviour
             currentCycles: 0,
             requiredCycles: definition != null ? definition.RequiredSuccessfulCycles : 0,
             activeRule: definition != null ? definition.RecallRule : null,
-            phaseLabel: "Recall");
+            phaseLabel: "Recall",
+            useNeutralBar: false);
     }
+
+    public void SetBoomerangWindowProgress(
+        float normalizedTime,
+        int currentCycles,
+        int requiredCycles,
+        TimedSequenceActionRule activeRule,
+        string phaseLabel)
+    {
+        SetBoomerangWindowProgress(
+            normalizedTime,
+            currentCycles,
+            requiredCycles,
+            activeRule,
+            phaseLabel,
+            false);
+    }
+
+    public void SetBoomerangWindowProgress(
+        float normalizedTime,
+        int currentCycles,
+        int requiredCycles,
+        TimedSequenceActionRule activeRule,
+        string phaseLabel,
+        bool useNeutralBar)
+    {
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+
+        if (playerBarView != null)
+        {
+            playerBarView.SetNeutralMode(useNeutralBar);
+            playerBarView.SetRule(activeRule);
+            playerBarView.SetMarker(normalizedTime);
+        }
+
+        if (progressText != null)
+            progressText.text = $"{currentCycles}/{requiredCycles}";
+
+        if (phaseText != null)
+            phaseText.text = phaseLabel;
+    }
+
+    // ---------------------------------------------------------------------
+    // COMÚN
+    // ---------------------------------------------------------------------
 
     public void Hide()
     {
@@ -122,72 +233,6 @@ public class TimedSequenceUIController : MonoBehaviour
 
         ResetFlashVisuals();
         SetCanvasVisible(!hideWhenInactive);
-    }
-
-    public void SetWindowProgress(float normalizedTime, int currentShots, int requiredShots, WeaponSequenceDefinitionSO definition)
-    {
-        normalizedTime = Mathf.Clamp01(normalizedTime);
-
-        if (cursorRingView != null)
-        {
-            cursorRingView.SetDefinition(definition);
-            cursorRingView.SetMarker(normalizedTime);
-        }
-
-        if (playerBarView != null)
-        {
-            playerBarView.SetDefinition(definition);
-            playerBarView.SetMarker(normalizedTime);
-        }
-
-        if (progressText != null)
-            progressText.text = $"{currentShots}/{requiredShots}";
-
-        if (phaseText != null)
-            phaseText.text = "Sequence";
-    }
-
-    public void SetBoomerangWindowProgress(
-        float normalizedTime,
-        int currentCycles,
-        int requiredCycles,
-        TimedSequenceActionRule activeRule,
-        string phaseLabel)
-    {
-        normalizedTime = Mathf.Clamp01(normalizedTime);
-
-        if (playerBarView != null)
-        {
-            playerBarView.SetRule(activeRule);
-            playerBarView.SetMarker(normalizedTime);
-        }
-
-        if (progressText != null)
-            progressText.text = $"{currentCycles}/{requiredCycles}";
-
-        if (phaseText != null)
-            phaseText.text = phaseLabel;
-    }
-
-    public void SetWaitingDashEnd(int currentShots, int requiredShots, WeaponSequenceDefinitionSO definition)
-    {
-        if (cursorRingView != null)
-        {
-            cursorRingView.SetDefinition(definition);
-            cursorRingView.SetMarker(1f);
-        }
-
-        if (playerBarView != null)
-        {
-            playerBarView.SetDefinition(definition);
-            playerBarView.SetMarker(1f);
-        }
-
-        if (progressText != null)
-            progressText.text = $"{currentShots}/{requiredShots}";
-
-        if (phaseText != null)
-            phaseText.text = "Dash";
     }
 
     public void FlashJudgement(TimingJudgement judgement)
@@ -235,28 +280,16 @@ public class TimedSequenceUIController : MonoBehaviour
             return;
 
         Vector3 worldPos = playerReferences.transform.position + activePlayerUIWorldOffset;
-        Vector3 screenPos = cam.WorldToScreenPoint(worldPos);
-
-        playerRoot.position = screenPos;
+        playerRoot.position = cam.WorldToScreenPoint(worldPos);
     }
 
     private void ResetFlashVisuals()
     {
         if (cursorJudgementFlash != null)
-        {
             cursorJudgementFlash.enabled = false;
-            Color c = cursorJudgementFlash.color;
-            c.a = 0f;
-            cursorJudgementFlash.color = c;
-        }
 
         if (playerJudgementFlash != null)
-        {
             playerJudgementFlash.enabled = false;
-            Color c = playerJudgementFlash.color;
-            c.a = 0f;
-            playerJudgementFlash.color = c;
-        }
     }
 
     private void SetCanvasVisible(bool isVisible)

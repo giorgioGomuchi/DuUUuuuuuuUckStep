@@ -25,12 +25,13 @@ MonoBehaviour:
     allowPerfect: 1
   dashRule:
     enabled: 1
-    goodHalfWindowNormalized: 0.323
+    goodHalfWindowNormalized: 0.3
     perfectHalfWindowNormalized: 0.111
     allowPerfect: 1
-  recallWindowDuration: 0.9
-  reflectWindowDuration: 0.9
-  reflectActivationNormalized: 0.42
+  recallWindowDuration: 1
+  reflectWindowDuration: 1
+  reflectActivationNormalized: 0.25
+  returnToReflectDuration: 1
   requiredSuccessfulCycles: 3
   allowDashDuringRecall: 1
   allowDashDuringReflect: 1
