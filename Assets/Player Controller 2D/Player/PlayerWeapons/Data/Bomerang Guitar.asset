@@ -31,24 +31,34 @@ MonoBehaviour:
   projectilePrefab: {fileID: 828991490477125810, guid: 31c259f8a84b5c843a506f7ce26b8c22, type: 3}
   projectileSpeed: 12
   sequenceDefinition: {fileID: 11400000, guid: c48cf1b05cd9faf46af53c16eff348a6, type: 2}
-  outboundDistance: 6
+  outboundDistance: 12
   returnSpeedMultiplier: 1.4
   returnSteering: 13
   reflectableDistance: 1.15
-  catchDistance: 0.4
+  catchDistance: 0.3
   driftDeceleration: 18
   timedReturnArcStrength: 0.08
-  timedReturnPresentationDistance: 0.55
+  timedReturnPresentationDistance: 0.45
   timedReturnMinSpeedMultiplier: 1.15
   timedReturnMaxSpeedMultiplier: 3.4
   timedReturnSpeedSmoothing: 24
-  timedReturnHoldRadius: 0.9
+  timedReturnHoldRadius: 1
   timedReturnReflectableRadius: 1.35
-  deflectOnlyWhileReturning: 1
-  outboundDistanceAfterDeflect: 4.5
+  destroyEnemyProjectileMask:
+    serializedVersion: 2
+    m_Bits: 512
   spinDegPerSec: 720
   reflectableColor: {r: 1, g: 0.9, b: 0.2, a: 1}
   reflectableFlashDuration: 0.12
   dashReturnSpeedMultiplierBonus: 0.35
+  deflectOnlyWhileReturning: 1
+  outboundDistanceAfterDeflect: 4.5
   dashReturnSteeringBonus: 5
   dashReflectSpeedMultiplierBonus: 1.35
+  orbitStartRadius: 0.8
+  orbitRadiusGrowthPerSecond: 1
+  orbitMaxRadius: 4
+  orbitAngularSpeedDegPerSec: 360
+  orbitSpeedMultiplier: 1.4
+  orbitClockwise: 1
+  orbitContactDamageInterval: 0.2

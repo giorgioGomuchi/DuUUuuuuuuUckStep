@@ -1067,7 +1067,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerReferences: {fileID: 4205475652766426246}
   sequenceUI: {fileID: 8318554948651735393}
-  aimGuide: {fileID: 4537643925048671725}
   debugLogs: 1
 --- !u!1 &1237347640591292721
 GameObject:
@@ -2322,6 +2321,9 @@ MonoBehaviour:
   goodRightZone: {fileID: 4389835136400600219}
   failRightZone: {fileID: 4813283309807222877}
   marker: {fileID: 569989282313250959}
+  barBackground: {fileID: 3682542658972693533}
+  activeBackgroundColor: {r: 0, g: 0, b: 0, a: 0.55}
+  neutralBackgroundColor: {r: 0.18, g: 0.18, b: 0.18, a: 0.7}
 --- !u!1 &4460319769387161922
 GameObject:
   m_ObjectHideFlags: 0
@@ -3148,6 +3150,7 @@ MonoBehaviour:
   recipes:
   - {fileID: 11400000, guid: 454cc550789ad784d880723a0230b045, type: 2}
   - {fileID: 11400000, guid: 00b2c79aa5b876849addfc6b8acd319d, type: 2}
+  - {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
   debugLogs: 1
 --- !u!114 &7516679360772917863
 MonoBehaviour:
@@ -3169,6 +3172,8 @@ MonoBehaviour:
     effect: {fileID: 11400000, guid: fa807131066cba14f895da1119e2a474, type: 2}
   - recipe: {fileID: 11400000, guid: 00b2c79aa5b876849addfc6b8acd319d, type: 2}
     effect: {fileID: 11400000, guid: 122363d9d7e3c8949b33c2a0ba1b1a5b, type: 2}
+  - recipe: {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
+    effect: {fileID: 11400000, guid: 866c6d1922616fa4987ade6114260408, type: 2}
   debugLogs: 1
 --- !u!1 &6052688968983993364
 GameObject:
