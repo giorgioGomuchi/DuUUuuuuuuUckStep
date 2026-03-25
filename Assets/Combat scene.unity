@@ -237459,17 +237459,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c583749f3a204b4aaeb9dbc0c2be7a2, type: 3}
---- !u!114 &1862698289 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3682542658972693533, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-  m_PrefabInstance: {fileID: 5730959013319052137}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1888787220
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -237928,46 +237917,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3101465929028004509, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: weaponData
-      value: 
-      objectReference: {fileID: 11400000, guid: 8e5939ec51eadae48b4b7016e4d0348f, type: 2}
-    - target: {fileID: 6249824853131958083, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: recipes.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 6249824853131958083, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: recipes.Array.data[2]
-      value: 
-      objectReference: {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
     - target: {fileID: 6841429869749178727, guid: fdbfd746d5d573840b89297d09438168, type: 3}
       propertyPath: m_Name
       value: True_player (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.data[2].effect
-      value: 
-      objectReference: {fileID: 11400000, guid: 866c6d1922616fa4987ade6114260408, type: 2}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.data[2].recipe
-      value: 
-      objectReference: {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.data[3].effect
-      value: 
-      objectReference: {fileID: 11400000, guid: 122363d9d7e3c8949b33c2a0ba1b1a5b, type: 2}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.data[3].recipe
-      value: 
-      objectReference: {fileID: 11400000, guid: 00b2c79aa5b876849addfc6b8acd319d, type: 2}
-    - target: {fileID: 9208216241433186538, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: barBackground
-      value: 
-      objectReference: {fileID: 1862698289}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -67,12 +67,18 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
     // Soporta triggers (parry zones, etc)
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log(
+    $"[KinematicProjectile2D] Trigger/Collision name={name} other={other.name} layer={other.gameObject.layer}",
+    this);
         OnHit(other);
     }
 
     // Soporta colisiones físicas (paredes, rebotes, etc)
     protected virtual void OnCollisionEnter2D(Collision2D collision)
     {
+        Debug.Log(
+    $"[KinematicProjectile2D] Trigger/Collision name={name} other={collision.gameObject.name} layer={collision.gameObject.layer}",
+    this);
         if (collision == null || collision.collider == null) return;
         OnHit(collision.collider);
     }
@@ -127,6 +133,7 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
 
     protected virtual void Kill()
     {
+        Debug.Log($"[KinematicProjectile2D] Kill name={name} pos={rb.position}", this);
         Destroy(gameObject);
     }
 

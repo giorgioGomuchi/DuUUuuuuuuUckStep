@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class BoomerangProjectile2D : KinematicProjectile2D
 {
+
     [Header("Boomerang Config")]
     [SerializeField] private float outboundDistance = 6f;
+    [SerializeField] private bool useFixedReturnToReflect = true;
     [SerializeField] private float returnSpeedMultiplier = 1.15f;
     [SerializeField] private bool deflectOnlyWhileReturning = true;
     [SerializeField] private float outboundDistanceAfterDeflect = 4.5f;
@@ -14,6 +16,8 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     [SerializeField] private float returnSteering = 8f;
     [SerializeField] private float reflectableDistance = 1.15f;
     [SerializeField] private float catchDistance = 0.25f;
+
+    [SerializeField] private bool holdReflectAtOwnerCenter = true;
 
     [Header("Timed Return")]
     [SerializeField] private float timedReturnArcStrength = 0.08f;
@@ -32,9 +36,18 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     [SerializeField] private float orbitRadiusGrowthPerSecond = 1f;
     [SerializeField] private float orbitMaxRadius = 3.5f;
     [SerializeField] private float orbitAngularSpeedDegPerSec = 360f;
+    [SerializeField] private float orbitSpeedMultiplier = 1f;
     [SerializeField] private bool orbitClockwise = true;
     [SerializeField] private float orbitContactDamageInterval = 0.2f;
-    [SerializeField] private float orbitSpeedMultiplier = 1.2f;
+
+    [Header("Feedback")]
+    [SerializeField] private Color reflectableColor = new Color(1f, 0.9f, 0.2f, 1f);
+    [SerializeField] private float reflectableFlashDuration = 0.12f;
+    [SerializeField] private Color orbitStartFlashColor = new Color(0.3f, 1f, 1f, 1f);
+    [SerializeField] private float orbitStartFlashDuration = 0.18f;
+    [SerializeField] private float orbitStartPulseScaleMultiplier = 1.35f;
+    [SerializeField] private float orbitStartPulseDuration = 0.2f;
+    [SerializeField] private Color returningColor = Color.white;
 
     [Header("Lost / Drift")]
     [SerializeField] private float driftDeceleration = 18f;
@@ -46,11 +59,9 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     [Header("Runtime")]
     [SerializeField] private Transform owner;
 
-    [Header("Feedback")]
-    [SerializeField] private GameObject returnWindowVfxRoot;
-    [SerializeField] private TrailRenderer trail;
-    [SerializeField] private SpriteRenderer spriteRenderer;
-    [SerializeField] private Color returningColor = Color.white;
+    [Header("Refs")]
+    [SerializeField] private BoomerangProjectileVisuals visuals;
+    [SerializeField] private BoomerangOwnerCollisionIgnore2D ownerCollisionIgnore;
 
     public Action<BoomerangProjectile2D> onFinished;
     public Action<BoomerangProjectile2D> onReturnedToOwner;
@@ -62,7 +73,6 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     private bool finishedNotified;
     private bool reflectableEventSent;
-    private bool returnWindowActive;
     private Vector2 startPos;
     private BoomerangFlightState flightState = BoomerangFlightState.Outbound;
 
@@ -72,16 +82,12 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     private float runtimeReturnSteeringBonus;
     private float runtimeNextReflectSpeedMultiplier = 1f;
 
-    private Color baseColor = Color.white;
-    private Color reflectableColor = Color.yellow;
-    private float reflectableFlashDuration = 0.12f;
-    private float reflectableFlashEndTime;
-
     private float timedReturnStartTime;
     private float timedReturnWindowDuration;
     private float reflectActivationNormalized = 0.55f;
     private bool useTimedReturn;
     private float currentTimedReturnSpeed;
+    private Vector2 timedReturnStartPos;
 
     private float orbitAngleRad;
     private float orbitRadius;
@@ -92,6 +98,8 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     private float orbitAccumulatedRadians;
 
     private readonly Dictionary<int, float> orbitDamageCooldownByColliderId = new();
+
+    private Transform ownerRoot;
 
     public Transform Owner => owner;
     public BoomerangFlightState FlightState => flightState;
@@ -119,25 +127,18 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     {
         base.Awake();
 
-        if (spriteRenderer == null)
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (visuals == null)
+            visuals = GetComponentInChildren<BoomerangProjectileVisuals>(true);
 
-        if (trail == null)
-            trail = GetComponentInChildren<TrailRenderer>();
+        if (ownerCollisionIgnore == null)
+            ownerCollisionIgnore = GetComponent<BoomerangOwnerCollisionIgnore2D>();
 
-        if (spriteRenderer != null)
-            baseColor = spriteRenderer.color;
-
-        SetReturnWindowActive(false);
-    }
-
-    private void Update()
-    {
-        UpdateVisualFeedback();
+        visuals?.ResetVisuals();
     }
 
     private void OnDisable()
     {
+        ownerCollisionIgnore?.Restore();
         NotifyFinished();
     }
 
@@ -145,41 +146,47 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     {
         sequenceBridge = bridge;
     }
-    /*
-     deflectOnlyWhileReturning: boom.deflectOnlyWhileReturning,
-            outboundDistanceAfterDeflect: boom.outboundDistanceAfterDeflect,
-     */
+
     public void ConfigureBoomerang(
-     Transform owner,
-     float outboundDistance,
-     float returnSpeedMultiplier,
-     bool deflectOnlyWhileReturning,
-     float outboundDistanceAfterDeflect,
-     float returnSteering,
-     float reflectableDistance,
-     float catchDistance,
-     float driftDeceleration,
-     float spinDegPerSec,
-     Color reflectableColor,
-     float reflectableFlashDuration,
-     float timedReturnArcStrength,
-     float timedReturnPresentationDistance,
-     float timedReturnMinSpeedMultiplier,
-     float timedReturnMaxSpeedMultiplier,
-     float timedReturnSpeedSmoothing,
-     float timedReturnHoldRadius,
-     float timedReturnReflectableRadius,
-     LayerMask destroyEnemyProjectileMask,
-     float orbitStartRadius,
-     float orbitRadiusGrowthPerSecond,
-     float orbitMaxRadius,
-     float orbitAngularSpeedDegPerSec,
-     float orbitSpeedMultiplier,
-     bool orbitClockwise,
-     float orbitContactDamageInterval)
+    Transform owner,
+    float outboundDistance,
+    bool useFixedReturnToReflect,
+    float returnSpeedMultiplier,
+    bool deflectOnlyWhileReturning,
+    float outboundDistanceAfterDeflect,
+    float returnSteering,
+    float reflectableDistance,
+    float catchDistance,
+    float driftDeceleration,
+    float spinDegPerSec,
+    Color reflectableColor,
+    float reflectableFlashDuration,
+    float timedReturnArcStrength,
+    float timedReturnPresentationDistance,
+    float timedReturnMinSpeedMultiplier,
+    float timedReturnMaxSpeedMultiplier,
+    float timedReturnSpeedSmoothing,
+    float timedReturnHoldRadius,
+    float timedReturnReflectableRadius,
+    bool holdReflectAtOwnerCenter,
+    LayerMask destroyEnemyProjectileMask,
+    float orbitStartRadius,
+    float orbitRadiusGrowthPerSecond,
+    float orbitMaxRadius,
+    float orbitAngularSpeedDegPerSec,
+    float orbitSpeedMultiplier,
+    bool orbitClockwise,
+    float orbitContactDamageInterval,
+    Color orbitStartFlashColor,
+    float orbitStartFlashDuration,
+    float orbitStartPulseScaleMultiplier,
+    float orbitStartPulseDuration)
     {
         this.owner = owner;
+        ownerRoot = owner != null ? owner.root : null;
+
         this.outboundDistance = Mathf.Max(0.1f, outboundDistance);
+        this.useFixedReturnToReflect = useFixedReturnToReflect;
         this.returnSpeedMultiplier = Mathf.Max(0.1f, returnSpeedMultiplier);
         this.deflectOnlyWhileReturning = deflectOnlyWhileReturning;
         this.outboundDistanceAfterDeflect = Mathf.Max(0.1f, outboundDistanceAfterDeflect);
@@ -188,8 +195,6 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         this.catchDistance = Mathf.Max(0.05f, catchDistance);
         this.driftDeceleration = Mathf.Max(0f, driftDeceleration);
         this.spinDegPerSec = Mathf.Max(0f, spinDegPerSec);
-        this.reflectableColor = reflectableColor;
-        this.reflectableFlashDuration = Mathf.Max(0.01f, reflectableFlashDuration);
 
         this.timedReturnArcStrength = Mathf.Max(0f, timedReturnArcStrength);
         this.timedReturnPresentationDistance = Mathf.Max(0f, timedReturnPresentationDistance);
@@ -198,6 +203,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         this.timedReturnSpeedSmoothing = Mathf.Max(0.01f, timedReturnSpeedSmoothing);
         this.timedReturnHoldRadius = Mathf.Max(0.05f, timedReturnHoldRadius);
         this.timedReturnReflectableRadius = Mathf.Max(this.timedReturnHoldRadius, timedReturnReflectableRadius);
+        this.holdReflectAtOwnerCenter = holdReflectAtOwnerCenter;
 
         this.destroyEnemyProjectileMask = destroyEnemyProjectileMask;
 
@@ -209,7 +215,6 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             Mathf.Max(1f, orbitAngularSpeedDegPerSec * Mathf.Max(0.01f, orbitSpeedMultiplier));
 
         this.orbitAngularSpeedRad = Mathf.Deg2Rad * finalOrbitAngularSpeed;
-
         if (orbitClockwise)
             this.orbitAngularSpeedRad *= -1f;
 
@@ -223,9 +228,15 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         runtimeReturnSpeedMultiplierBonus = 0f;
         runtimeReturnSteeringBonus = 0f;
         runtimeNextReflectSpeedMultiplier = 1f;
-        reflectableFlashEndTime = 0f;
         currentTimedReturnSpeed = 0f;
         orbitDamageCooldownByColliderId.Clear();
+
+        ownerCollisionIgnore?.Apply(ownerRoot);
+
+        visuals?.ConfigureReflectableFeedback(reflectableColor, reflectableFlashDuration);
+        visuals?.ConfigureOrbitStartFeedback(orbitStartFlashColor, orbitStartPulseScaleMultiplier);
+        visuals?.SetReturningColor(returningColor);
+        visuals?.ResetVisuals();
 
         SetFlightState(BoomerangFlightState.Outbound);
         SetReturnWindowActive(false);
@@ -267,6 +278,8 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         reflectableEventSent = false;
         SetReturnWindowActive(false);
         SetFlightState(BoomerangFlightState.OrbitingExpanding);
+
+        visuals?.TriggerOrbitStartFeedback(orbitStartFlashDuration, orbitStartPulseDuration);
     }
 
     protected override void FixedUpdate()
@@ -311,6 +324,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         useTimedReturn = true;
         timedReturnStartTime = Time.time;
         timedReturnWindowDuration = Mathf.Max(0.05f, returnDuration);
+        timedReturnStartPos = rb.position;
         this.reflectActivationNormalized = Mathf.Clamp(reflectActivationNormalized, 0.05f, 0.95f);
 
         runtimeReturnSpeedMultiplierBonus = Mathf.Max(0f, runtimeReturnSpeedMultiplierBonus);
@@ -320,6 +334,13 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             0.01f,
             speed * (returnSpeedMultiplier + runtimeReturnSpeedMultiplierBonus));
 
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] StartCurvedReturn fixedMode={useFixedReturnToReflect} duration={timedReturnWindowDuration:F3} startPos={timedReturnStartPos} ownerPos={(owner != null ? (Vector2)owner.position : Vector2.zero)}",
+                this);
+        }
+
         SetFlightState(BoomerangFlightState.ReturningCurved);
         SetReturnWindowActive(true);
         onEnteredReturning?.Invoke(this);
@@ -327,6 +348,13 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     public void EnterDriftLost()
     {
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] EnterDriftLost stateBefore={flightState} pos={rb.position}",
+                this);
+        }
+
         SetFlightState(BoomerangFlightState.DriftingLost);
         SetReturnWindowActive(false);
         onLost?.Invoke(this);
@@ -375,11 +403,26 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         if (other == null)
             return;
 
-        if (owner != null && (other.transform == owner || other.transform.IsChildOf(owner)))
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] OnHit other={other.name} state={flightState} layer={other.gameObject.layer}",
+                this);
+        }
+
+        if (BelongsToOwnerBodyOnly(other))
+        {
+            if (debugLogs)
+                Debug.Log($"[BoomerangProjectile2D] Ignored owner body hit: {other.name}", this);
+
             return;
+        }
 
         if (ShouldDestroyEnemyProjectile(other))
         {
+            if (debugLogs)
+                Debug.Log($"[BoomerangProjectile2D] Destroy enemy projectile: {other.name}", this);
+
             Destroy(other.gameObject);
             return;
         }
@@ -401,10 +444,36 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         }
 
         damageable.TakeDamage(damage);
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangProjectile2D] Damage applied to {other.name}", this);
+    }
+
+    private bool BelongsToOwnerBodyOnly(Collider2D other)
+    {
+        if (other == null || ownerRoot == null)
+            return false;
+
+        Transform t = other.transform;
+        if (t != ownerRoot && !t.IsChildOf(ownerRoot))
+            return false;
+
+        int playerMeleeLayer = LayerMask.NameToLayer("PlayerMelee");
+        if (playerMeleeLayer >= 0 && other.gameObject.layer == playerMeleeLayer)
+            return false;
+
+        return true;
     }
 
     protected override void OnLifeTimeEnded()
     {
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] OnLifeTimeEnded state={flightState} pos={rb.position}",
+                this);
+        }
+
         NotifyFinished();
         base.OnLifeTimeEnded();
     }
@@ -434,7 +503,10 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     {
         if (useTimedReturn)
         {
-            TickTimedReturn();
+            if (useFixedReturnToReflect)
+                TickTimedReturnFixedDuration();
+            else
+                TickTimedReturnPhysical();
             return;
         }
 
@@ -473,7 +545,60 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         }
     }
 
-    private void TickTimedReturn()
+    private void TickTimedReturnFixedDuration()
+    {
+        Vector2 targetPos = ResolveTimedReturnPresentationTarget();
+
+        float elapsed = Time.time - timedReturnStartTime;
+        float normalized = Mathf.Clamp01(elapsed / Mathf.Max(0.0001f, timedReturnWindowDuration));
+
+        Vector2 nextPos = EvaluateFixedTimedReturnPosition(normalized, targetPos);
+        rb.MovePosition(nextPos);
+
+        Vector2 toTarget = targetPos - rb.position;
+        if (toTarget.sqrMagnitude > 0.0001f)
+            direction = toTarget.normalized;
+
+        if (debugLogs && !reflectableEventSent)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] FixedReturn tick normalized={normalized:F3} pos={rb.position} target={targetPos}",
+                this);
+        }
+
+        if (!reflectableEventSent && normalized >= 0.98f)
+        {
+            reflectableEventSent = true;
+            SetFlightState(BoomerangFlightState.ReflectableReturning);
+            TriggerReflectableFlash();
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangProjectile2D] Reflectable OPEN fixed normalized={normalized:F3} pos={rb.position} target={targetPos} ownerPos={(Vector2)owner.position} distToTarget={Vector2.Distance(rb.position, targetPos):F3}",
+                    this);
+            }
+
+            onBecameReflectable?.Invoke(this);
+        }
+
+        if (reflectableEventSent)
+        {
+            Vector2 holdTarget = ResolveReflectHoldTarget();
+            float holdStep = Mathf.Max(0.01f, currentTimedReturnSpeed) * Time.fixedDeltaTime;
+            Vector2 holdPos = Vector2.MoveTowards(rb.position, holdTarget, holdStep);
+            rb.MovePosition(holdPos);
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangProjectile2D] Reflect hold fixed holdTarget={holdTarget} currentPos={rb.position} centerMode={holdReflectAtOwnerCenter}",
+                    this);
+            }
+        }
+    }
+
+    private void TickTimedReturnPhysical()
     {
         Vector2 currentPos = rb.position;
         Vector2 targetPos = ResolveTimedReturnPresentationTarget();
@@ -511,6 +636,14 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             reflectableEventSent = true;
             SetFlightState(BoomerangFlightState.ReflectableReturning);
             TriggerReflectableFlash();
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangProjectile2D] Reflectable OPEN physical normalized={normalized:F3} distToTarget={distanceToTarget:F3} radius={timedReturnReflectableRadius:F3}",
+                    this);
+            }
+
             onBecameReflectable?.Invoke(this);
         }
 
@@ -518,13 +651,52 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
         if (reflectableEventSent && distanceToTarget <= timedReturnHoldRadius)
         {
-            Vector2 nextPos = Vector2.MoveTowards(currentPos, targetPos, moveDistance);
+            Vector2 holdTarget = ResolveReflectHoldTarget();
+            Vector2 nextPos = Vector2.MoveTowards(currentPos, holdTarget, moveDistance);
             rb.MovePosition(nextPos);
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangProjectile2D] Reflect hold physical holdTarget={holdTarget} currentPos={currentPos} centerMode={holdReflectAtOwnerCenter}",
+                    this);
+            }
+
             return;
         }
 
         Vector2 next = Vector2.MoveTowards(currentPos, targetPos, moveDistance);
         rb.MovePosition(next);
+    }
+
+    private Vector2 EvaluateFixedTimedReturnPosition(float normalized, Vector2 targetPos)
+    {
+        normalized = Mathf.Clamp01(normalized);
+
+        Vector2 linear = Vector2.Lerp(timedReturnStartPos, targetPos, normalized);
+
+        Vector2 travel = targetPos - timedReturnStartPos;
+        if (travel.sqrMagnitude <= 0.0001f)
+            return linear;
+
+        Vector2 travelDir = travel.normalized;
+        Vector2 perpendicular = new Vector2(-travelDir.y, travelDir.x);
+
+        float distance = travel.magnitude;
+        float arcAmount = Mathf.Sin(normalized * Mathf.PI) * distance * timedReturnArcStrength;
+
+        return linear + perpendicular * arcAmount;
+    }
+
+    private Vector2 ResolveReflectHoldTarget()
+    {
+        if (owner == null)
+            return rb.position;
+
+        if (holdReflectAtOwnerCenter)
+            return owner.position;
+
+        return ResolveTimedReturnPresentationTarget();
     }
 
     private Vector2 ResolveTimedReturnPresentationTarget()
@@ -588,9 +760,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         bool turnsReached = orbitTargetTurns > 0 && orbitAccumulatedRadians >= orbitTargetTurns * Mathf.PI * 2f;
 
         if (durationReached || turnsReached)
-        {
             onOrbitRewardFinished?.Invoke(this);
-        }
     }
 
     private void TickDriftingLost()
@@ -616,30 +786,9 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         transform.Rotate(0f, 0f, spinDegPerSec * Time.fixedDeltaTime);
     }
 
-    private void UpdateVisualFeedback()
-    {
-        if (spriteRenderer == null)
-            return;
-
-        if (flightState == BoomerangFlightState.ReflectableReturning)
-        {
-            spriteRenderer.color = reflectableFlashEndTime > Time.time ? reflectableColor : returningColor;
-            return;
-        }
-
-        if (flightState == BoomerangFlightState.ReturningCurved ||
-            flightState == BoomerangFlightState.OrbitingExpanding)
-        {
-            spriteRenderer.color = returningColor;
-            return;
-        }
-
-        spriteRenderer.color = baseColor;
-    }
-
     private void TriggerReflectableFlash()
     {
-        reflectableFlashEndTime = Time.time + reflectableFlashDuration;
+        visuals?.TriggerReflectableFlash(reflectableFlashDuration);
     }
 
     private void SetFlightState(BoomerangFlightState newState)
@@ -648,21 +797,13 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             return;
 
         flightState = newState;
+        visuals?.SetState(newState);
         onFlightStateChanged?.Invoke(this, flightState);
     }
 
     private void SetReturnWindowActive(bool active)
     {
-        if (returnWindowActive == active)
-            return;
-
-        returnWindowActive = active;
-
-        if (returnWindowVfxRoot != null)
-            returnWindowVfxRoot.SetActive(active);
-
-        if (trail != null)
-            trail.emitting = true;
+        visuals?.SetReturnWindowActive(active);
     }
 
     private void NotifyReturnedToOwner()
@@ -676,8 +817,55 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             return;
 
         finishedNotified = true;
+
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangProjectile2D] NotifyFinished state={flightState} pos={rb.position} ownerPos={(owner != null ? (Vector2)owner.position : Vector2.zero)}",
+                this);
+        }
+
         onFinished?.Invoke(this);
     }
 
-  
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        if (owner == null)
+            return;
+
+        Vector3 ownerPos = owner.position;
+
+        Vector2 axis;
+        if (Application.isPlaying)
+        {
+            axis = ResolveReturnPresentationAxis();
+        }
+        else
+        {
+            axis = owner.right;
+            if (axis.sqrMagnitude <= 0.0001f)
+                axis = Vector2.right;
+
+            axis = axis.normalized;
+        }
+
+        Vector3 presentationTarget = ownerPos - (Vector3)(axis * timedReturnPresentationDistance);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawSphere(presentationTarget, 0.08f);
+
+        Gizmos.color = new Color(0f, 1f, 1f, 0.35f);
+        Gizmos.DrawWireSphere(presentationTarget, timedReturnHoldRadius);
+
+        Gizmos.color = new Color(1f, 1f, 0f, 0.35f);
+        Gizmos.DrawWireSphere(presentationTarget, timedReturnReflectableRadius);
+
+        Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
+        Gizmos.DrawWireSphere(ownerPos, orbitStartRadius);
+
+        Gizmos.color = new Color(1f, 0f, 1f, 0.5f);
+        Gizmos.DrawWireSphere(ownerPos, orbitMaxRadius);
+    }
+#endif
 }

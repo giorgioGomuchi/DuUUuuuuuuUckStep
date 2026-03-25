@@ -261,6 +261,13 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (!runtime.IsRunning)
             return;
 
+        // IMPORTANTE:
+        // Si el boomerang usa retorno fijo por tiempo, NO dejamos que el bridge
+        // mate la secuencia por expiración. El propio proyectil abrirá Reflect
+        // al llegar a normalized >= 1.
+        if (activeWeaponData != null && activeWeaponData.useFixedReturnToReflect)
+            return;
+
         if (runtime.IsWindowExpired())
         {
             ForceWindowUIToEnd(null, "Return", true);
@@ -387,17 +394,18 @@ public class BoomerangSequenceBridge : MonoBehaviour
     }
 
     private void FailSequence(string reason)
+{
+    Debug.LogWarning(
+        $"[BoomerangSequenceBridge] FAIL reason='{reason}' phase={runtime.Phase} cycles={runtime.CompletedCycles} projectile={(activeProjectile != null ? activeProjectile.name : "null")}",
+        this);
+
+    if (phaseTransitionRoutine != null)
     {
-        if (debugLogs)
-            Debug.LogWarning($"[BoomerangSequenceBridge] Fail -> {reason}", this);
+        StopCoroutine(phaseTransitionRoutine);
+        phaseTransitionRoutine = null;
+    }
 
-        if (phaseTransitionRoutine != null)
-        {
-            StopCoroutine(phaseTransitionRoutine);
-            phaseTransitionRoutine = null;
-        }
-
-        runtime.Fail();
+    runtime.Fail();
 
         bool clearOverride = activeDefinition == null || activeDefinition.ClearWeaponOverrideOnFail;
 
@@ -512,6 +520,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (projectile != activeProjectile)
             return;
 
+        if (debugLogs)
+            Debug.Log($"[BoomerangSequenceBridge] OnProjectileReturnedToOwner phase={runtime.Phase}", this);
+
         if (runtime.Phase == BoomerangSequencePhase.OutboundRecallWindow ||
             runtime.Phase == BoomerangSequencePhase.ReturningToReflectZone ||
             runtime.Phase == BoomerangSequencePhase.ReflectWindow)
@@ -524,6 +535,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
     {
         if (projectile != activeProjectile)
             return;
+
+        Debug.Log(
+            $"[BoomerangSequenceBridge] OnProjectileFinished phase={runtime.Phase} orbitReward={orbitRewardActive} projectileState={projectile.FlightState}",
+            this);
 
         if (runtime.IsInOrbitReward)
         {
@@ -539,6 +554,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
     {
         if (projectile != activeProjectile)
             return;
+
+        Debug.Log(
+            $"[BoomerangSequenceBridge] OnProjectileLost phase={runtime.Phase} projectileState={projectile.FlightState}",
+            this);
 
         if (runtime.IsRunning)
             FailSequence("Projectile was lost during sequence.");

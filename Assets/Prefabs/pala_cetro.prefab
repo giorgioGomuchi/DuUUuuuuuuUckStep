@@ -159,6 +159,7 @@ MonoBehaviour:
   deflectDotThreshold: -1
   deflectSpeedMultiplier: 1
   disableColliderAfterDeflect: 1
+  allowBoomerangDeflectOnTriggerStay: 1
   useRhythmForBoomerangRebound: 1
   boomerangMusic: {fileID: 0}
   debugLogs: 1

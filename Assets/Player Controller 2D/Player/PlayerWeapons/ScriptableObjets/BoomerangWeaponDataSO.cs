@@ -9,20 +9,24 @@ public class BoomerangWeaponDataSO : RangedWeaponDataSO
 
     [Header("Outbound Flight")]
     [Tooltip("Distancia máxima que recorre al salir antes de perderse si no entra en secuencia.")]
-    public float outboundDistance = 9.5f;
+    public float outboundDistance = 12f;
+
+    [Header("Return Mode")]
+    [Tooltip("Si está activo, la vuelta hasta reflect tarda SIEMPRE exactamente Return To Reflect Duration. Si está apagado, usa la lógica física/realista.")]
+    public bool useFixedReturnToReflect = true;
 
     [Header("Return Movement")]
-    [Tooltip("Multiplicador base de velocidad durante la vuelta.")]
+    [Tooltip("Multiplicador base de velocidad durante la vuelta física/realista.")]
     public float returnSpeedMultiplier = 1.4f;
 
-    [Tooltip("Qué tan agresivamente corrige la dirección para volver al target de presentación.")]
+    [Tooltip("Qué tan agresivamente corrige la dirección en modos físicos/realistas.")]
     public float returnSteering = 13f;
 
     [Tooltip("Distancia legacy a la que pasa a reflectable fuera del flujo timed.")]
     public float reflectableDistance = 1.15f;
 
     [Tooltip("Distancia de catch al owner en flujos legacy.")]
-    public float catchDistance = 0.2f;
+    public float catchDistance = 0.3f;
 
     [Tooltip("Qué rápido pierde velocidad cuando se queda en drift/lost.")]
     public float driftDeceleration = 18f;
@@ -32,24 +36,35 @@ public class BoomerangWeaponDataSO : RangedWeaponDataSO
     public float timedReturnArcStrength = 0.08f;
 
     [Tooltip("Distancia delante del player a la que intenta colocarse antes del reflect.")]
-    public float timedReturnPresentationDistance = 0.35f;
+    public float timedReturnPresentationDistance = 0.45f;
 
     [Header("Timed Return Speed")]
-    [Tooltip("Multiplicador mínimo de velocidad durante la vuelta timed.")]
+    [Tooltip("Solo relevante en modo físico/realista.")]
     public float timedReturnMinSpeedMultiplier = 1.15f;
 
-    [Tooltip("Multiplicador máximo de velocidad durante la vuelta timed.")]
+    [Tooltip("Solo relevante en modo físico/realista.")]
     public float timedReturnMaxSpeedMultiplier = 3.4f;
 
-    [Tooltip("Qué rápido adapta su velocidad al tiempo restante.")]
+    [Tooltip("Solo relevante en modo físico/realista.")]
     public float timedReturnSpeedSmoothing = 24f;
 
     [Header("Timed Return Assist")]
     [Tooltip("Radio alrededor del target donde puede quedarse presentado de forma estable.")]
-    public float timedReturnHoldRadius = 1.1f;
+    public float timedReturnHoldRadius = 1.0f;
 
-    [Tooltip("Radio necesario para armar el estado reflectable.")]
-    public float timedReturnReflectableRadius = 1.4f;
+    [Tooltip("Radio necesario para armar el estado reflectable en modo físico/realista.")]
+    public float timedReturnReflectableRadius = 1.35f;
+
+    [Header("Reflect Hold")]
+    [Tooltip("Si está activo, cuando el boomerang entra en reflectable se queda en el centro del player para poder devolverlo desde cualquier dirección.")]
+    public bool holdReflectAtOwnerCenter = true;
+
+    [Header("Deflect Rules")]
+    [Tooltip("Si está activo, solo se puede devolver/deflectar mientras está en fase de vuelta.")]
+    public bool deflectOnlyWhileReturning = true;
+
+    [Tooltip("Distancia que recorrerá tras un reflect/deflect antes de volver a cambiar de estado.")]
+    public float outboundDistanceAfterDeflect = 4.5f;
 
     [Header("Projectile Interaction")]
     [Tooltip("Layers de proyectiles enemigos que el boomerang destruye al tocarlos.")]
@@ -69,13 +84,6 @@ public class BoomerangWeaponDataSO : RangedWeaponDataSO
     [Header("Dash Bonuses")]
     [Tooltip("Bonus temporal al multiplicador de velocidad de vuelta si aciertas dash en recall.")]
     public float dashReturnSpeedMultiplierBonus = 0.35f;
-    
-    [Header("Deflect Rules")]
-    [Tooltip("Si está activo, solo se puede devolver/deflectar mientras está en fase de vuelta.")]
-    public bool deflectOnlyWhileReturning = true;
-
-    [Tooltip("Distancia que recorrerá tras un reflect/deflect antes de volver a cambiar de estado.")]
-    public float outboundDistanceAfterDeflect = 4.5f;
 
     [Tooltip("Bonus temporal al steering si aciertas dash en recall.")]
     public float dashReturnSteeringBonus = 5f;
@@ -96,7 +104,7 @@ public class BoomerangWeaponDataSO : RangedWeaponDataSO
     [Tooltip("Velocidad angular base de la órbita en grados por segundo.")]
     public float orbitAngularSpeedDegPerSec = 360f;
 
-    [Tooltip("Multiplicador global de velocidad de órbita. Útil para iterar rápido sin tocar la base.")]
+    [Tooltip("Multiplicador global de velocidad de órbita.")]
     public float orbitSpeedMultiplier = 1f;
 
     [Tooltip("Sentido de giro de la órbita.")]
@@ -105,4 +113,16 @@ public class BoomerangWeaponDataSO : RangedWeaponDataSO
     [Tooltip("Cooldown de daño por contacto mientras orbita.")]
     public float orbitContactDamageInterval = 0.2f;
 
+    [Header("Orbit Start Feedback")]
+    [Tooltip("Color de flash al empezar la órbita.")]
+    public Color orbitStartFlashColor = new Color(0.3f, 1f, 1f, 1f);
+
+    [Tooltip("Duración del flash de entrada a órbita.")]
+    public float orbitStartFlashDuration = 0.18f;
+
+    [Tooltip("Escala máxima temporal al empezar la órbita.")]
+    public float orbitStartPulseScaleMultiplier = 1.35f;
+
+    [Tooltip("Duración del pulso de escala al empezar la órbita.")]
+    public float orbitStartPulseDuration = 0.2f;
 }

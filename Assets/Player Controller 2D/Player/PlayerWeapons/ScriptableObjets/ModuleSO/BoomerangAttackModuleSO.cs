@@ -53,6 +53,7 @@ public class BoomerangAttackModuleSO : AttackModuleSO
         proj.ConfigureBoomerang(
             owner: weapon.transform,
             outboundDistance: boom.outboundDistance,
+            useFixedReturnToReflect: boom.useFixedReturnToReflect,
             returnSpeedMultiplier: boom.returnSpeedMultiplier,
             deflectOnlyWhileReturning: boom.deflectOnlyWhileReturning,
             outboundDistanceAfterDeflect: boom.outboundDistanceAfterDeflect,
@@ -70,6 +71,7 @@ public class BoomerangAttackModuleSO : AttackModuleSO
             timedReturnSpeedSmoothing: boom.timedReturnSpeedSmoothing,
             timedReturnHoldRadius: boom.timedReturnHoldRadius,
             timedReturnReflectableRadius: boom.timedReturnReflectableRadius,
+            holdReflectAtOwnerCenter: boom.holdReflectAtOwnerCenter,
             destroyEnemyProjectileMask: boom.destroyEnemyProjectileMask,
             orbitStartRadius: boom.orbitStartRadius,
             orbitRadiusGrowthPerSecond: boom.orbitRadiusGrowthPerSecond,
@@ -77,8 +79,12 @@ public class BoomerangAttackModuleSO : AttackModuleSO
             orbitAngularSpeedDegPerSec: boom.orbitAngularSpeedDegPerSec,
             orbitSpeedMultiplier: boom.orbitSpeedMultiplier,
             orbitClockwise: boom.orbitClockwise,
-            orbitContactDamageInterval: boom.orbitContactDamageInterval
-);
+            orbitContactDamageInterval: boom.orbitContactDamageInterval,
+            orbitStartFlashColor: boom.orbitStartFlashColor,
+            orbitStartFlashDuration: boom.orbitStartFlashDuration,
+            orbitStartPulseScaleMultiplier: boom.orbitStartPulseScaleMultiplier,
+            orbitStartPulseDuration: boom.orbitStartPulseDuration
+        );
 
         if (bridge != null)
         {
