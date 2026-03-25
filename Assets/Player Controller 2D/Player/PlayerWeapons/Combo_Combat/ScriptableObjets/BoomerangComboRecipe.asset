@@ -15,15 +15,15 @@ MonoBehaviour:
   recipeId: Boomerang
   consumeMatchedActions: 1
   steps:
-  - actionType: 1
+  - actionType: 2
     actionVsAimRelation: 0
     similarMinDot: 0
     perpendicularMaxAbsDot: 0
-  - actionType: 1
+  - actionType: 2
     actionVsAimRelation: 0
     similarMinDot: 0
     perpendicularMaxAbsDot: 0
-  - actionType: 1
+  - actionType: 3
     actionVsAimRelation: 0
     similarMinDot: 0
     perpendicularMaxAbsDot: 0

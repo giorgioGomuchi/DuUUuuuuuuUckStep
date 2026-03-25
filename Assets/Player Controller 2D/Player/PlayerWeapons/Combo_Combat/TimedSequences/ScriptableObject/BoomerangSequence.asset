@@ -29,10 +29,10 @@ MonoBehaviour:
     perfectHalfWindowNormalized: 0.111
     allowPerfect: 1
   recallWindowDuration: 1
-  returnToReflectDuration: 1
+  returnToReflectDuration: 0.3
   reflectWindowDuration: 1
   uiPhaseTransitionHoldDuration: 0.08
-  reflectActivationNormalized: 0.25
+  reflectActivationNormalized: 0.319
   requiredSuccessfulCycles: 3
   allowDashDuringRecall: 1
   allowDashDuringReflect: 1
