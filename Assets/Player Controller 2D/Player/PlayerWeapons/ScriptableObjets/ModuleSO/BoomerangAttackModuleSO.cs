@@ -5,8 +5,6 @@ public class BoomerangAttackModuleSO : AttackModuleSO
 {
     public override bool Execute(WeaponBehaviour weapon, WeaponDataSO data)
     {
-        Debug.Log("[BoomerangAttackModuleSO] Execute ENTER", weapon);
-
         if (weapon == null || data == null)
             return false;
 
@@ -26,82 +24,43 @@ public class BoomerangAttackModuleSO : AttackModuleSO
         }
 
         GameObject go = Instantiate(boom.projectilePrefab, weapon.FirePoint.position, Quaternion.identity);
-        Debug.Log("[BoomerangAttackModuleSO] Projectile instantiated.", go);
+        BoomerangProjectile2D projectile = go.GetComponent<BoomerangProjectile2D>();
 
-        BoomerangProjectile2D proj = go.GetComponent<BoomerangProjectile2D>();
-        if (proj == null)
+        if (projectile == null)
         {
             Debug.LogWarning("[BoomerangAttackModuleSO] Missing BoomerangProjectile2D on prefab.", go);
             weapon.UnlockAttack();
+            Destroy(go);
             return false;
         }
 
         PlayerReferences playerRefs = weapon.GetComponentInParent<PlayerReferences>(true);
-        BoomerangSequenceBridge bridge =
-            playerRefs != null && playerRefs.Combat != null
-                ? playerRefs.Combat.BoomerangSequence
-                : null;
+        BoomerangSequenceBridge bridge = playerRefs != null && playerRefs.Combat != null
+            ? playerRefs.Combat.BoomerangSequence
+            : null;
 
         int finalDamage = weapon.ConsumeFinalDamage(boom.damage);
 
-        proj.Initialize(
+        projectile.Initialize(
             weapon.CurrentAim,
             boom.projectileSpeed,
             finalDamage,
             boom.targetLayer);
 
-        proj.ConfigureBoomerang(
+        projectile.Configure(
             owner: weapon.transform,
-            outboundDistance: boom.outboundDistance,
-            useFixedReturnToReflect: boom.useFixedReturnToReflect,
-            returnSpeedMultiplier: boom.returnSpeedMultiplier,
-            deflectOnlyWhileReturning: boom.deflectOnlyWhileReturning,
-            outboundDistanceAfterDeflect: boom.outboundDistanceAfterDeflect,
-            returnSteering: boom.returnSteering,
-            reflectableDistance: boom.reflectableDistance,
-            catchDistance: boom.catchDistance,
-            driftDeceleration: boom.driftDeceleration,
-            spinDegPerSec: boom.spinDegPerSec,
-            reflectableColor: boom.reflectableColor,
-            reflectableFlashDuration: boom.reflectableFlashDuration,
-            timedReturnArcStrength: boom.timedReturnArcStrength,
-            timedReturnPresentationDistance: boom.timedReturnPresentationDistance,
-            timedReturnMinSpeedMultiplier: boom.timedReturnMinSpeedMultiplier,
-            timedReturnMaxSpeedMultiplier: boom.timedReturnMaxSpeedMultiplier,
-            timedReturnSpeedSmoothing: boom.timedReturnSpeedSmoothing,
-            timedReturnHoldRadius: boom.timedReturnHoldRadius,
-            timedReturnReflectableRadius: boom.timedReturnReflectableRadius,
-            holdReflectAtOwnerCenter: boom.holdReflectAtOwnerCenter,
-            destroyEnemyProjectileMask: boom.destroyEnemyProjectileMask,
-            orbitStartRadius: boom.orbitStartRadius,
-            orbitRadiusGrowthPerSecond: boom.orbitRadiusGrowthPerSecond,
-            orbitMaxRadius: boom.orbitMaxRadius,
-            orbitAngularSpeedDegPerSec: boom.orbitAngularSpeedDegPerSec,
-            orbitSpeedMultiplier: boom.orbitSpeedMultiplier,
-            orbitClockwise: boom.orbitClockwise,
-            orbitContactDamageInterval: boom.orbitContactDamageInterval,
-            orbitStartFlashColor: boom.orbitStartFlashColor,
-            orbitStartFlashDuration: boom.orbitStartFlashDuration,
-            orbitStartPulseScaleMultiplier: boom.orbitStartPulseScaleMultiplier,
-            orbitStartPulseDuration: boom.orbitStartPulseDuration
-        );
+            config: boom.BuildProjectileConfig());
 
         if (bridge != null)
         {
-            proj.SetSequenceBridge(bridge);
-            bool started = bridge.BeginSequence(proj, weapon, boom);
-            Debug.Log($"[BoomerangAttackModuleSO] BeginSequence returned {started}", weapon);
-        }
-        else
-        {
-            Debug.LogWarning("[BoomerangAttackModuleSO] No BoomerangSequenceBridge found.", weapon);
+            projectile.SetSequenceBridge(bridge);
+            bridge.BeginSequence(projectile, weapon, boom);
         }
 
         weapon.SetVisualVisible(false);
 
-        proj.onFinished += _ =>
+        projectile.onFinished += _ =>
         {
-            Debug.Log("[BoomerangAttackModuleSO] Projectile finished -> unlock attack", weapon);
             weapon.UnlockAttack();
             weapon.SetVisualVisible(true);
         };

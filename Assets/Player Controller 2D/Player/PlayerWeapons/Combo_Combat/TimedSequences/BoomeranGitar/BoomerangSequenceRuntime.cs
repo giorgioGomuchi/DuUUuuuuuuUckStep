@@ -1,145 +1,127 @@
 using UnityEngine;
 
 [System.Serializable]
-public sealed class BoomerangSequenceRuntime
+public class BoomerangSequenceRuntime
 {
-    public BoomerangSequencePhase Phase { get; private set; } = BoomerangSequencePhase.Inactive;
+    [SerializeField] private BoomerangSequencePhase phase = BoomerangSequencePhase.None;
+    [SerializeField] private float windowStartTime;
+    [SerializeField] private float windowDuration;
+    [SerializeField] private int completedCycles;
+    [SerializeField] private bool recallDashSucceededThisWindow;
+    [SerializeField] private bool reflectDashSucceededThisWindow;
+    [SerializeField] private bool isRunning;
+    [SerializeField] private bool isInOrbitReward;
 
-    public int SuccessfulRecalls { get; private set; }
-    public int SuccessfulReflects { get; private set; }
-    public int CompletedCycles { get; private set; }
+    public BoomerangSequencePhase Phase => phase;
+    public int CompletedCycles => completedCycles;
+    public bool IsRunning => isRunning;
+    public bool IsInOrbitReward => isInOrbitReward;
+    public bool RecallDashSucceededThisWindow => recallDashSucceededThisWindow;
+    public bool ReflectDashSucceededThisWindow => reflectDashSucceededThisWindow;
 
-    public bool RecallDashSucceededThisWindow { get; private set; }
-    public bool ReflectDashSucceededThisWindow { get; private set; }
-
-    public float WindowStartTime { get; private set; }
-    public float WindowEndTime { get; private set; }
-
-    public bool IsRunning { get; private set; }
-    public bool IsCompleted => Phase == BoomerangSequencePhase.Completed;
-    public bool IsFailed => Phase == BoomerangSequencePhase.Failed;
-    public bool IsInOrbitReward => Phase == BoomerangSequencePhase.OrbitReward;
+    public void Reset()
+    {
+        phase = BoomerangSequencePhase.None;
+        windowStartTime = 0f;
+        windowDuration = 0f;
+        completedCycles = 0;
+        recallDashSucceededThisWindow = false;
+        reflectDashSucceededThisWindow = false;
+        isRunning = false;
+        isInOrbitReward = false;
+    }
 
     public void BeginRecallWindow(float duration)
     {
-        IsRunning = true;
-        Phase = BoomerangSequencePhase.OutboundRecallWindow;
-        RecallDashSucceededThisWindow = false;
-        ReflectDashSucceededThisWindow = false;
-        OpenWindow(duration);
+        isRunning = true;
+        isInOrbitReward = false;
+        phase = BoomerangSequencePhase.OutboundRecallWindow;
+        recallDashSucceededThisWindow = false;
+        reflectDashSucceededThisWindow = false;
+        BeginWindow(duration);
     }
 
     public void CompleteRecall()
     {
-        SuccessfulRecalls++;
+        recallDashSucceededThisWindow = false;
     }
 
     public void BeginReturnToReflectZone(float duration)
     {
-        if (!IsRunning)
-            return;
-
-        Phase = BoomerangSequencePhase.ReturningToReflectZone;
-        ReflectDashSucceededThisWindow = false;
-        OpenWindow(duration);
+        phase = BoomerangSequencePhase.ReturningToReflectZone;
+        BeginWindow(duration);
     }
 
     public void BeginReflectWindow(float duration)
     {
-        if (!IsRunning)
-            return;
-
-        Phase = BoomerangSequencePhase.ReflectWindow;
-        ReflectDashSucceededThisWindow = false;
-        OpenWindow(duration);
-    }
-
-    public void BeginOrbitReward()
-    {
-        if (!IsRunning)
-            return;
-
-        Phase = BoomerangSequencePhase.OrbitReward;
-        WindowStartTime = 0f;
-        WindowEndTime = 0f;
-        RecallDashSucceededThisWindow = false;
-        ReflectDashSucceededThisWindow = false;
-    }
-
-    public void RegisterRecallDashSuccess()
-    {
-        RecallDashSucceededThisWindow = true;
-    }
-
-    public void RegisterReflectDashSuccess()
-    {
-        ReflectDashSucceededThisWindow = true;
+        phase = BoomerangSequencePhase.ReflectWindow;
+        reflectDashSucceededThisWindow = false;
+        BeginWindow(duration);
     }
 
     public void CompleteReflect()
     {
-        SuccessfulReflects++;
-        CompletedCycles++;
+        completedCycles++;
+        reflectDashSucceededThisWindow = false;
     }
 
-    public void LoopBackToRecallWindow(float duration)
+    public void BeginOrbitReward()
     {
-        if (!IsRunning)
-            return;
-
-        Phase = BoomerangSequencePhase.OutboundRecallWindow;
-        RecallDashSucceededThisWindow = false;
-        ReflectDashSucceededThisWindow = false;
-        OpenWindow(duration);
+        phase = BoomerangSequencePhase.OrbitReward;
+        isInOrbitReward = true;
+        windowStartTime = 0f;
+        windowDuration = 0f;
+        recallDashSucceededThisWindow = false;
+        reflectDashSucceededThisWindow = false;
     }
 
     public void Complete()
     {
-        IsRunning = false;
-        Phase = BoomerangSequencePhase.Completed;
-        WindowStartTime = 0f;
-        WindowEndTime = 0f;
+        isRunning = false;
+        isInOrbitReward = false;
+        phase = BoomerangSequencePhase.Completed;
+        windowStartTime = 0f;
+        windowDuration = 0f;
     }
 
     public void Fail()
     {
-        IsRunning = false;
-        Phase = BoomerangSequencePhase.Failed;
-        WindowStartTime = 0f;
-        WindowEndTime = 0f;
+        isRunning = false;
+        isInOrbitReward = false;
+        phase = BoomerangSequencePhase.Failed;
+        windowStartTime = 0f;
+        windowDuration = 0f;
+    }
+
+    public void RegisterRecallDashSuccess()
+    {
+        recallDashSucceededThisWindow = true;
+    }
+
+    public void RegisterReflectDashSuccess()
+    {
+        reflectDashSucceededThisWindow = true;
     }
 
     public bool IsWindowExpired()
     {
-        return IsRunning &&
-               WindowEndTime > WindowStartTime &&
-               Time.time >= WindowEndTime;
+        if (windowDuration <= 0f)
+            return true;
+
+        return Time.time >= windowStartTime + windowDuration;
     }
 
     public float GetWindowNormalizedTime()
     {
-        if (WindowEndTime <= WindowStartTime)
-            return 0f;
+        if (windowDuration <= 0.0001f)
+            return 1f;
 
-        return Mathf.InverseLerp(WindowStartTime, WindowEndTime, Time.time);
+        return Mathf.Clamp01((Time.time - windowStartTime) / windowDuration);
     }
 
-    public void Reset()
+    private void BeginWindow(float duration)
     {
-        Phase = BoomerangSequencePhase.Inactive;
-        SuccessfulRecalls = 0;
-        SuccessfulReflects = 0;
-        CompletedCycles = 0;
-        RecallDashSucceededThisWindow = false;
-        ReflectDashSucceededThisWindow = false;
-        WindowStartTime = 0f;
-        WindowEndTime = 0f;
-        IsRunning = false;
-    }
-
-    private void OpenWindow(float duration)
-    {
-        WindowStartTime = Time.time;
-        WindowEndTime = Time.time + Mathf.Max(0.01f, duration);
+        windowStartTime = Time.time;
+        windowDuration = Mathf.Max(0.0001f, duration);
     }
 }

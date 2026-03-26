@@ -1,86 +1,84 @@
 using UnityEngine;
 
-[CreateAssetMenu(
-    fileName = "BoomerangSequenceDefinition",
-    menuName = "Game/Player/Boomerang Timed Sequence")]
+[CreateAssetMenu(fileName = "BoomerangSequence", menuName = "Game/Player/Boomerang Sequence")]
 public class BoomerangSequenceDefinitionSO : ScriptableObject
 {
-    [Header("Identificación")]
-    [Tooltip("Id interno de la secuencia del boomerang.")]
+    [Header("Identification")]
     [SerializeField] private string sequenceId = "BoomerangSequence";
 
     [Header("Rules")]
-    [Tooltip("Ventana visual/lógica para acertar el recall.")]
-    [SerializeField] private TimedSequenceActionRule recallRule;
-
-    [Tooltip("Ventana visual/lógica para acertar el reflect.")]
-    [SerializeField] private TimedSequenceActionRule reflectRule;
-
-    [Tooltip("Ventana visual/lógica para acertar el dash bonus.")]
-    [SerializeField] private TimedSequenceActionRule dashRule;
+    [SerializeField] private TimedSequenceActionRule recallRule = new();
+    [SerializeField] private TimedSequenceActionRule reflectRule = new();
+    [SerializeField] private TimedSequenceActionRule dashRule = new();
 
     [Header("Main Timing")]
     [Min(0.05f)]
-    [Tooltip("Duración total de la ventana de recall.")]
     [SerializeField] private float recallWindowDuration = 1f;
 
     [Min(0.05f)]
-    [Tooltip("Tiempo de la fase Return antes de abrir Reflect. Si el boomerang usa modo fijo, esta duración manda completamente.")]
-    [SerializeField] private float returnToReflectDuration = 0.2f;
+    [SerializeField] private float returnToReflectDuration = 0.3f;
 
     [Min(0.05f)]
-    [Tooltip("Duración total de la ventana de reflect.")]
     [SerializeField] private float reflectWindowDuration = 1f;
 
     [Header("UI / Transition")]
     [Min(0f)]
-    [Tooltip("Pausa visual corta para que la barra llegue al final antes de cambiar de fase.")]
     [SerializeField] private float uiPhaseTransitionHoldDuration = 0.08f;
 
     [Header("Reflect Activation During Return")]
-    [Range(0.05f, 0.95f)]
-    [Tooltip("Solo relevante en modo de vuelta física/realista. En modo fijo, el reflect se abre al final exacto del Return.")]
-    [SerializeField] private float reflectActivationNormalized = 0.25f;
+    [Range(0f, 1f)]
+    [SerializeField] private float reflectActivationNormalized = 0.3f;
 
     [Header("Progress")]
     [Min(1)]
-    [Tooltip("Número de ciclos recall + reflect necesarios para completar la secuencia base.")]
     [SerializeField] private int requiredSuccessfulCycles = 3;
 
     [Header("Dash Behaviour")]
-    [Tooltip("Permite hacer dash durante la ventana de recall.")]
     [SerializeField] private bool allowDashDuringRecall = true;
-
-    [Tooltip("Permite hacer dash durante la ventana de reflect.")]
     [SerializeField] private bool allowDashDuringReflect = true;
-
-    [Tooltip("Si está activo, un dash fuera de timing hace fallar la secuencia.")]
     [SerializeField] private bool failOnBadDash = false;
 
     [Header("Cancel / Fail")]
-    [Tooltip("Si está activo, cambiar de arma durante la secuencia la cancela.")]
     [SerializeField] private bool failOnSwitchWeaponInput = true;
-
-    [Tooltip("Si falla la secuencia, limpia cualquier override temporal de arma.")]
     [SerializeField] private bool clearWeaponOverrideOnFail = true;
 
     [Header("UI")]
-    [Tooltip("Offset en mundo para posicionar la barra sobre el player.")]
-    [SerializeField] private Vector3 playerUIWorldOffset = new Vector3(0f, 1.4f, 0f);
+    [SerializeField] private Vector3 playerUIWorldOffset = new(0f, 1.4f, 0f);
 
-    [Header("Advanced Orbit Reward")]
-    [Tooltip("Si está activo, al completar la secuencia base el boomerang entra en fase de órbita.")]
+    [Header("Orbit Reward")]
     [SerializeField] private bool useOrbitReward = true;
 
     [Min(0.05f)]
-    [Tooltip("Duración máxima de la órbita reward.")]
     [SerializeField] private float orbitDuration = 3.5f;
 
     [Min(0)]
-    [Tooltip("Número de vueltas de órbita. 0 = ignorar y usar solo duración.")]
     [SerializeField] private int orbitTurns = 0;
 
+    [Header("Reward Gating")]
+    [SerializeField] private bool requireDamageForReward = false;
+
+    [Min(1)]
+    [SerializeField] private int minUniqueEnemiesDamagedForReward = 1;
+
+    [Header("Reward Scaling")]
+    [SerializeField] private bool scaleOrbitDurationByUniqueEnemies = false;
+
+    [Min(0f)]
+    [SerializeField] private float extraOrbitDurationPerUniqueEnemy = 0.35f;
+
+    [Min(0)]
+    [SerializeField] private int maxEnemiesCountedForRewardDuration = 10;
+
+    [SerializeField] private bool clampFinalOrbitDuration = true;
+
+    [Min(0.05f)]
+    [SerializeField] private float minFinalOrbitDuration = 0.5f;
+
+    [Min(0.05f)]
+    [SerializeField] private float maxFinalOrbitDuration = 6f;
+
     public string SequenceId => sequenceId;
+
     public TimedSequenceActionRule RecallRule => recallRule;
     public TimedSequenceActionRule ReflectRule => reflectRule;
     public TimedSequenceActionRule DashRule => dashRule;
@@ -106,14 +104,65 @@ public class BoomerangSequenceDefinitionSO : ScriptableObject
     public float OrbitDuration => orbitDuration;
     public int OrbitTurns => orbitTurns;
 
+    public bool RequireDamageForReward => requireDamageForReward;
+    public int MinUniqueEnemiesDamagedForReward => Mathf.Max(0, minUniqueEnemiesDamagedForReward);
+
+    public bool ScaleOrbitDurationByUniqueEnemies => scaleOrbitDurationByUniqueEnemies;
+    public float ExtraOrbitDurationPerUniqueEnemy => Mathf.Max(0f, extraOrbitDurationPerUniqueEnemy);
+    public int MaxEnemiesCountedForRewardDuration => Mathf.Max(0, maxEnemiesCountedForRewardDuration);
+
+    public bool ClampFinalOrbitDuration => clampFinalOrbitDuration;
+    public float MinFinalOrbitDuration => Mathf.Max(0.05f, minFinalOrbitDuration);
+    public float MaxFinalOrbitDuration => Mathf.Max(MinFinalOrbitDuration, maxFinalOrbitDuration);
+
     public bool IsValid()
     {
-        return recallRule != null &&
-               reflectRule != null &&
-               dashRule != null &&
-               recallWindowDuration > 0f &&
+        return recallWindowDuration > 0f &&
                returnToReflectDuration > 0f &&
                reflectWindowDuration > 0f &&
-               requiredSuccessfulCycles > 0;
+               requiredSuccessfulCycles > 0 &&
+               recallRule != null &&
+               reflectRule != null &&
+               dashRule != null;
+    }
+
+    public bool CanActivateReward(BoomerangSequencePerformance performance)
+    {
+        if (!useOrbitReward)
+            return false;
+
+        if (!requireDamageForReward)
+            return true;
+
+        return performance != null &&
+               performance.TotalUniqueEnemiesDamaged >= MinUniqueEnemiesDamagedForReward;
+    }
+
+    public float ResolveOrbitDuration(BoomerangSequencePerformance performance)
+    {
+        float result = orbitDuration;
+
+        if (scaleOrbitDurationByUniqueEnemies && performance != null)
+        {
+            int countedEnemies = Mathf.Min(
+                performance.TotalUniqueEnemiesDamaged,
+                MaxEnemiesCountedForRewardDuration);
+
+            result += countedEnemies * ExtraOrbitDurationPerUniqueEnemy;
+        }
+
+        if (clampFinalOrbitDuration)
+        {
+            result = Mathf.Clamp(
+                result,
+                MinFinalOrbitDuration,
+                MaxFinalOrbitDuration);
+        }
+        else
+        {
+            result = Mathf.Max(0.05f, result);
+        }
+
+        return result;
     }
 }

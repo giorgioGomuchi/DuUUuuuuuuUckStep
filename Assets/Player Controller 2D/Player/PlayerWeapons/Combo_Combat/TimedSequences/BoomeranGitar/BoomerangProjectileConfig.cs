@@ -14,7 +14,7 @@ public class BoomerangProjectileConfig
     [Min(0f)] public float timedReturnPresentationDistance = 0.55f;
     [Min(0f)] public float driftDeceleration = 18f;
 
-    [Header("Return Dash Bonuses")]
+    [Header("Dash Bonuses")]
     [Min(0f)] public float dashReturnSpeedMultiplierBonus = 0.35f;
     [Min(0f)] public float dashReturnSteeringBonus = 5f;
     [Min(0.01f)] public float dashReflectSpeedMultiplierBonus = 1.35f;
@@ -33,9 +33,9 @@ public class BoomerangProjectileConfig
 
     [Header("Visual Feedback")]
     public Color returningColor = Color.white;
-    public Color reflectableColor = new(1f, 0.9f, 0.2f, 1f);
+    public Color reflectableColor = new Color(1f, 0.9f, 0.2f, 1f);
     [Min(0.01f)] public float reflectableFlashDuration = 0.12f;
-    public Color orbitStartFlashColor = new(0.3f, 1f, 1f, 1f);
+    public Color orbitStartFlashColor = new Color(0.3f, 1f, 1f, 1f);
     [Min(0.01f)] public float orbitStartFlashDuration = 0.18f;
     [Min(1f)] public float orbitStartPulseScaleMultiplier = 1.35f;
     [Min(0.01f)] public float orbitStartPulseDuration = 0.2f;

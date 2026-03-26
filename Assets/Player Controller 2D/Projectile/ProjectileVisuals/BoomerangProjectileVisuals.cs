@@ -4,78 +4,91 @@ public class BoomerangProjectileVisuals : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private GameObject returnWindowVfxRoot;
+    [SerializeField] private GameObject reflectHoldVfxRoot;
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private TrailRenderer defaultTrail;
     [SerializeField] private TrailRenderer orbitTrail;
 
-    [Header("Colors")]
-    [SerializeField] private Color returningColor = Color.white;
-
     private Color baseColor = Color.white;
+    private Color returningColor = Color.white;
     private Color reflectableColor = Color.yellow;
-    private float reflectableFlashEndTime;
+    private Color orbitStartFlashColor = Color.cyan;
 
-    private Color orbitStartFlashColor = new Color(0.3f, 1f, 1f, 1f);
+    private float reflectableFlashEndTime;
     private float orbitFlashEndTime;
 
-    private float orbitPulseStartTime;
-    private float orbitPulseEndTime;
-    private float orbitStartPulseScaleMultiplier = 1.35f;
-    private Vector3 baseVisualScale = Vector3.one;
+    private float pulseStartTime;
+    private float pulseEndTime;
+    private float pulseScaleMultiplier = 1.35f;
+
+    private Vector3 baseScale = Vector3.one;
+    private BoomerangProjectileMotorState currentState = BoomerangProjectileMotorState.None;
 
     private void Awake()
     {
         if (spriteRenderer == null)
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            spriteRenderer = GetComponentInChildren<SpriteRenderer>(true);
 
         if (defaultTrail == null)
-            defaultTrail = GetComponentInChildren<TrailRenderer>();
+            defaultTrail = GetComponentInChildren<TrailRenderer>(true);
 
         if (spriteRenderer != null)
             baseColor = spriteRenderer.color;
 
-        baseVisualScale = transform.localScale;
+        baseScale = transform.localScale;
 
         SetReturnWindowActive(false);
-        SetOrbitTrailActive(false);
-        SetDefaultTrailActive(true);
+        SetReflectHoldActive(false);
+        SetTrailMode(false);
     }
 
     private void Update()
     {
-        UpdatePulse();
         UpdateColor();
+        UpdatePulse();
     }
 
-    public void ConfigureReflectableFeedback(Color color, float flashDuration)
+    public void ApplyConfig(BoomerangProjectileConfig config)
     {
-        reflectableColor = color;
+        if (config == null)
+            return;
+
+        returningColor = config.returningColor;
+        reflectableColor = config.reflectableColor;
+        orbitStartFlashColor = config.orbitStartFlashColor;
+        pulseScaleMultiplier = Mathf.Max(1f, config.orbitStartPulseScaleMultiplier);
     }
 
-    public void ConfigureOrbitStartFeedback(Color flashColor, float pulseScaleMultiplier)
+    public void ResetVisuals()
     {
-        orbitStartFlashColor = flashColor;
-        orbitStartPulseScaleMultiplier = Mathf.Max(1f, pulseScaleMultiplier);
+        currentState = BoomerangProjectileMotorState.None;
+        reflectableFlashEndTime = 0f;
+        orbitFlashEndTime = 0f;
+        pulseStartTime = 0f;
+        pulseEndTime = 0f;
+
+        transform.localScale = baseScale;
+
+        if (spriteRenderer != null)
+            spriteRenderer.color = baseColor;
+
+        SetReturnWindowActive(false);
+        SetReflectHoldActive(false);
+        SetTrailMode(false);
     }
 
-    public void SetReturningColor(Color color)
+    public void SetMotorState(BoomerangProjectileMotorState state)
     {
-        returningColor = color;
+        currentState = state;
+
+        SetTrailMode(state == BoomerangProjectileMotorState.Orbiting);
+        SetReflectHoldActive(state == BoomerangProjectileMotorState.ReflectHold);
     }
 
     public void SetReturnWindowActive(bool active)
     {
         if (returnWindowVfxRoot != null)
             returnWindowVfxRoot.SetActive(active);
-    }
-
-    public void SetState(BoomerangFlightState state)
-    {
-        bool orbitActive = state == BoomerangFlightState.OrbitingExpanding;
-        SetOrbitTrailActive(orbitActive);
-
-        // Trail normal activo fuera de órbita
-        SetDefaultTrailActive(!orbitActive);
     }
 
     public void TriggerReflectableFlash(float duration)
@@ -86,11 +99,11 @@ public class BoomerangProjectileVisuals : MonoBehaviour
     public void TriggerOrbitStartFeedback(float flashDuration, float pulseDuration)
     {
         orbitFlashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
-        orbitPulseStartTime = Time.time;
-        orbitPulseEndTime = Time.time + Mathf.Max(0.01f, pulseDuration);
+        pulseStartTime = Time.time;
+        pulseEndTime = Time.time + Mathf.Max(0.01f, pulseDuration);
     }
 
-    public void ApplyVisualState(BoomerangFlightState state)
+    private void UpdateColor()
     {
         if (spriteRenderer == null)
             return;
@@ -101,75 +114,58 @@ public class BoomerangProjectileVisuals : MonoBehaviour
             return;
         }
 
-        if (state == BoomerangFlightState.ReflectableReturning)
+        switch (currentState)
         {
-            spriteRenderer.color = Time.time < reflectableFlashEndTime ? reflectableColor : returningColor;
-            return;
+            case BoomerangProjectileMotorState.Returning:
+            case BoomerangProjectileMotorState.Orbiting:
+                spriteRenderer.color = returningColor;
+                break;
+
+            case BoomerangProjectileMotorState.ReflectHold:
+                spriteRenderer.color = Time.time < reflectableFlashEndTime
+                    ? reflectableColor
+                    : returningColor;
+                break;
+
+            default:
+                spriteRenderer.color = baseColor;
+                break;
         }
-
-        if (state == BoomerangFlightState.ReturningCurved ||
-            state == BoomerangFlightState.OrbitingExpanding)
-        {
-            spriteRenderer.color = returningColor;
-            return;
-        }
-
-        spriteRenderer.color = baseColor;
-    }
-
-    public void ResetVisuals()
-    {
-        transform.localScale = baseVisualScale;
-        orbitFlashEndTime = 0f;
-        reflectableFlashEndTime = 0f;
-
-        if (spriteRenderer != null)
-            spriteRenderer.color = baseColor;
-
-        SetReturnWindowActive(false);
-        SetOrbitTrailActive(false);
-        SetDefaultTrailActive(true);
-    }
-
-    private void UpdateColor()
-    {
-        BoomerangProjectile2D projectile = GetComponent<BoomerangProjectile2D>();
-        if (projectile == null)
-            return;
-
-        ApplyVisualState(projectile.FlightState);
     }
 
     private void UpdatePulse()
     {
-        if (Time.time >= orbitPulseEndTime)
+        if (Time.time >= pulseEndTime)
         {
-            transform.localScale = baseVisualScale;
+            transform.localScale = baseScale;
             return;
         }
 
-        float t = Mathf.InverseLerp(orbitPulseStartTime, orbitPulseEndTime, Time.time);
-        float scale = Mathf.Lerp(orbitStartPulseScaleMultiplier, 1f, t);
-        transform.localScale = baseVisualScale * scale;
+        float t = Mathf.InverseLerp(pulseStartTime, pulseEndTime, Time.time);
+        float scale = Mathf.Lerp(pulseScaleMultiplier, 1f, t);
+        transform.localScale = baseScale * scale;
     }
 
-    private void SetDefaultTrailActive(bool active)
+    private void SetReflectHoldActive(bool active)
     {
-        if (defaultTrail == null)
-            return;
-
-        defaultTrail.emitting = active;
-        if (active)
-            defaultTrail.Clear();
+        if (reflectHoldVfxRoot != null)
+            reflectHoldVfxRoot.SetActive(active);
     }
 
-    private void SetOrbitTrailActive(bool active)
+    private void SetTrailMode(bool orbitMode)
     {
-        if (orbitTrail == null)
-            return;
+        if (defaultTrail != null)
+        {
+            defaultTrail.emitting = !orbitMode;
+            if (!orbitMode)
+                defaultTrail.Clear();
+        }
 
-        orbitTrail.emitting = active;
-        if (active)
-            orbitTrail.Clear();
+        if (orbitTrail != null)
+        {
+            orbitTrail.emitting = orbitMode;
+            if (orbitMode)
+                orbitTrail.Clear();
+        }
     }
 }

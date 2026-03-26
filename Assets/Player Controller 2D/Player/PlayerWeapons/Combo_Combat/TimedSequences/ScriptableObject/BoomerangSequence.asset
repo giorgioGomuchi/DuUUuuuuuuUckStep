@@ -29,7 +29,7 @@ MonoBehaviour:
     perfectHalfWindowNormalized: 0.111
     allowPerfect: 1
   recallWindowDuration: 1
-  returnToReflectDuration: 0.3
+  returnToReflectDuration: 0.5
   reflectWindowDuration: 1
   uiPhaseTransitionHoldDuration: 0.08
   reflectActivationNormalized: 0.319
@@ -43,3 +43,6 @@ MonoBehaviour:
   useOrbitReward: 1
   orbitDuration: 3.5
   orbitTurns: 0
+  requireDamageForReward: 0
+  scaleOrbitDurationByUniqueTargets: 0
+  orbitDurationBonusPerUniqueTarget: 0.25

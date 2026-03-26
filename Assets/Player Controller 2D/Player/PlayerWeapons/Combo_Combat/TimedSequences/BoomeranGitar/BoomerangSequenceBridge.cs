@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public class BoomerangSequenceBridge : MonoBehaviour
@@ -10,14 +9,17 @@ public class BoomerangSequenceBridge : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
-    private readonly BoomerangSequenceRuntime runtime = new BoomerangSequenceRuntime();
+
+    [SerializeField] private BoomerangSequenceRuntime runtime = new();
+    [SerializeField] private BoomerangSequencePendingTransition pendingTransition;
+
+    [SerializeField] private BoomerangSequencePerformance performance = new();
+    public BoomerangSequencePerformance Performance => performance;
 
     private BoomerangProjectile2D activeProjectile;
     private WeaponBehaviour activeWeapon;
     private BoomerangWeaponDataSO activeWeaponData;
     private BoomerangSequenceDefinitionSO activeDefinition;
-
-    private Coroutine phaseTransitionRoutine;
     private bool orbitRewardActive;
 
     public bool IsSequenceActive => runtime.IsRunning;
@@ -32,6 +34,8 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
         if (sequenceUI == null)
             sequenceUI = GetComponentInChildren<TimedSequenceUIController>(true);
+
+        pendingTransition.Clear();
     }
 
     public bool BeginSequence(BoomerangProjectile2D projectile, WeaponBehaviour weapon, BoomerangWeaponDataSO weaponData)
@@ -55,9 +59,16 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
         runtime.Reset();
         runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
+        pendingTransition.Clear();
+
+        performance.ResetAll();
+        performance.BeginCycle(1);
 
         sequenceUI?.ShowBoomerang(activeDefinition, playerReferences);
         UpdateWindowUI();
+
+        if (debugLogs)
+            Debug.Log("[BoomerangSequenceBridge] Sequence started.", this);
 
         return true;
     }
@@ -67,10 +78,11 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (!runtime.IsRunning || input == null || activeDefinition == null)
             return;
 
-        if (phaseTransitionRoutine != null)
+        ProcessPendingTransition();
+
+        if (!runtime.IsRunning)
             return;
 
-        // Cuando entra en órbita, la secuencia ya no secuestra el combate.
         if (orbitRewardActive)
             return;
 
@@ -93,6 +105,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
             case BoomerangSequencePhase.ReflectWindow:
                 TickReflectWindow(input);
                 break;
+
+            case BoomerangSequencePhase.PostReflectOutbound:
+                TickPostReflectOutbound(input);
+                break;
         }
     }
 
@@ -106,6 +122,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
         if (runtime.Phase != BoomerangSequencePhase.ReflectWindow)
             return false;
+
+        if (pendingTransition.IsActive)
+            return true;
 
         TimingJudgement judgement = EvaluateTiming(
             runtime.GetWindowNormalizedTime(),
@@ -121,21 +140,19 @@ public class BoomerangSequenceBridge : MonoBehaviour
         }
 
         if (runtime.ReflectDashSucceededThisWindow && activeWeaponData != null)
-            projectile.ApplyNextReflectDashBoost(activeWeaponData.dashReflectSpeedMultiplierBonus);
+        {
+            projectile.ApplyNextReflectDashBoost(
+                activeWeaponData.DashReflectSpeedMultiplierBonus);
+        }
 
         ForceWindowUIToEnd(activeDefinition.ReflectRule, "Reflect", false);
-        phaseTransitionRoutine = StartCoroutine(ResolveReflectAfterUiHold(info.newDirection));
+        pendingTransition.SetResolveReflect(activeDefinition.UiPhaseTransitionHoldDuration, info.newDirection);
         return true;
     }
 
     public void CancelActiveSequence(bool clearOverride, bool destroyProjectile)
     {
-        if (phaseTransitionRoutine != null)
-        {
-            StopCoroutine(phaseTransitionRoutine);
-            phaseTransitionRoutine = null;
-        }
-
+        pendingTransition.Clear();
         UnbindProjectileEvents();
 
         if (destroyProjectile && activeProjectile != null)
@@ -155,6 +172,64 @@ public class BoomerangSequenceBridge : MonoBehaviour
         runtime.Reset();
     }
 
+    private void ProcessPendingTransition()
+    {
+        if (!pendingTransition.IsReady())
+            return;
+
+        switch (pendingTransition.type)
+        {
+            case BoomerangPendingTransitionType.BeginReturn:
+                ExecuteBeginReturnTransition();
+                break;
+
+            case BoomerangPendingTransitionType.ResolveReflect:
+                ExecuteResolveReflectTransition();
+                break;
+        }
+
+        pendingTransition.Clear();
+    }
+
+    private void ExecuteBeginReturnTransition()
+    {
+        if (!runtime.IsRunning || activeProjectile == null || activeDefinition == null)
+            return;
+
+        runtime.CompleteRecall();
+        runtime.BeginReturnToReflectZone(activeDefinition.ReturnToReflectDuration);
+
+        activeProjectile.StartCurvedReturn(
+            activeDefinition.ReturnToReflectDuration,
+            activeDefinition.ReflectActivationNormalized);
+
+        UpdateWindowUI();
+    }
+
+    private void ExecuteResolveReflectTransition()
+    {
+        if (!runtime.IsRunning || activeProjectile == null || activeDefinition == null)
+            return;
+
+        runtime.CompleteReflect();
+        performance.CommitCurrentCycle();
+
+        activeProjectile.ReflectFromMelee(pendingTransition.reflectDirection);
+
+        if (runtime.CompletedCycles >= activeDefinition.RequiredSuccessfulCycles)
+        {
+            StartOrbitRewardOrComplete();
+        }
+        else
+        {
+            runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
+            performance.BeginCycle(runtime.CompletedCycles + 1);
+            UpdateWindowUI();
+        }
+    }
+
+   
+
     private void TickRecallWindow(PlayerInputReader input)
     {
         UpdateWindowUI();
@@ -168,8 +243,8 @@ public class BoomerangSequenceBridge : MonoBehaviour
         HandleDashInput(
             input,
             activeDefinition.AllowDashDuringRecall,
-            onSuccess: OnRecallDashSuccess,
-            failReason: "Bad dash timing during recall window.");
+            OnRecallDashSuccess,
+            "Bad dash timing during recall window.");
 
         if (!runtime.IsRunning)
             return;
@@ -183,63 +258,24 @@ public class BoomerangSequenceBridge : MonoBehaviour
             return;
         }
 
-        if (input.ConsumePrimaryFireRequest())
+        if (!input.ConsumePrimaryFireRequest())
+            return;
+
+        TimingJudgement judgement = EvaluateTiming(
+            runtime.GetWindowNormalizedTime(),
+            activeDefinition.RecallRule);
+
+        sequenceUI?.FlashJudgement(judgement);
+
+        if (!IsSuccess(judgement))
         {
-            TimingJudgement judgement = EvaluateTiming(
-                runtime.GetWindowNormalizedTime(),
-                activeDefinition.RecallRule);
-
-            sequenceUI?.FlashJudgement(judgement);
-
-            if (!IsSuccess(judgement))
-            {
-                activeProjectile.EnterDriftLost();
-                FailSequence("Recall input outside recall rule.");
-                return;
-            }
-
-            ForceWindowUIToEnd(activeDefinition.RecallRule, "Recall", false);
-            phaseTransitionRoutine = StartCoroutine(BeginReturnAfterUiHold());
-        }
-    }
-
-    private IEnumerator BeginReturnAfterUiHold()
-    {
-        float hold = activeDefinition != null ? activeDefinition.UiPhaseTransitionHoldDuration : 0f;
-        if (hold > 0f)
-            yield return new WaitForSeconds(hold);
-
-        runtime.CompleteRecall();
-        runtime.BeginReturnToReflectZone(activeDefinition.ReturnToReflectDuration);
-
-        activeProjectile.StartCurvedReturn(
-            activeDefinition.ReturnToReflectDuration,
-            activeDefinition.ReflectActivationNormalized);
-
-        UpdateWindowUI();
-        phaseTransitionRoutine = null;
-    }
-
-    private IEnumerator ResolveReflectAfterUiHold(Vector2 reflectDirection)
-    {
-        float hold = activeDefinition != null ? activeDefinition.UiPhaseTransitionHoldDuration : 0f;
-        if (hold > 0f)
-            yield return new WaitForSeconds(hold);
-
-        runtime.CompleteReflect();
-        activeProjectile.ReflectFromMelee(reflectDirection);
-
-        if (runtime.CompletedCycles >= activeDefinition.RequiredSuccessfulCycles)
-        {
-            StartOrbitRewardOrComplete();
-        }
-        else
-        {
-            runtime.LoopBackToRecallWindow(activeDefinition.RecallWindowDuration);
-            UpdateWindowUI();
+            activeProjectile.EnterDriftLost();
+            FailSequence("Recall input outside recall rule.");
+            return;
         }
 
-        phaseTransitionRoutine = null;
+        ForceWindowUIToEnd(activeDefinition.RecallRule, "Recall", false);
+        pendingTransition.SetBeginReturn(activeDefinition.UiPhaseTransitionHoldDuration);
     }
 
     private void TickReturningToReflectZone(PlayerInputReader input)
@@ -255,26 +291,11 @@ public class BoomerangSequenceBridge : MonoBehaviour
         HandleDashInput(
             input,
             activeDefinition.AllowDashDuringRecall,
-            onSuccess: OnRecallDashSuccess,
-            failReason: "Bad dash timing while returning to reflect zone.");
+            OnRecallDashSuccess,
+            "Bad dash timing while returning to reflect zone.");
 
         if (!runtime.IsRunning)
             return;
-
-        // IMPORTANTE:
-        // Si el boomerang usa retorno fijo por tiempo, NO dejamos que el bridge
-        // mate la secuencia por expiración. El propio proyectil abrirá Reflect
-        // al llegar a normalized >= 1.
-        if (activeWeaponData != null && activeWeaponData.useFixedReturnToReflect)
-            return;
-
-        if (runtime.IsWindowExpired())
-        {
-            ForceWindowUIToEnd(null, "Return", true);
-            sequenceUI?.FlashJudgement(default);
-            activeProjectile.EnterDriftLost();
-            FailSequence("Boomerang did not reach reflect zone in time.");
-        }
     }
 
     private void TickReflectWindow(PlayerInputReader input)
@@ -290,8 +311,8 @@ public class BoomerangSequenceBridge : MonoBehaviour
         HandleDashInput(
             input,
             activeDefinition.AllowDashDuringReflect,
-            onSuccess: OnReflectDashSuccess,
-            failReason: "Bad dash timing during reflect window.");
+            OnReflectDashSuccess,
+            "Bad dash timing during reflect window.");
 
         if (!runtime.IsRunning)
             return;
@@ -305,6 +326,24 @@ public class BoomerangSequenceBridge : MonoBehaviour
         }
     }
 
+    private void TickPostReflectOutbound(PlayerInputReader input)
+    {
+        UpdateWindowUI();
+
+        if (activeProjectile == null)
+        {
+            FailSequence("Post reflect outbound without projectile.");
+            return;
+        }
+
+        if (runtime.IsWindowExpired())
+        {
+            runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
+            UpdateWindowUI();
+            return;
+        }
+    }
+
     private void HandleDashInput(PlayerInputReader input, bool dashAllowed, System.Action onSuccess, string failReason)
     {
         if (!dashAllowed)
@@ -313,7 +352,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (!input.ConsumeDashPressed())
             return;
 
-        TimingJudgement dashJudgement = EvaluateTiming(runtime.GetWindowNormalizedTime(), activeDefinition.DashRule);
+        TimingJudgement dashJudgement = EvaluateTiming(
+            runtime.GetWindowNormalizedTime(),
+            activeDefinition.DashRule);
+
         sequenceUI?.FlashJudgement(dashJudgement);
 
         if (IsSuccess(dashJudgement))
@@ -322,6 +364,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
         }
         else if (activeDefinition.FailOnBadDash)
         {
+            if (activeProjectile != null)
+                activeProjectile.EnterDriftLost();
+
             FailSequence(failReason);
         }
     }
@@ -330,48 +375,127 @@ public class BoomerangSequenceBridge : MonoBehaviour
     {
         runtime.RegisterRecallDashSuccess();
 
-        if (activeProjectile != null && activeWeaponData != null)
-        {
-            activeProjectile.ApplyReturnDashBoost(
-                activeWeaponData.dashReturnSpeedMultiplierBonus,
-                activeWeaponData.dashReturnSteeringBonus);
-        }
+        if (activeProjectile == null || activeWeaponData == null)
+            return;
+
+        activeProjectile.ApplyReturnDashBoost(
+            activeWeaponData.DashReturnSpeedMultiplierBonus,
+            activeWeaponData.DashReturnSteeringBonus);
     }
 
     private void OnReflectDashSuccess()
     {
         runtime.RegisterReflectDashSuccess();
 
-        if (activeProjectile != null && activeWeaponData != null)
-            activeProjectile.ApplyNextReflectDashBoost(activeWeaponData.dashReflectSpeedMultiplierBonus);
+        if (activeProjectile == null || activeWeaponData == null)
+            return;
+
+        activeProjectile.ApplyNextReflectDashBoost(
+            activeWeaponData.DashReflectSpeedMultiplierBonus);
     }
 
     private void StartOrbitRewardOrComplete()
     {
         if (activeDefinition != null &&
-            activeDefinition.UseOrbitReward &&
             activeProjectile != null &&
-            activeWeaponData != null)
+            activeDefinition.CanActivateReward(performance))
         {
             runtime.BeginOrbitReward();
             orbitRewardActive = true;
 
-            // La UI de secuencia desaparece.
             sequenceUI?.Hide();
 
-            // IMPORTANTÍSIMO:
-            // devolvemos el arma base al jugador para que pueda volver a disparar/melee normal
             playerReferences?.Combat?.CancelAllAttacks();
             playerReferences?.WeaponOverride?.ClearActiveOverride();
 
+            float orbitDuration = activeDefinition.ResolveOrbitDuration(performance);
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangSequenceBridge] Orbit reward granted. uniqueEnemies={performance.TotalUniqueEnemiesDamaged} totalHits={performance.TotalHitEvents} finalDuration={orbitDuration}",
+                    this);
+            }
+
             activeProjectile.BeginOrbitReward(
-                activeDefinition.OrbitDuration,
+                orbitDuration,
                 activeDefinition.OrbitTurns);
 
             return;
         }
 
+        if (debugLogs && activeDefinition != null)
+        {
+            Debug.Log(
+                $"[BoomerangSequenceBridge] Orbit reward skipped. requireDamage={activeDefinition.RequireDamageForReward} uniqueEnemies={performance.TotalUniqueEnemiesDamaged}",
+                this);
+        }
+
         CompleteSequence();
+    }
+
+    public void RegisterBoomerangDamage(BoomerangProjectile2D projectile, Collider2D other, BoomerangFlightState flightState)
+    {
+        if (projectile == null || other == null)
+            return;
+
+        if (projectile != activeProjectile)
+            return;
+
+        if (!runtime.IsRunning && !orbitRewardActive)
+            return;
+
+        BoomerangDamageActionType actionType = ResolveDamageActionType(flightState);
+        performance.RegisterDamage(other, actionType);
+
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangSequenceBridge] Damage registered action={actionType} totalHits={performance.TotalHitEvents} totalUnique={performance.TotalUniqueEnemiesDamaged} cycle={performance.CurrentCycleNumber} cycleHits={performance.CurrentCycleHitEvents} cycleUnique={performance.CurrentCycleUniqueEnemiesDamaged}",
+                this);
+        }
+    }
+
+    private static BoomerangDamageActionType ResolveDamageActionType(BoomerangFlightState state)
+    {
+        return state switch
+        {
+            BoomerangFlightState.Outbound => BoomerangDamageActionType.Outbound,
+            BoomerangFlightState.ReturningCurved => BoomerangDamageActionType.Returning,
+            BoomerangFlightState.ReflectableReturning => BoomerangDamageActionType.ReflectHold,
+            BoomerangFlightState.ReflectedOutbound => BoomerangDamageActionType.ReflectedOutbound,
+            BoomerangFlightState.OrbitingExpanding => BoomerangDamageActionType.OrbitReward,
+            _ => BoomerangDamageActionType.Unknown
+        };
+    }
+
+    private bool CanGrantOrbitReward()
+    {
+        if (activeDefinition == null)
+            return false;
+
+        if (!activeDefinition.RequireDamageForReward)
+            return true;
+
+        return performance.TotalUniqueEnemiesDamaged >= activeDefinition.MinUniqueEnemiesDamagedForReward;
+    }
+
+    private float EvaluateOrbitDuration()
+    {
+        if (activeDefinition == null)
+            return 0f;
+
+        float duration = activeDefinition.OrbitDuration;
+
+        if (!activeDefinition.ScaleOrbitDurationByUniqueEnemies)
+            return duration;
+
+        int countedEnemies = Mathf.Min(
+            performance.TotalUniqueEnemiesDamaged,
+            activeDefinition.MaxEnemiesCountedForRewardDuration);
+
+        duration += countedEnemies * activeDefinition.ExtraOrbitDurationPerUniqueEnemy;
+        return duration;
     }
 
     private void CompleteSequence()
@@ -379,8 +503,6 @@ public class BoomerangSequenceBridge : MonoBehaviour
         runtime.Complete();
 
         sequenceUI?.Hide();
-
-        // aseguramos restauración del arma base al terminar
         playerReferences?.Combat?.CancelAllAttacks();
         playerReferences?.WeaponOverride?.ClearActiveOverride();
 
@@ -391,26 +513,24 @@ public class BoomerangSequenceBridge : MonoBehaviour
         activeWeaponData = null;
         activeDefinition = null;
         orbitRewardActive = false;
+        pendingTransition.Clear();
+
+        if (debugLogs)
+            Debug.Log("[BoomerangSequenceBridge] Sequence completed.", this);
     }
 
     private void FailSequence(string reason)
-{
-    Debug.LogWarning(
-        $"[BoomerangSequenceBridge] FAIL reason='{reason}' phase={runtime.Phase} cycles={runtime.CompletedCycles} projectile={(activeProjectile != null ? activeProjectile.name : "null")}",
-        this);
-
-    if (phaseTransitionRoutine != null)
     {
-        StopCoroutine(phaseTransitionRoutine);
-        phaseTransitionRoutine = null;
-    }
-
-    runtime.Fail();
+        Debug.LogWarning(
+            $"[BoomerangSequenceBridge] FAIL reason='{reason}' phase={runtime.Phase} cycles={runtime.CompletedCycles} projectile={(activeProjectile != null ? activeProjectile.name : "null")}",
+            this);
 
         bool clearOverride = activeDefinition == null || activeDefinition.ClearWeaponOverrideOnFail;
 
-        UnbindProjectileEvents();
+        runtime.Fail();
+        pendingTransition.Clear();
 
+        UnbindProjectileEvents();
         sequenceUI?.Hide();
 
         activeProjectile = null;
@@ -428,7 +548,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (sequenceUI == null || activeDefinition == null)
             return;
 
-        bool useNeutralBar = runtime.Phase == BoomerangSequencePhase.ReturningToReflectZone;
+        bool useNeutralBar =
+            runtime.Phase == BoomerangSequencePhase.ReturningToReflectZone ||
+            runtime.Phase == BoomerangSequencePhase.PostReflectOutbound;
 
         sequenceUI.SetBoomerangWindowProgress(
             runtime.GetWindowNormalizedTime(),
@@ -460,6 +582,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
             BoomerangSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
             BoomerangSequencePhase.ReturningToReflectZone => null,
             BoomerangSequencePhase.ReflectWindow => activeDefinition.ReflectRule,
+            BoomerangSequencePhase.PostReflectOutbound => null,
             _ => null
         };
     }
@@ -471,6 +594,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
             BoomerangSequencePhase.OutboundRecallWindow => "Recall",
             BoomerangSequencePhase.ReturningToReflectZone => "Return",
             BoomerangSequencePhase.ReflectWindow => "Reflect",
+            BoomerangSequencePhase.PostReflectOutbound => "Outbound",
             BoomerangSequencePhase.OrbitReward => "Orbit",
             BoomerangSequencePhase.Completed => "Complete",
             BoomerangSequencePhase.Failed => "Fail",
@@ -520,12 +644,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (projectile != activeProjectile)
             return;
 
-        if (debugLogs)
-            Debug.Log($"[BoomerangSequenceBridge] OnProjectileReturnedToOwner phase={runtime.Phase}", this);
-
         if (runtime.Phase == BoomerangSequencePhase.OutboundRecallWindow ||
             runtime.Phase == BoomerangSequencePhase.ReturningToReflectZone ||
-            runtime.Phase == BoomerangSequencePhase.ReflectWindow)
+            runtime.Phase == BoomerangSequencePhase.ReflectWindow ||
+            runtime.Phase == BoomerangSequencePhase.PostReflectOutbound)
         {
             FailSequence("Projectile returned to owner unexpectedly during active sequence.");
         }
@@ -535,10 +657,6 @@ public class BoomerangSequenceBridge : MonoBehaviour
     {
         if (projectile != activeProjectile)
             return;
-
-        Debug.Log(
-            $"[BoomerangSequenceBridge] OnProjectileFinished phase={runtime.Phase} orbitReward={orbitRewardActive} projectileState={projectile.FlightState}",
-            this);
 
         if (runtime.IsInOrbitReward)
         {
@@ -554,10 +672,6 @@ public class BoomerangSequenceBridge : MonoBehaviour
     {
         if (projectile != activeProjectile)
             return;
-
-        Debug.Log(
-            $"[BoomerangSequenceBridge] OnProjectileLost phase={runtime.Phase} projectileState={projectile.FlightState}",
-            this);
 
         if (runtime.IsRunning)
             FailSequence("Projectile was lost during sequence.");
