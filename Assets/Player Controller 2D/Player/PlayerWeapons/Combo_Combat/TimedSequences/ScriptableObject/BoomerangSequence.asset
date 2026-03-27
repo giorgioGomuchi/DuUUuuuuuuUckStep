@@ -43,6 +43,11 @@ MonoBehaviour:
   useOrbitReward: 1
   orbitDuration: 3.5
   orbitTurns: 0
-  requireDamageForReward: 0
-  scaleOrbitDurationByUniqueTargets: 0
-  orbitDurationBonusPerUniqueTarget: 0.25
+  requireDamageForReward: 1
+  minUniqueEnemiesDamagedForReward: 1
+  scaleOrbitDurationByUniqueEnemies: 1
+  extraOrbitDurationPerUniqueEnemy: 0.35
+  maxEnemiesCountedForRewardDuration: 5
+  clampFinalOrbitDuration: 1
+  minFinalOrbitDuration: 2.5
+  maxFinalOrbitDuration: 6

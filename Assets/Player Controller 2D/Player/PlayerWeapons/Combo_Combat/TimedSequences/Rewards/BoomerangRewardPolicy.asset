@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afc4c0c8d19b94f43928c12066895748, type: 3}
+  m_Name: BoomerangRewardPolicy
+  m_EditorClassIdentifier: 
+  requireDamageForReward: 0
+  minUniqueEnemiesDamagedForReward: 1
+  scaleDurationByUniqueEnemies: 0
+  extraDurationPerUniqueEnemy: 0.35
+  maxEnemiesCountedForDuration: 10
+  clampFinalDuration: 1
+  minFinalDuration: 0.5
+  maxFinalDuration: 6

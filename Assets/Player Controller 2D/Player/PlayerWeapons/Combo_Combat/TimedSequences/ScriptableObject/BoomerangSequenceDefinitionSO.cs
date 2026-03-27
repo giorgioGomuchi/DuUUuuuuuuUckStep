@@ -47,35 +47,17 @@ public class BoomerangSequenceDefinitionSO : ScriptableObject
 
     [Header("Orbit Reward")]
     [SerializeField] private bool useOrbitReward = true;
-
     [Min(0.05f)]
     [SerializeField] private float orbitDuration = 3.5f;
-
     [Min(0)]
     [SerializeField] private int orbitTurns = 0;
+    [SerializeField] private SequenceRewardPolicySO rewardPolicy;
 
-    [Header("Reward Gating")]
-    [SerializeField] private bool requireDamageForReward = false;
-
-    [Min(1)]
-    [SerializeField] private int minUniqueEnemiesDamagedForReward = 1;
-
-    [Header("Reward Scaling")]
-    [SerializeField] private bool scaleOrbitDurationByUniqueEnemies = false;
+    [Header("Projectile Cleanup")]
+    [SerializeField] private bool destroyProjectileOnFail = true;
 
     [Min(0f)]
-    [SerializeField] private float extraOrbitDurationPerUniqueEnemy = 0.35f;
-
-    [Min(0)]
-    [SerializeField] private int maxEnemiesCountedForRewardDuration = 10;
-
-    [SerializeField] private bool clampFinalOrbitDuration = true;
-
-    [Min(0.05f)]
-    [SerializeField] private float minFinalOrbitDuration = 0.5f;
-
-    [Min(0.05f)]
-    [SerializeField] private float maxFinalOrbitDuration = 6f;
+    [SerializeField] private float destroyProjectileOnFailDelay = 0f;
 
     public string SequenceId => sequenceId;
 
@@ -88,32 +70,20 @@ public class BoomerangSequenceDefinitionSO : ScriptableObject
     public float ReflectWindowDuration => reflectWindowDuration;
     public float UiPhaseTransitionHoldDuration => uiPhaseTransitionHoldDuration;
     public float ReflectActivationNormalized => reflectActivationNormalized;
-
     public int RequiredSuccessfulCycles => requiredSuccessfulCycles;
-
     public bool AllowDashDuringRecall => allowDashDuringRecall;
     public bool AllowDashDuringReflect => allowDashDuringReflect;
     public bool FailOnBadDash => failOnBadDash;
-
     public bool FailOnSwitchWeaponInput => failOnSwitchWeaponInput;
     public bool ClearWeaponOverrideOnFail => clearWeaponOverrideOnFail;
-
     public Vector3 PlayerUIWorldOffset => playerUIWorldOffset;
-
     public bool UseOrbitReward => useOrbitReward;
     public float OrbitDuration => orbitDuration;
     public int OrbitTurns => orbitTurns;
+    public SequenceRewardPolicySO RewardPolicy => rewardPolicy;
+    public bool DestroyProjectileOnFail => destroyProjectileOnFail;
+    public float DestroyProjectileOnFailDelay => Mathf.Max(0f, destroyProjectileOnFailDelay);
 
-    public bool RequireDamageForReward => requireDamageForReward;
-    public int MinUniqueEnemiesDamagedForReward => Mathf.Max(0, minUniqueEnemiesDamagedForReward);
-
-    public bool ScaleOrbitDurationByUniqueEnemies => scaleOrbitDurationByUniqueEnemies;
-    public float ExtraOrbitDurationPerUniqueEnemy => Mathf.Max(0f, extraOrbitDurationPerUniqueEnemy);
-    public int MaxEnemiesCountedForRewardDuration => Mathf.Max(0, maxEnemiesCountedForRewardDuration);
-
-    public bool ClampFinalOrbitDuration => clampFinalOrbitDuration;
-    public float MinFinalOrbitDuration => Mathf.Max(0.05f, minFinalOrbitDuration);
-    public float MaxFinalOrbitDuration => Mathf.Max(MinFinalOrbitDuration, maxFinalOrbitDuration);
 
     public bool IsValid()
     {
@@ -126,43 +96,5 @@ public class BoomerangSequenceDefinitionSO : ScriptableObject
                dashRule != null;
     }
 
-    public bool CanActivateReward(BoomerangSequencePerformance performance)
-    {
-        if (!useOrbitReward)
-            return false;
-
-        if (!requireDamageForReward)
-            return true;
-
-        return performance != null &&
-               performance.TotalUniqueEnemiesDamaged >= MinUniqueEnemiesDamagedForReward;
-    }
-
-    public float ResolveOrbitDuration(BoomerangSequencePerformance performance)
-    {
-        float result = orbitDuration;
-
-        if (scaleOrbitDurationByUniqueEnemies && performance != null)
-        {
-            int countedEnemies = Mathf.Min(
-                performance.TotalUniqueEnemiesDamaged,
-                MaxEnemiesCountedForRewardDuration);
-
-            result += countedEnemies * ExtraOrbitDurationPerUniqueEnemy;
-        }
-
-        if (clampFinalOrbitDuration)
-        {
-            result = Mathf.Clamp(
-                result,
-                MinFinalOrbitDuration,
-                MaxFinalOrbitDuration);
-        }
-        else
-        {
-            result = Mathf.Max(0.05f, result);
-        }
-
-        return result;
-    }
+  
 }

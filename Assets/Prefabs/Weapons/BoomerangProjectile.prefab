@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 582956107514684671}
   - component: {fileID: 3018275737260020501}
   - component: {fileID: 6488027233540059081}
+  - component: {fileID: -3496354206788839153}
   m_Layer: 12
   m_Name: BoomerangProjectile
   m_TagString: Untagged
@@ -236,42 +237,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lifetime: 10
   debugLogs: 1
-  outboundDistance: 6
-  useFixedReturnToReflect: 1
-  returnSpeedMultiplier: 1.15
-  deflectOnlyWhileReturning: 1
-  outboundDistanceAfterDeflect: 4.5
-  returnSteering: 8
-  reflectableDistance: 1.15
-  catchDistance: 0.2
-  timedReturnArcStrength: 0.08
-  timedReturnPresentationDistance: 0.95
-  timedReturnMinSpeedMultiplier: 0.85
-  timedReturnMaxSpeedMultiplier: 2.75
-  timedReturnSpeedSmoothing: 18
-  timedReturnHoldRadius: 0.55
-  timedReturnReflectableRadius: 0.95
-  destroyEnemyProjectileMask:
-    serializedVersion: 2
-    m_Bits: 512
-  orbitStartRadius: 0.8
-  orbitRadiusGrowthPerSecond: 1
-  orbitMaxRadius: 3.5
-  orbitAngularSpeedDegPerSec: 360
-  orbitSpeedMultiplier: 1
-  orbitClockwise: 1
-  orbitContactDamageInterval: 0.2
-  reflectableColor: {r: 1, g: 0.9, b: 0.2, a: 1}
-  reflectableFlashDuration: 0.12
-  orbitStartFlashColor: {r: 0.3, g: 1, b: 1, a: 1}
-  orbitStartFlashDuration: 0.18
-  orbitStartPulseScaleMultiplier: 1.35
-  orbitStartPulseDuration: 0.2
-  returningColor: {r: 0, g: 0, b: 0, a: 1}
-  driftDeceleration: 18
-  enableSpin: 1
-  spinDegPerSec: 720
-  owner: {fileID: 0}
   visuals: {fileID: 3018275737260020501}
   ownerCollisionIgnore: {fileID: 6488027233540059081}
 --- !u!58 &582956107514684671
@@ -322,10 +287,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   returnWindowVfxRoot: {fileID: 0}
+  reflectHoldVfxRoot: {fileID: 0}
   spriteRenderer: {fileID: 5641371957355748568}
   defaultTrail: {fileID: 0}
   orbitTrail: {fileID: 7229750255448800791}
-  returningColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!114 &6488027233540059081
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -339,6 +304,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   debugLogs: 1
+--- !u!114 &-3496354206788839153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 828991490477125810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32eccae5a74c39842bcf52963d2ea403, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectile: {fileID: -5586635616111229935}
 --- !u!1 &4375153095278378738
 GameObject:
   m_ObjectHideFlags: 0
