@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afc4c0c8d19b94f43928c12066895748, type: 3}
   m_Name: BoomerangRewardPolicy
   m_EditorClassIdentifier: 
-  requireDamageForReward: 0
+  requireDamageForReward: 1
   minUniqueEnemiesDamagedForReward: 1
-  scaleDurationByUniqueEnemies: 0
+  scaleDurationByUniqueEnemies: 1
   extraDurationPerUniqueEnemy: 0.35
   maxEnemiesCountedForDuration: 10
   clampFinalDuration: 1
-  minFinalDuration: 0.5
-  maxFinalDuration: 6
+  minFinalDuration: 2
+  maxFinalDuration: 5

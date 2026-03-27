@@ -41,13 +41,8 @@ MonoBehaviour:
   clearWeaponOverrideOnFail: 1
   playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
   useOrbitReward: 1
-  orbitDuration: 3.5
+  orbitDuration: 2
   orbitTurns: 0
-  requireDamageForReward: 1
-  minUniqueEnemiesDamagedForReward: 1
-  scaleOrbitDurationByUniqueEnemies: 1
-  extraOrbitDurationPerUniqueEnemy: 0.35
-  maxEnemiesCountedForRewardDuration: 5
-  clampFinalOrbitDuration: 1
-  minFinalOrbitDuration: 2.5
-  maxFinalOrbitDuration: 6
+  rewardPolicy: {fileID: 11400000, guid: 26d714e6832eb6f418dfc698c68db509, type: 2}
+  destroyProjectileOnFail: 1
+  destroyProjectileOnFailDelay: 0.2

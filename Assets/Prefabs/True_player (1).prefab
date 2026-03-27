@@ -1068,6 +1068,49 @@ MonoBehaviour:
   playerReferences: {fileID: 4205475652766426246}
   sequenceUI: {fileID: 8318554948651735393}
   debugLogs: 1
+  runtime:
+    phase: 0
+    windowStartTime: 0
+    windowDuration: 0
+    completedCycles: 0
+    recallDashSucceededThisWindow: 0
+    reflectDashSucceededThisWindow: 0
+    isRunning: 0
+    isInOrbitReward: 0
+  pendingTransition:
+    type: 0
+    executeAtTime: 0
+    reflectDirection: {x: 0, y: 0}
+  performanceTracker:
+    performance:
+      totalHitEvents: 0
+      totalUniqueEnemiesDamaged: 0
+      currentCycleNumber: 0
+      currentCycleHitEvents: 0
+      currentCycleUniqueEnemiesDamaged: 0
+      currentCycleActionCounters:
+        outboundHitEvents: 0
+        outboundUniqueEnemies: 0
+        returningHitEvents: 0
+        returningUniqueEnemies: 0
+        reflectHoldHitEvents: 0
+        reflectHoldUniqueEnemies: 0
+        reflectedOutboundHitEvents: 0
+        reflectedOutboundUniqueEnemies: 0
+        orbitRewardHitEvents: 0
+        orbitRewardUniqueEnemies: 0
+      totalActionCounters:
+        outboundHitEvents: 0
+        outboundUniqueEnemies: 0
+        returningHitEvents: 0
+        returningUniqueEnemies: 0
+        reflectHoldHitEvents: 0
+        reflectHoldUniqueEnemies: 0
+        reflectedOutboundHitEvents: 0
+        reflectedOutboundUniqueEnemies: 0
+        orbitRewardHitEvents: 0
+        orbitRewardUniqueEnemies: 0
+      completedCycles: []
 --- !u!1 &1237347640591292721
 GameObject:
   m_ObjectHideFlags: 0
