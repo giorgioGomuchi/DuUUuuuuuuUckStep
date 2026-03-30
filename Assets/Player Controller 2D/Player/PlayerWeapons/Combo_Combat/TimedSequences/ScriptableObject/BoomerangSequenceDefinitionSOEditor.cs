@@ -29,6 +29,7 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
 
     private SerializedProperty playerUIWorldOffsetProp;
 
+    private SerializedProperty modularRewardPolicyProp;
     private SerializedProperty useOrbitRewardProp;
     private SerializedProperty orbitDurationProp;
     private SerializedProperty orbitTurnsProp;
@@ -46,7 +47,6 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
         reflectWindowDurationProp = serializedObject.FindProperty("reflectWindowDuration");
         uiPhaseTransitionHoldDurationProp = serializedObject.FindProperty("uiPhaseTransitionHoldDuration");
         reflectActivationNormalizedProp = serializedObject.FindProperty("reflectActivationNormalized");
-        requiredSuccessfulCyclesProp = serializedObject.FindProperty("requiredSuccessfulCycles");
 
         allowDashDuringRecallProp = serializedObject.FindProperty("allowDashDuringRecall");
         allowDashDuringReflectProp = serializedObject.FindProperty("allowDashDuringReflect");
@@ -60,10 +60,12 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
 
         playerUIWorldOffsetProp = serializedObject.FindProperty("playerUIWorldOffset");
 
+
+        requiredSuccessfulCyclesProp = serializedObject.FindProperty("requiredSteps");
+        modularRewardPolicyProp = serializedObject.FindProperty("rewardPolicy");
         useOrbitRewardProp = serializedObject.FindProperty("useOrbitReward");
         orbitDurationProp = serializedObject.FindProperty("orbitDuration");
         orbitTurnsProp = serializedObject.FindProperty("orbitTurns");
-        rewardPolicyProp = serializedObject.FindProperty("rewardPolicy");
     }
 
     public override void OnInspectorGUI()
@@ -120,12 +122,19 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
         {
             EditorGUILayout.PropertyField(orbitDurationProp);
             EditorGUILayout.PropertyField(orbitTurnsProp);
-            EditorGUILayout.PropertyField(rewardPolicyProp);
 
-            if (rewardPolicyProp.objectReferenceValue == null)
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Legacy Reward Policy", EditorStyles.miniBoldLabel);
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Modular Reward Policy", EditorStyles.miniBoldLabel);
+            EditorGUILayout.PropertyField(modularRewardPolicyProp);
+
+
+            if (modularRewardPolicyProp.objectReferenceValue == null)
             {
                 EditorGUILayout.HelpBox(
-                    "No Reward Policy assigned. Reward will use base Orbit Duration only, with no gating or scaling.",
+                    "Modular Reward Policy is empty. New modular reward preview/gating will be disabled.",
                     MessageType.Info);
             }
         }

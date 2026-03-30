@@ -4,20 +4,15 @@ public class PlayerCombatController : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private WeaponSlotsController weapons;
-    [SerializeField] private WeaponSequenceController weaponSequence;
     [SerializeField] private BoomerangSequenceBridge boomerangSequence;
 
     public bool CombatBlocked { get; private set; }
-
     public BoomerangSequenceBridge BoomerangSequence => boomerangSequence;
 
     private void Awake()
     {
         if (weapons == null)
             weapons = GetComponentInChildren<WeaponSlotsController>();
-
-        if (weaponSequence == null)
-            weaponSequence = GetComponentInChildren<WeaponSequenceController>();
 
         if (boomerangSequence == null)
             boomerangSequence = GetComponentInChildren<BoomerangSequenceBridge>();
@@ -44,19 +39,10 @@ public class PlayerCombatController : MonoBehaviour
         if (weapons == null || CombatBlocked)
             return;
 
-        // Sniper / secuencias lineales antiguas: exclusivas.
-        if (weaponSequence != null && weaponSequence.IsSequenceActive)
-        {
-            weaponSequence.TickSequence(input);
-            return;
-        }
-
         if (boomerangSequence != null && boomerangSequence.IsSequenceActive)
         {
             boomerangSequence.TickSequence(input);
 
-            // Si está en órbita reward, el boomerang ya es autónomo:
-            // dejamos volver a usar armas normales.
             if (boomerangSequence.IsInOrbitReward)
             {
                 HandlePrimary(input);
@@ -65,7 +51,6 @@ public class PlayerCombatController : MonoBehaviour
                 return;
             }
 
-            // Durante recall/return/reflect dejamos pasar solo melee real.
             HandleSecondary(input);
             return;
         }

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a58359baa7d8ec40b93419c60720ab1, type: 3}
+  m_Name: SniperSequenceRewardPolicy
+  m_EditorClassIdentifier: 
+  rewardMode: 1
+  baseAmmoCount: 3
+  maxAmmoCount: 12
+  baseDurationSeconds: 3
+  maxDurationSeconds: 6
+  scaleWithPerformance: 1
+  bonusDurationPerPerfect: 0.15
+  bonusDurationPerHit: 0.08
+  bonusDurationPerUniqueTarget: 0.2
+  bonusAmmoPerPerfect: 0
+  bonusAmmoPerUniqueTarget: 0

@@ -13,12 +13,18 @@ MonoBehaviour:
   m_Name: SniperSequence
   m_EditorClassIdentifier: 
   sequenceId: SniperSequence
+  requiredSteps: 6
+  startupDelay: 0.08
+  decisionWindowDuration: 1.5
+  completionDelay: 0
+  failOnTimeout: 1
+  failOnWrongAction: 1
+  failOnForbiddenInput: 1
+  rewardPolicy: {fileID: 11400000, guid: d61ae1c05aa09fa4a89bbd32cb2c3035, type: 2}
+  completionReward: {fileID: 11400000, guid: c3b7e1b8886f6284eab99e26c09aa486, type: 2}
   sequenceWeaponData: {fileID: 11400000, guid: b690ff6182828734e89678169cc363f0, type: 2}
   targetSlot: 0
   overrideAmmoCount: 6
-  requiredSuccessfulShots: 6
-  decisionWindowDuration: 1.5
-  startupDelay: 0.08
   shootRule:
     enabled: 1
     goodHalfWindowNormalized: 0.121
@@ -29,10 +35,7 @@ MonoBehaviour:
     goodHalfWindowNormalized: 0.49
     perfectHalfWindowNormalized: 0.49
     allowPerfect: 0
-  failOnTimeout: 1
   failOnSecondaryInput: 1
   failOnSwitchWeaponInput: 1
   showAimGuide: 1
   playerUIWorldOffset: {x: 0, y: 1.5, z: 0}
-  completionReward: {fileID: 11400000, guid: eb8ead3ce74328d4bb1e65e22e4605b8, type: 2}
-  completionRewardDelay: 0.1

@@ -25,10 +25,10 @@ public class StartWeaponSequenceComboEffectSO : ComboEffectSO
             return;
         }
 
-        WeaponSequenceController sequenceController = context.PlayerReferences.WeaponSequence;
+        WeaponSequenceControllerV2 sequenceController = context.PlayerReferences.WeaponSequenceControllerV2;
         if (sequenceController == null)
         {
-            Debug.LogError("[StartWeaponSequenceComboEffectSO] WeaponSequenceController missing.");
+            Debug.LogError("[StartWeaponSequenceComboEffectSO] WeaponSequenceControllerV2 missing.");
             return;
         }
 

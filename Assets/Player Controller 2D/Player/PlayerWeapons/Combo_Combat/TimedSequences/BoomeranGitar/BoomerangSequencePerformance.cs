@@ -185,4 +185,104 @@ public class BoomerangSequencePerformance
             actionCounters = currentCycleActionCounters.Clone()
         });
     }
+
+    public SequenceRewardContextBase BuildRewardContextBase(
+    bool sequenceCompleted,
+    int completedSteps,
+    int attemptedSteps)
+    {
+        SequenceRewardContextBase context = new SequenceRewardContextBase
+        {
+            sequenceCompleted = sequenceCompleted,
+            completedSteps = completedSteps,
+            attemptedSteps = attemptedSteps,
+
+            successfulActions = completedCycles.Count,
+            perfectCount = 0,
+            goodCount = 0,
+
+            hitCount = totalHitEvents,
+            uniqueTargetCount = totalUniqueEnemiesDamaged,
+            totalDamage = 0f
+        };
+
+        int cyclesWithHits = 0;
+        int maxHitsInOneCycle = 0;
+
+        for (int i = 0; i < completedCycles.Count; i++)
+        {
+            CycleSnapshot cycle = completedCycles[i];
+
+            if (cycle.hitEvents > 0)
+                cyclesWithHits++;
+
+            if (cycle.hitEvents > maxHitsInOneCycle)
+                maxHitsInOneCycle = cycle.hitEvents;
+        }
+
+        context.SetInt("boomerang_total_hit_events", totalHitEvents);
+        context.SetInt("boomerang_total_unique_enemies", totalUniqueEnemiesDamaged);
+        context.SetInt("boomerang_completed_cycles", completedCycles.Count);
+        context.SetInt("boomerang_current_cycle_number", currentCycleNumber);
+        context.SetInt("boomerang_cycles_with_hits", cyclesWithHits);
+        context.SetInt("boomerang_max_hits_in_one_cycle", maxHitsInOneCycle);
+
+        context.SetInt("boomerang_outbound_hits", totalActionCounters.outboundHitEvents);
+        context.SetInt("boomerang_outbound_unique", totalActionCounters.outboundUniqueEnemies);
+
+        context.SetInt("boomerang_returning_hits", totalActionCounters.returningHitEvents);
+        context.SetInt("boomerang_returning_unique", totalActionCounters.returningUniqueEnemies);
+
+        context.SetInt("boomerang_reflect_hold_hits", totalActionCounters.reflectHoldHitEvents);
+        context.SetInt("boomerang_reflect_hold_unique", totalActionCounters.reflectHoldUniqueEnemies);
+
+        context.SetInt("boomerang_reflected_outbound_hits", totalActionCounters.reflectedOutboundHitEvents);
+        context.SetInt("boomerang_reflected_outbound_unique", totalActionCounters.reflectedOutboundUniqueEnemies);
+
+        context.SetInt("boomerang_orbit_hits", totalActionCounters.orbitRewardHitEvents);
+        context.SetInt("boomerang_orbit_unique", totalActionCounters.orbitRewardUniqueEnemies);
+
+        return context;
+    }
+
+    public SequencePerformanceUISnapshot BuildGenericUISnapshot(
+    int currentProgress,
+    int requiredProgress,
+    bool rewardEligible)
+    {
+        int cyclesWithHits = 0;
+        int maxHitsInOneCycle = 0;
+
+        for (int i = 0; i < completedCycles.Count; i++)
+        {
+            CycleSnapshot cycle = completedCycles[i];
+
+            if (cycle.hitEvents > 0)
+                cyclesWithHits++;
+
+            if (cycle.hitEvents > maxHitsInOneCycle)
+                maxHitsInOneCycle = cycle.hitEvents;
+        }
+
+        return new SequencePerformanceUISnapshot
+        {
+            currentProgress = currentProgress,
+            requiredProgress = requiredProgress,
+
+            metric1Label = "Hits",
+            metric1Value = totalHitEvents.ToString(),
+
+            metric2Label = "Unique",
+            metric2Value = totalUniqueEnemiesDamaged.ToString(),
+
+            metric3Label = "Cycles",
+            metric3Value = completedCycles.Count.ToString(),
+
+            metric4Label = "Hit Cycles",
+            metric4Value = cyclesWithHits.ToString(),
+
+            rewardLabel = "Orbit",
+            rewardEligible = rewardEligible
+        };
+    }
 }

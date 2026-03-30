@@ -410,18 +410,31 @@ public class BoomerangSequenceBridge : MonoBehaviour
             return;
         }
 
-        SequenceRewardPolicySO rewardPolicy = activeDefinition.RewardPolicy;
-        SequenceRewardContext rewardContext = SequenceRewardContext.FromBoomerang(
-            performanceTracker.Performance,
-            runtime.CompletedCycles);
+        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
 
-        bool canActivateReward = rewardPolicy == null || rewardPolicy.CanActivateReward(rewardContext);
-        if (!canActivateReward)
+        SequenceRewardContextBase rewardContext =
+            performanceTracker.Performance.BuildRewardContextBase(
+                sequenceCompleted: true,
+                completedSteps: runtime.CompletedCycles,
+                attemptedSteps: runtime.CompletedCycles);
+
+        SequenceRewardResolution resolution =
+            rewardPolicy != null
+                ? rewardPolicy.Evaluate(rewardContext, null)
+                : new SequenceRewardResolution
+                {
+                    shouldApply = true,
+                    duration = activeDefinition.OrbitDuration,
+                    ammo = 0,
+                    magnitude = 0f
+                };
+
+        if (!resolution.shouldApply)
         {
             if (debugLogs)
             {
                 Debug.Log(
-                    $"[BoomerangSequenceBridge] Orbit reward skipped by policy. uniqueEnemies={rewardContext.TotalUniqueEnemiesDamaged} totalHits={rewardContext.TotalHitEvents}",
+                    $"[BoomerangSequenceBridge] Orbit reward skipped by policy. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount}",
                     this);
             }
 
@@ -429,9 +442,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
             return;
         }
 
-        float orbitDuration = activeDefinition.OrbitDuration;
-        if (rewardPolicy != null)
-            orbitDuration = rewardPolicy.ResolveRewardDuration(rewardContext, orbitDuration);
+        float orbitDuration = resolution.duration > 0f
+            ? resolution.duration
+            : activeDefinition.OrbitDuration;
 
         runtime.BeginOrbitReward();
         orbitRewardActive = true;
@@ -444,13 +457,28 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (debugLogs)
         {
             Debug.Log(
-                $"[BoomerangSequenceBridge] Orbit reward granted. uniqueEnemies={rewardContext.TotalUniqueEnemiesDamaged} totalHits={rewardContext.TotalHitEvents} finalDuration={orbitDuration}",
+                $"[BoomerangSequenceBridge] Orbit reward granted. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount} finalDuration={orbitDuration}",
                 this);
         }
 
-        activeActorAdapter.BeginReward(
-            orbitDuration,
-            activeDefinition.OrbitTurns);
+        BoomerangOrbitRewardApplySO orbitRewardApply =
+    activeDefinition.CompletionReward as BoomerangOrbitRewardApplySO;
+
+        if (orbitRewardApply != null)
+        {
+            orbitRewardApply.ApplyToBoomerang(
+                rewardContext,
+                resolution,
+                activeActorAdapter,
+                activeDefinition.OrbitDuration,
+                activeDefinition.OrbitTurns);
+        }
+        else
+        {
+            activeActorAdapter.BeginReward(
+                orbitDuration,
+                activeDefinition.OrbitTurns);
+        }
     }
 
     private void CompleteSequence(bool destroyProjectile)
@@ -534,9 +562,42 @@ public class BoomerangSequenceBridge : MonoBehaviour
             runtime.GetWindowNormalizedTime(),
             runtime.CompletedCycles,
             activeDefinition.RequiredSuccessfulCycles,
-            GetActiveBarRule(),
-            GetPhaseLabel(),
+            GetActiveRuleForCurrentPhase(),
+            GetCurrentPhaseLabel(),
             useNeutralBar);
+
+        SequenceRewardPreviewInfo previewInfo = BuildRewardPreviewInfo();
+
+        SequencePerformanceUISnapshot snapshot =
+            performanceTracker.Performance.BuildGenericUISnapshot(
+                currentProgress: runtime.CompletedCycles,
+                requiredProgress: activeDefinition.RequiredSuccessfulCycles,
+                rewardEligible: previewInfo.stateText == "READY");
+
+        snapshot.rewardStateText = previewInfo.stateText;
+        snapshot.rewardFormulaText = previewInfo.formulaText;
+        snapshot.rewardResultText = previewInfo.resultText;
+
+        sequenceUI.SetPerformanceSnapshot(snapshot);
+    }
+
+    private SequenceRewardPreviewInfo BuildRewardPreviewInfo()
+    {
+        if (activeDefinition == null)
+            return SequenceRewardPreviewInfo.Empty;
+
+        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
+        if (rewardPolicy == null)
+            return SequenceRewardPreviewInfo.Empty;
+
+        SequenceRewardContextBase previewContext =
+            performanceTracker.Performance.BuildRewardContextBase(
+                sequenceCompleted: true,
+                completedSteps: runtime.CompletedCycles,
+                attemptedSteps: runtime.CompletedCycles + 1);
+
+        SequenceRewardResolution previewResolution = rewardPolicy.Evaluate(previewContext, null);
+        return rewardPolicy.BuildPreview(previewContext, null, previewResolution);
     }
 
     private void ForceWindowUIToEnd(TimedSequenceActionRule rule, string phaseLabel, bool useNeutralBar)
@@ -693,6 +754,51 @@ public class BoomerangSequenceBridge : MonoBehaviour
             BoomerangFlightState.ReflectedOutbound => BoomerangDamageActionType.ReflectedOutbound,
             BoomerangFlightState.OrbitingExpanding => BoomerangDamageActionType.OrbitReward,
             _ => BoomerangDamageActionType.Unknown
+        };
+    }
+
+    private bool EvaluateRewardEligibilityPreview()
+    {
+        if (activeDefinition == null)
+            return false;
+
+        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
+        if (rewardPolicy == null)
+            return false;
+
+        SequenceRewardContextBase previewContext =
+            performanceTracker.Performance.BuildRewardContextBase(
+                sequenceCompleted: true,
+                completedSteps: runtime.CompletedCycles,
+                attemptedSteps: runtime.CompletedCycles + 1);
+
+        SequenceRewardResolution preview = rewardPolicy.Evaluate(previewContext, null);
+        return preview.shouldApply;
+    }
+
+    private TimedSequenceActionRule GetActiveRuleForCurrentPhase()
+    {
+        if (activeDefinition == null)
+            return null;
+
+        return runtime.Phase switch
+        {
+            BoomerangSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
+            BoomerangSequencePhase.ReturningToReflectZone => activeDefinition.ReflectRule,
+            BoomerangSequencePhase.ReflectWindow => activeDefinition.ReflectRule,
+            _ => activeDefinition.RecallRule
+        };
+    }
+
+    private string GetCurrentPhaseLabel()
+    {
+        return runtime.Phase switch
+        {
+            BoomerangSequencePhase.OutboundRecallWindow => "Recall",
+            BoomerangSequencePhase.ReturningToReflectZone => "Return",
+            BoomerangSequencePhase.ReflectWindow => "Reflect",
+            BoomerangSequencePhase.OrbitReward => "Orbit",
+            _ => "Sequence"
         };
     }
 }

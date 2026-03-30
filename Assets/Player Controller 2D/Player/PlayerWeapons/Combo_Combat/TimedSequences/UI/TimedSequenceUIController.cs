@@ -22,6 +22,15 @@ public class TimedSequenceUIController : MonoBehaviour
     [SerializeField] private TMP_Text progressText;
     [SerializeField] private TMP_Text phaseText;
 
+    [Header("Performance Text")]
+    [SerializeField] private TMP_Text hitsText;
+    [SerializeField] private TMP_Text uniqueTargetsText;
+    [SerializeField] private TMP_Text perfectShotsText;
+    [SerializeField] private TMP_Text perfectHitText;
+    [SerializeField] private TMP_Text rewardStateText;
+    [SerializeField] private TMP_Text rewardFormulaText;
+    [SerializeField] private TMP_Text rewardResultText;
+
     [Header("Behaviour")]
     [SerializeField] private bool hideWhenInactive = true;
     [SerializeField] private bool cursorUIOnlyForScreenAim = true;
@@ -93,16 +102,18 @@ public class TimedSequenceUIController : MonoBehaviour
 
         SetWindowProgress(
             normalizedTime: 0f,
-            currentShots: 0,
-            requiredShots: definition != null ? definition.RequiredSuccessfulShots : 0,
+            currentProgress: 0,
+            requiredProgress: definition != null ? definition.RequiredSuccessfulShots : 0,
             definition: definition);
+
+        SetPerformanceSnapshot(SequencePerformanceUISnapshot.Empty);
     }
 
     public void SetWindowProgress(
-        float normalizedTime,
-        int currentShots,
-        int requiredShots,
-        WeaponSequenceDefinitionSO definition)
+    float normalizedTime,
+    int currentProgress,
+    int requiredProgress,
+    WeaponSequenceDefinitionSO definition)
     {
         normalizedTime = Mathf.Clamp01(normalizedTime);
 
@@ -120,16 +131,16 @@ public class TimedSequenceUIController : MonoBehaviour
         }
 
         if (progressText != null)
-            progressText.text = $"{currentShots}/{requiredShots}";
+            progressText.text = $"{currentProgress}/{requiredProgress}";
 
         if (phaseText != null)
             phaseText.text = "Sequence";
     }
 
     public void SetWaitingDashEnd(
-        int currentShots,
-        int requiredShots,
-        WeaponSequenceDefinitionSO definition)
+    int currentProgress,
+    int requiredProgress,
+    WeaponSequenceDefinitionSO definition)
     {
         if (cursorRingView != null)
         {
@@ -145,7 +156,7 @@ public class TimedSequenceUIController : MonoBehaviour
         }
 
         if (progressText != null)
-            progressText.text = $"{currentShots}/{requiredShots}";
+            progressText.text = $"{currentProgress}/{requiredProgress}";
 
         if (phaseText != null)
             phaseText.text = "Dash";
@@ -233,6 +244,54 @@ public class TimedSequenceUIController : MonoBehaviour
 
         ResetFlashVisuals();
         SetCanvasVisible(!hideWhenInactive);
+        ResetPerformanceTexts();
+
+
+    }
+
+    public void SetPerformanceSnapshot(SequencePerformanceUISnapshot snapshot)
+    {
+        if (hitsText != null)
+            hitsText.text = FormatMetric(snapshot.metric1Label, snapshot.metric1Value);
+
+        if (uniqueTargetsText != null)
+            uniqueTargetsText.text = FormatMetric(snapshot.metric2Label, snapshot.metric2Value);
+
+        if (perfectShotsText != null)
+            perfectShotsText.text = FormatMetric(snapshot.metric3Label, snapshot.metric3Value);
+
+        if (perfectHitText != null)
+            perfectHitText.text = FormatMetric(snapshot.metric4Label, snapshot.metric4Value);
+
+        if (rewardStateText != null)
+        {
+            string label = string.IsNullOrWhiteSpace(snapshot.rewardLabel) ? "Reward" : snapshot.rewardLabel;
+            string state = string.IsNullOrWhiteSpace(snapshot.rewardStateText)
+                ? (snapshot.rewardEligible ? "READY" : "LOCKED")
+                : snapshot.rewardStateText;
+
+            rewardStateText.text = $"{label}: {state}";
+            rewardStateText.color = state == "READY"
+                ? new Color(0.4f, 1f, 0.4f, 1f)
+                : new Color(1f, 0.55f, 0.55f, 1f);
+        }
+
+        if (rewardFormulaText != null)
+            rewardFormulaText.text = snapshot.rewardFormulaText ?? string.Empty;
+
+        if (rewardResultText != null)
+            rewardResultText.text = snapshot.rewardResultText ?? string.Empty;
+    }
+
+    private string FormatMetric(string label, string value)
+    {
+        if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        if (string.IsNullOrWhiteSpace(label))
+            return value ?? string.Empty;
+
+        return $"{label}: {value}";
     }
 
     public void FlashJudgement(TimingJudgement judgement)
@@ -304,5 +363,18 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             rootCanvas.enabled = isVisible;
         }
+    }
+
+    private void ResetPerformanceTexts()
+    {
+        if (hitsText != null) hitsText.text = string.Empty;
+        if (uniqueTargetsText != null) uniqueTargetsText.text = string.Empty;
+        if (perfectShotsText != null) perfectShotsText.text = string.Empty;
+        if (perfectHitText != null) perfectHitText.text = string.Empty;
+        if (rewardStateText != null) rewardStateText.text = string.Empty;
+
+        if (rewardStateText != null) rewardStateText.text = string.Empty;
+        if (rewardFormulaText != null) rewardFormulaText.text = string.Empty;
+        if (rewardResultText != null) rewardResultText.text = string.Empty;
     }
 }

@@ -30,7 +30,7 @@ public class HitscanAttackModuleSO : AttackModuleSO
         Vector2 finalPoint = origin + direction * range;
 
         PlayerReferences playerRefs = weapon.GetComponentInParent<PlayerReferences>();
-        WeaponSequenceController sequenceController = playerRefs != null ? playerRefs.WeaponSequence : null;
+        WeaponSequenceControllerV2 sequenceController = playerRefs != null ? playerRefs.WeaponSequenceControllerV2 : null;
 
         for (int i = 0; i < hits.Length; i++)
         {

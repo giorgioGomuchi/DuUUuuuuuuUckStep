@@ -1,10 +1,22 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "WeaponSequenceDefinition", menuName = "Game/Player/Weapon Timed Sequence")]
-public class WeaponSequenceDefinitionSO : ScriptableObject
+public class WeaponSequenceDefinitionSO : SequenceDefinitionSOBase
 {
-    [Header("Id")]
-    [SerializeField] private string sequenceId = "SniperSequence";
+    [Header("Generic Runtime Timing")]
+    [Min(0f)]
+    [SerializeField] private float startupDelay = 0f;
+
+    [Min(0.05f)]
+    [SerializeField] private float decisionWindowDuration = 0.5f;
+
+    [Min(0f)]
+    [SerializeField] private float completionDelay = 0f;
+
+    [Header("Generic Runtime Fail Rules")]
+    [SerializeField] private bool failOnTimeout = true;
+    [SerializeField] private bool failOnWrongAction = true;
+    [SerializeField] private bool failOnForbiddenInput = true;
 
     [Header("Sequence Weapon")]
     [SerializeField] private WeaponDataSO sequenceWeaponData;
@@ -13,65 +25,48 @@ public class WeaponSequenceDefinitionSO : ScriptableObject
     [Tooltip("If <= 0, uses Required Successful Shots.")]
     [SerializeField] private int overrideAmmoCount = 0;
 
-    [Header("Progress")]
-    [Min(1)]
-    [SerializeField] private int requiredSuccessfulShots = 6;
-
-    [Header("Timing")]
-    [Min(0.05f)]
-    [SerializeField] private float decisionWindowDuration = 0.9f;
-
-    [Min(0f)]
-    [SerializeField] private float startupDelay = 0.08f;
-
+    [Header("Action Rules")]
     [SerializeField] private TimedSequenceActionRule shootRule = new();
     [SerializeField] private TimedSequenceActionRule dashRule = new();
 
-    [Header("Fail Rules")]
-    [SerializeField] private bool failOnTimeout = true;
+    [Header("Fail Rules (Weapon Specific)")]
     [SerializeField] private bool failOnSecondaryInput = true;
     [SerializeField] private bool failOnSwitchWeaponInput = true;
 
     [Header("Aim Guide")]
     [SerializeField] private bool showAimGuide = false;
 
-    [Header("UI")]
-    [SerializeField] private Vector3 playerUIWorldOffset = new(0f, 1.5f, 0f);
+    public override bool SupportsGenericRuntime => true;
 
-    [Header("Reward")]
-    [SerializeField] private SequenceRewardSO completionReward;
+    public override float StartupDelay => startupDelay;
+    public override float DecisionWindowDuration => decisionWindowDuration;
+    public override float CompletionDelay => completionDelay;
 
-    [Min(0f)]
-    [SerializeField] private float completionRewardDelay = 0.05f;
+    public override bool FailOnTimeout => failOnTimeout;
+    public override bool FailOnWrongAction => failOnWrongAction;
+    public override bool FailOnForbiddenInput => failOnForbiddenInput;
 
-    public string SequenceId => sequenceId;
     public WeaponDataSO SequenceWeaponData => sequenceWeaponData;
     public WeaponSlotType TargetSlot => targetSlot;
     public int OverrideAmmoCount => overrideAmmoCount;
-    public int RequiredSuccessfulShots => requiredSuccessfulShots;
-    public float DecisionWindowDuration => decisionWindowDuration;
-    public float StartupDelay => startupDelay;
+    public int RequiredSuccessfulShots => RequiredSteps;
     public TimedSequenceActionRule ShootRule => shootRule;
     public TimedSequenceActionRule DashRule => dashRule;
-    public bool FailOnTimeout => failOnTimeout;
     public bool FailOnSecondaryInput => failOnSecondaryInput;
     public bool FailOnSwitchWeaponInput => failOnSwitchWeaponInput;
     public bool ShowAimGuide => showAimGuide;
-    public Vector3 PlayerUIWorldOffset => playerUIWorldOffset;
-    public SequenceRewardSO CompletionReward => completionReward;
-    public float CompletionRewardDelay => completionRewardDelay;
 
     public int ResolveInitialAmmo()
     {
         return overrideAmmoCount > 0
             ? overrideAmmoCount
-            : Mathf.Max(1, requiredSuccessfulShots);
+            : Mathf.Max(1, RequiredSteps);
     }
 
-    public bool IsValid()
+    public override bool IsValid()
     {
-        return sequenceWeaponData != null &&
-               requiredSuccessfulShots > 0 &&
-               decisionWindowDuration > 0f;
+        return RequiredSteps > 0 &&
+               decisionWindowDuration > 0f &&
+               sequenceWeaponData != null;
     }
 }

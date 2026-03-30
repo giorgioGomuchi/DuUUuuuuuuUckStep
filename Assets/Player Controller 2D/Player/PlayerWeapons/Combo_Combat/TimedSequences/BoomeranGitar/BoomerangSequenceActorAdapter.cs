@@ -1,12 +1,11 @@
 using UnityEngine;
 
-public class BoomerangSequenceActorAdapter : SequenceActorAdapter
+public class BoomerangSequenceActorAdapter : MonoBehaviour
 {
     [SerializeField] private BoomerangProjectile2D projectile;
 
     public BoomerangProjectile2D Projectile => projectile;
-
-    public override bool IsValid => projectile != null;
+    public bool IsValid => projectile != null;
 
     private void Awake()
     {
@@ -19,7 +18,7 @@ public class BoomerangSequenceActorAdapter : SequenceActorAdapter
         this.projectile = projectile;
     }
 
-    public override void BeginReturn(float duration, float reflectActivationNormalized)
+    public void BeginReturn(float duration, float reflectActivationNormalized)
     {
         if (projectile == null)
             return;
@@ -27,7 +26,7 @@ public class BoomerangSequenceActorAdapter : SequenceActorAdapter
         projectile.StartCurvedReturn(duration, reflectActivationNormalized);
     }
 
-    public override void ResolveReflect(Vector2 direction)
+    public void ResolveReflect(Vector2 direction)
     {
         if (projectile == null)
             return;
@@ -35,7 +34,7 @@ public class BoomerangSequenceActorAdapter : SequenceActorAdapter
         projectile.ReflectFromMelee(direction);
     }
 
-    public override void BeginReward(float duration, int turns)
+    public void BeginReward(float duration, int turns)
     {
         if (projectile == null)
             return;
@@ -43,7 +42,7 @@ public class BoomerangSequenceActorAdapter : SequenceActorAdapter
         projectile.BeginOrbitReward(duration, turns);
     }
 
-    public override void FailAndCleanup(float destroyDelay)
+    public void FailAndCleanup(float destroyDelay)
     {
         if (projectile == null)
             return;
@@ -56,7 +55,7 @@ public class BoomerangSequenceActorAdapter : SequenceActorAdapter
             Destroy(projectile.gameObject, destroyDelay);
     }
 
-    public override bool CanReceiveReflect()
+    public bool CanReceiveReflect()
     {
         return projectile != null && projectile.IsReflectable;
     }

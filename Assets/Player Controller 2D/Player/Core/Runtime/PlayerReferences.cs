@@ -16,8 +16,9 @@ public class PlayerReferences : MonoBehaviour
     [SerializeField] private PlayerHealth health;
     [SerializeField] private WeaponSlotsController weaponSlots;
     [SerializeField] private WeaponOverrideController weaponOverride;
-    [SerializeField] private WeaponSequenceController weaponSequence;
     [SerializeField] private WeaponAimGuideController weaponAimGuide;
+    [SerializeField] private WeaponSequenceActorAdapter weaponSequenceActorAdapter;
+    [SerializeField] private WeaponSequenceControllerV2 weaponSequenceControllerV2;
 
     public PlayerInputReader Input => input;
     public PlayerStateMachine StateMachine => stateMachine;
@@ -32,8 +33,9 @@ public class PlayerReferences : MonoBehaviour
     public PlayerHealth Health => health;
     public WeaponSlotsController WeaponSlots => weaponSlots;
     public WeaponOverrideController WeaponOverride => weaponOverride;
-    public WeaponSequenceController WeaponSequence => weaponSequence;
     public WeaponAimGuideController WeaponAimGuide => weaponAimGuide;
+    public WeaponSequenceActorAdapter WeaponSequenceActorAdapter => weaponSequenceActorAdapter;
+    public WeaponSequenceControllerV2 WeaponSequenceControllerV2 => weaponSequenceControllerV2;
 
 #if UNITY_EDITOR
     private void OnValidate()
@@ -51,8 +53,9 @@ public class PlayerReferences : MonoBehaviour
         if (health == null) health = GetComponentInChildren<PlayerHealth>(true);
         if (weaponSlots == null) weaponSlots = GetComponentInChildren<WeaponSlotsController>(true);
         if (weaponOverride == null) weaponOverride = GetComponentInChildren<WeaponOverrideController>(true);
-        if (weaponSequence == null) weaponSequence = GetComponentInChildren<WeaponSequenceController>(true);
         if (weaponAimGuide == null) weaponAimGuide = GetComponentInChildren<WeaponAimGuideController>(true);
+        if (weaponSequenceActorAdapter == null) weaponSequenceActorAdapter = GetComponentInChildren<WeaponSequenceActorAdapter>(true);
+        if (weaponSequenceControllerV2 == null) weaponSequenceControllerV2 = GetComponentInChildren<WeaponSequenceControllerV2>(true);
     }
 #endif
 }
