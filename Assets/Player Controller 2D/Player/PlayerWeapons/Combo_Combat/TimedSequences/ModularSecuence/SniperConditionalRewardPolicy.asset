@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rewardMode: 1
   requireAtLeastOneHit: 1
-  minShotsThatHit: 2
+  minShotsThatHit: 3
   minUniqueTargetsHit: 0
   minPerfectShots: 0
   minPerfectShotsThatHit: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   attackModule: {fileID: 11400000, guid: 3b59058f7da7c974d86f8cda0dbf67c5, type: 2}
   useRhythmGate: 0
   cancelAttackOnFail: 0
-  perfectDamageMultiplier: 1.75
+  perfectDamageMultiplier: 1.905
   weaponName: 
   weaponIcon: {fileID: 21300000, guid: a13b1bde2efef0341bba8a14164c0abd, type: 3}
   damage: 1

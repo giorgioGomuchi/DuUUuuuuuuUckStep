@@ -13,6 +13,10 @@ MonoBehaviour:
   m_Name: BoomerangSequence
   m_EditorClassIdentifier: 
   sequenceId: BoomerangSequence
+  requiredSteps: 3
+  playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
+  rewardPolicy: {fileID: 11400000, guid: ee67d184cd98244488d1132ed11b6def, type: 2}
+  completionReward: {fileID: 0}
   recallRule:
     enabled: 1
     goodHalfWindowNormalized: 0.284
@@ -33,17 +37,13 @@ MonoBehaviour:
   reflectWindowDuration: 1
   uiPhaseTransitionHoldDuration: 0.08
   reflectActivationNormalized: 0.319
-  requiredSuccessfulCycles: 3
   allowDashDuringRecall: 1
   allowDashDuringReflect: 1
   failOnBadDash: 0
   failOnSwitchWeaponInput: 1
   clearWeaponOverrideOnFail: 1
-  modularRewardPolicy: {fileID: 11400000, guid: ee67d184cd98244488d1132ed11b6def, type: 2}
-  playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
   useOrbitReward: 1
   orbitDuration: 2
   orbitTurns: 0
-  rewardPolicy: {fileID: 0}
   destroyProjectileOnFail: 1
   destroyProjectileOnFailDelay: 0.2
