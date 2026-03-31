@@ -33,9 +33,13 @@ MonoBehaviour:
     allowPerfect: 1
   dashRule:
     enabled: 1
-    goodHalfWindowNormalized: 0.49
-    perfectHalfWindowNormalized: 0.49
-    allowPerfect: 0
+    goodHalfWindowNormalized: 0.121
+    perfectHalfWindowNormalized: 0.013
+    allowPerfect: 1
+  useDashResetLimitPerStep: 1
+  maxDashResetsPerCurrentStep: 1
+  useMaxSequenceDuration: 0
+  maxSequenceDurationSeconds: 8
   failOnSecondaryInput: 1
   failOnSwitchWeaponInput: 1
   showAimGuide: 1

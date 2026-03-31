@@ -35,7 +35,7 @@ public class BoomerangAttackModuleSO : AttackModuleSO
         }
 
         PlayerReferences playerRefs = weapon.GetComponentInParent<PlayerReferences>(true);
-        BoomerangSequenceBridge bridge = playerRefs != null && playerRefs.Combat != null
+        BoomerangSequenceController bridge = playerRefs != null && playerRefs.Combat != null
             ? playerRefs.Combat.BoomerangSequence
             : null;
 

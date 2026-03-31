@@ -4,18 +4,34 @@ public class PlayerCombatController : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private WeaponSlotsController weapons;
-    [SerializeField] private BoomerangSequenceBridge boomerangSequence;
+    [SerializeField] private BoomerangSequenceController boomerangSequence;
+    [SerializeField] private WeaponSequenceControllerV2 weaponSequenceController;
 
     public bool CombatBlocked { get; private set; }
-    public BoomerangSequenceBridge BoomerangSequence => boomerangSequence;
+    public BoomerangSequenceController BoomerangSequence => boomerangSequence;
 
     private void Awake()
     {
+        ResolveReferences();
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        ResolveReferences();
+    }
+#endif
+
+    private void ResolveReferences()
+    {
         if (weapons == null)
-            weapons = GetComponentInChildren<WeaponSlotsController>();
+            weapons = GetComponentInChildren<WeaponSlotsController>(true);
 
         if (boomerangSequence == null)
-            boomerangSequence = GetComponentInChildren<BoomerangSequenceBridge>();
+            boomerangSequence = GetComponentInChildren<BoomerangSequenceController>(true);
+
+        if (weaponSequenceController == null)
+            weaponSequenceController = GetComponentInChildren<WeaponSequenceControllerV2>(true);
     }
 
     public void SetAim(Vector2 dir)
@@ -37,6 +53,9 @@ public class PlayerCombatController : MonoBehaviour
             return;
 
         if (weapons == null || CombatBlocked)
+            return;
+
+        if (weaponSequenceController != null && weaponSequenceController.IsSequenceActive)
             return;
 
         if (boomerangSequence != null && boomerangSequence.IsSequenceActive)

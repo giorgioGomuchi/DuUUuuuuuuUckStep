@@ -17,7 +17,7 @@ MonoBehaviour:
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
-  weaponIcon: {fileID: 21300000, guid: c9152ff1838673045b4d5a716caccac6, type: 3}
+  weaponIcon: {fileID: 21300000, guid: f2c7c971169f4d54ab13b318aaf16d9a, type: 3}
   damage: 1
   cooldown: 1
   targetLayer:
@@ -26,10 +26,12 @@ MonoBehaviour:
   cameraShakeDuration: 0.1
   cameraShakeStrength: 0.15
   knockbackForce: 2.5
-  projectilePrefab: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
+  preferredFireInputMode: 0
+  cadenceMode: 0
+  projectilePrefab: {fileID: 5341200751948304790, guid: f1715a73c7abff14584a824f2c6ae644, type: 3}
   projectileSpeed: 12
   pellets: 6
-  spreadAngleDegrees: 18
+  spreadAngleDegrees: 30
   randomSpread: 1
   minPelletSpeed: 10
   maxPelletSpeed: 15

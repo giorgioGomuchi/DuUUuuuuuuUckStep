@@ -373,7 +373,6 @@ public class TimedSequenceUIController : MonoBehaviour
         if (perfectHitText != null) perfectHitText.text = string.Empty;
         if (rewardStateText != null) rewardStateText.text = string.Empty;
 
-        if (rewardStateText != null) rewardStateText.text = string.Empty;
         if (rewardFormulaText != null) rewardFormulaText.text = string.Empty;
         if (rewardResultText != null) rewardResultText.text = string.Empty;
     }

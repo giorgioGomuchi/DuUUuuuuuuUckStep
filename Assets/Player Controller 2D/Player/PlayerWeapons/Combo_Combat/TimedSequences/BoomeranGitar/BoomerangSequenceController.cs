@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BoomerangSequenceBridge : MonoBehaviour
+public class BoomerangSequenceController : MonoBehaviour
 {
     [Header("Refs")]
     [SerializeField] private PlayerReferences playerReferences;
@@ -21,6 +21,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
     private bool orbitRewardActive;
     private BoomerangSequenceActorAdapter activeActorAdapter;
 
+    private BoomerangSequenceRewardEvaluator rewardEvaluator;
+    private BoomerangSequenceUIPresenter uiPresenter;
+
     public bool IsSequenceActive => runtime.IsRunning;
     public bool IsInOrbitReward => orbitRewardActive;
     public BoomerangSequencePhase ActivePhase => runtime.Phase;
@@ -34,6 +37,9 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
         if (sequenceUI == null)
             sequenceUI = GetComponentInChildren<TimedSequenceUIController>(true);
+
+        rewardEvaluator = new BoomerangSequenceRewardEvaluator();
+        uiPresenter = new BoomerangSequenceUIPresenter(sequenceUI);
 
         pendingTransition.Clear();
     }
@@ -71,11 +77,11 @@ public class BoomerangSequenceBridge : MonoBehaviour
         performanceTracker.ResetSequence();
         performanceTracker.BeginCycle(1);
 
-        sequenceUI?.ShowBoomerang(activeDefinition, playerReferences);
+        uiPresenter?.Show(activeDefinition, playerReferences);
         UpdateWindowUI();
 
         if (debugLogs)
-            Debug.Log("[BoomerangSequenceBridge] Sequence started.", this);
+            Debug.Log("[BoomerangSequenceController] Sequence started.", this);
 
         return true;
     }
@@ -133,7 +139,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
             runtime.GetWindowNormalizedTime(),
             activeDefinition.ReflectRule);
 
-        sequenceUI?.FlashJudgement(judgement);
+        uiPresenter?.FlashJudgement(judgement);
 
         if (!IsSuccess(judgement))
         {
@@ -171,7 +177,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
         {
             BoomerangSequencePerformance performance = performanceTracker.Performance;
             Debug.Log(
-                $"[BoomerangSequenceBridge] Damage registered action={actionType} totalHits={performance.TotalHitEvents} totalUnique={performance.TotalUniqueEnemiesDamaged} cycle={performance.CurrentCycleNumber} cycleHits={performance.CurrentCycleHitEvents} cycleUnique={performance.CurrentCycleUniqueEnemiesDamaged}",
+                $"[BoomerangSequenceController] Damage registered action={actionType} totalHits={performance.TotalHitEvents} totalUnique={performance.TotalUniqueEnemiesDamaged} cycle={performance.CurrentCycleNumber} cycleHits={performance.CurrentCycleHitEvents} cycleUnique={performance.CurrentCycleUniqueEnemiesDamaged}",
                 this);
         }
     }
@@ -187,7 +193,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (clearOverride)
             playerReferences?.WeaponOverride?.ClearActiveOverride();
 
-        sequenceUI?.Hide();
+        uiPresenter?.Hide();
 
         activeProjectile = null;
         activeWeapon = null;
@@ -278,7 +284,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (runtime.IsWindowExpired())
         {
             ForceWindowUIToEnd(activeDefinition.RecallRule, "Recall", false);
-            sequenceUI?.FlashJudgement(default);
+            uiPresenter?.FlashJudgement(default);
             activeProjectile.EnterDriftLost();
             FailSequence("Recall timing expired.");
             return;
@@ -291,7 +297,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
             runtime.GetWindowNormalizedTime(),
             activeDefinition.RecallRule);
 
-        sequenceUI?.FlashJudgement(judgement);
+        uiPresenter?.FlashJudgement(judgement);
 
         if (!IsSuccess(judgement))
         {
@@ -346,7 +352,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (runtime.IsWindowExpired())
         {
             ForceWindowUIToEnd(activeDefinition.ReflectRule, "Reflect", false);
-            sequenceUI?.FlashJudgement(default);
+            uiPresenter?.FlashJudgement(default);
             activeProjectile.EnterDriftLost();
             FailSequence("Reflect timing expired.");
         }
@@ -364,7 +370,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
             runtime.GetWindowNormalizedTime(),
             activeDefinition.DashRule);
 
-        sequenceUI?.FlashJudgement(dashJudgement);
+        uiPresenter?.FlashJudgement(dashJudgement);
 
         if (IsSuccess(dashJudgement))
         {
@@ -410,31 +416,21 @@ public class BoomerangSequenceBridge : MonoBehaviour
             return;
         }
 
-        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
-
         SequenceRewardContextBase rewardContext =
-            performanceTracker.Performance.BuildRewardContextBase(
-                sequenceCompleted: true,
-                completedSteps: runtime.CompletedCycles,
-                attemptedSteps: runtime.CompletedCycles);
+            rewardEvaluator.BuildContext(
+                performanceTracker.Performance,
+                runtime.CompletedCycles,
+                runtime.CompletedCycles);
 
         SequenceRewardResolution resolution =
-            rewardPolicy != null
-                ? rewardPolicy.Evaluate(rewardContext, null)
-                : new SequenceRewardResolution
-                {
-                    shouldApply = true,
-                    duration = activeDefinition.OrbitDuration,
-                    ammo = 0,
-                    magnitude = 0f
-                };
+            rewardEvaluator.Evaluate(activeDefinition.RewardPolicy, rewardContext);
 
         if (!resolution.shouldApply)
         {
             if (debugLogs)
             {
                 Debug.Log(
-                    $"[BoomerangSequenceBridge] Orbit reward skipped by policy. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount}",
+                    $"[BoomerangSequenceController] Orbit reward skipped by policy. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount}",
                     this);
             }
 
@@ -442,14 +438,10 @@ public class BoomerangSequenceBridge : MonoBehaviour
             return;
         }
 
-        float orbitDuration = resolution.duration > 0f
-            ? resolution.duration
-            : activeDefinition.OrbitDuration;
-
         runtime.BeginOrbitReward();
         orbitRewardActive = true;
 
-        sequenceUI?.Hide();
+        uiPresenter?.Hide();
 
         playerReferences?.Combat?.CancelAllAttacks();
         playerReferences?.WeaponOverride?.ClearActiveOverride();
@@ -457,12 +449,12 @@ public class BoomerangSequenceBridge : MonoBehaviour
         if (debugLogs)
         {
             Debug.Log(
-                $"[BoomerangSequenceBridge] Orbit reward granted. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount} finalDuration={orbitDuration}",
+                $"[BoomerangSequenceController] Orbit reward granted. uniqueEnemies={rewardContext.uniqueTargetCount} totalHits={rewardContext.hitCount} finalDuration={resolution.duration:F2}",
                 this);
         }
 
         BoomerangOrbitRewardApplySO orbitRewardApply =
-    activeDefinition.CompletionReward as BoomerangOrbitRewardApplySO;
+            activeDefinition.CompletionReward as BoomerangOrbitRewardApplySO;
 
         if (orbitRewardApply != null)
         {
@@ -470,14 +462,13 @@ public class BoomerangSequenceBridge : MonoBehaviour
                 rewardContext,
                 resolution,
                 activeActorAdapter,
-                activeDefinition.OrbitDuration,
-                activeDefinition.OrbitTurns);
+                activeDefinition.OrbitDuration);
         }
         else
         {
             activeActorAdapter.BeginReward(
-                orbitDuration,
-                activeDefinition.OrbitTurns);
+                resolution.duration > 0f ? resolution.duration : activeDefinition.OrbitDuration,
+                0);
         }
     }
 
@@ -487,7 +478,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
         runtime.Complete();
 
-        sequenceUI?.Hide();
+        uiPresenter?.Hide();
         playerReferences?.Combat?.CancelAllAttacks();
         playerReferences?.WeaponOverride?.ClearActiveOverride();
 
@@ -505,15 +496,16 @@ public class BoomerangSequenceBridge : MonoBehaviour
             Destroy(projectileToDestroy.gameObject);
 
         if (debugLogs)
-            Debug.Log("[BoomerangSequenceBridge] Sequence completed.", this);
+            Debug.Log("[BoomerangSequenceController] Sequence completed.", this);
     }
 
     private void FailSequence(string reason)
     {
         BoomerangProjectile2D projectileToDestroy = activeProjectile;
+        BoomerangSequenceActorAdapter actorAdapterToCleanup = activeActorAdapter;
 
         Debug.LogWarning(
-            $"[BoomerangSequenceBridge] FAIL reason='{reason}' phase={runtime.Phase} cycles={runtime.CompletedCycles} projectile={(projectileToDestroy != null ? projectileToDestroy.name : "null")}",
+            $"[BoomerangSequenceController] FAIL reason='{reason}' phase={runtime.Phase} cycles={runtime.CompletedCycles} projectile={(projectileToDestroy != null ? projectileToDestroy.name : "null")}",
             this);
 
         bool clearOverride = activeDefinition == null || activeDefinition.ClearWeaponOverrideOnFail;
@@ -524,7 +516,7 @@ public class BoomerangSequenceBridge : MonoBehaviour
         pendingTransition.Clear();
 
         UnbindProjectileEvents();
-        sequenceUI?.Hide();
+        uiPresenter?.Hide();
 
         activeProjectile = null;
         activeWeapon = null;
@@ -532,14 +524,13 @@ public class BoomerangSequenceBridge : MonoBehaviour
         activeDefinition = null;
         activeActorAdapter = null;
         orbitRewardActive = false;
-        activeActorAdapter = null;
 
         if (clearOverride)
             playerReferences?.WeaponOverride?.ClearActiveOverride();
 
-        if (destroyProjectileOnFail && activeActorAdapter != null)
+        if (destroyProjectileOnFail && actorAdapterToCleanup != null)
         {
-            activeActorAdapter.FailAndCleanup(destroyDelay);
+            actorAdapterToCleanup.FailAndCleanup(destroyDelay);
         }
         else if (destroyProjectileOnFail && projectileToDestroy != null)
         {
@@ -552,92 +543,50 @@ public class BoomerangSequenceBridge : MonoBehaviour
 
     private void UpdateWindowUI()
     {
-        if (sequenceUI == null || activeDefinition == null)
+        if (activeDefinition == null || rewardEvaluator == null || uiPresenter == null)
             return;
 
-        bool useNeutralBar =
-            runtime.Phase == BoomerangSequencePhase.ReturningToReflectZone;
+        SequenceRewardContextBase previewContext =
+            rewardEvaluator.BuildContext(
+                performanceTracker.Performance,
+                runtime.CompletedCycles,
+                runtime.CompletedCycles + 1);
 
-        sequenceUI.SetBoomerangWindowProgress(
-            runtime.GetWindowNormalizedTime(),
-            runtime.CompletedCycles,
-            activeDefinition.RequiredSuccessfulCycles,
-            GetActiveRuleForCurrentPhase(),
-            GetCurrentPhaseLabel(),
-            useNeutralBar);
+        SequenceRewardResolution previewResolution =
+            rewardEvaluator.Evaluate(activeDefinition.RewardPolicy, previewContext);
 
-        SequenceRewardPreviewInfo previewInfo = BuildRewardPreviewInfo();
+        SequenceRewardPreviewInfo previewInfo =
+            rewardEvaluator.BuildPreview(activeDefinition.RewardPolicy, previewContext, previewResolution);
 
         SequencePerformanceUISnapshot snapshot =
             performanceTracker.Performance.BuildGenericUISnapshot(
                 currentProgress: runtime.CompletedCycles,
                 requiredProgress: activeDefinition.RequiredSuccessfulCycles,
-                rewardEligible: previewInfo.stateText == "READY");
+                rewardEligible: previewResolution.shouldApply);
 
         snapshot.rewardStateText = previewInfo.stateText;
         snapshot.rewardFormulaText = previewInfo.formulaText;
         snapshot.rewardResultText = previewInfo.resultText;
 
-        sequenceUI.SetPerformanceSnapshot(snapshot);
+        uiPresenter.Update(runtime, activeDefinition, snapshot);
     }
 
-    private SequenceRewardPreviewInfo BuildRewardPreviewInfo()
-    {
-        if (activeDefinition == null)
-            return SequenceRewardPreviewInfo.Empty;
-
-        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
-        if (rewardPolicy == null)
-            return SequenceRewardPreviewInfo.Empty;
-
-        SequenceRewardContextBase previewContext =
-            performanceTracker.Performance.BuildRewardContextBase(
-                sequenceCompleted: true,
-                completedSteps: runtime.CompletedCycles,
-                attemptedSteps: runtime.CompletedCycles + 1);
-
-        SequenceRewardResolution previewResolution = rewardPolicy.Evaluate(previewContext, null);
-        return rewardPolicy.BuildPreview(previewContext, null, previewResolution);
-    }
+    
 
     private void ForceWindowUIToEnd(TimedSequenceActionRule rule, string phaseLabel, bool useNeutralBar)
     {
-        if (sequenceUI == null || activeDefinition == null)
+        if (activeDefinition == null || uiPresenter == null)
             return;
 
-        sequenceUI.SetBoomerangWindowProgress(
-            1f,
-            runtime.CompletedCycles,
-            activeDefinition.RequiredSuccessfulCycles,
+        uiPresenter.ForceWindowToEnd(
+            runtime,
+            activeDefinition,
             rule,
             phaseLabel,
             useNeutralBar);
     }
 
-    private TimedSequenceActionRule GetActiveBarRule()
-    {
-        return runtime.Phase switch
-        {
-            BoomerangSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
-            BoomerangSequencePhase.ReturningToReflectZone => null,
-            BoomerangSequencePhase.ReflectWindow => activeDefinition.ReflectRule,
-            _ => null
-        };
-    }
-
-    private string GetPhaseLabel()
-    {
-        return runtime.Phase switch
-        {
-            BoomerangSequencePhase.OutboundRecallWindow => "Recall",
-            BoomerangSequencePhase.ReturningToReflectZone => "Return",
-            BoomerangSequencePhase.ReflectWindow => "Reflect",
-            BoomerangSequencePhase.OrbitReward => "Orbit",
-            BoomerangSequencePhase.Completed => "Complete",
-            BoomerangSequencePhase.Failed => "Fail",
-            _ => "Boomerang"
-        };
-    }
+    
 
     private void BindProjectileEvents(BoomerangProjectile2D projectile)
     {
@@ -757,48 +706,4 @@ public class BoomerangSequenceBridge : MonoBehaviour
         };
     }
 
-    private bool EvaluateRewardEligibilityPreview()
-    {
-        if (activeDefinition == null)
-            return false;
-
-        SequenceRewardPolicySOBase rewardPolicy = activeDefinition.RewardPolicy;
-        if (rewardPolicy == null)
-            return false;
-
-        SequenceRewardContextBase previewContext =
-            performanceTracker.Performance.BuildRewardContextBase(
-                sequenceCompleted: true,
-                completedSteps: runtime.CompletedCycles,
-                attemptedSteps: runtime.CompletedCycles + 1);
-
-        SequenceRewardResolution preview = rewardPolicy.Evaluate(previewContext, null);
-        return preview.shouldApply;
-    }
-
-    private TimedSequenceActionRule GetActiveRuleForCurrentPhase()
-    {
-        if (activeDefinition == null)
-            return null;
-
-        return runtime.Phase switch
-        {
-            BoomerangSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
-            BoomerangSequencePhase.ReturningToReflectZone => activeDefinition.ReflectRule,
-            BoomerangSequencePhase.ReflectWindow => activeDefinition.ReflectRule,
-            _ => activeDefinition.RecallRule
-        };
-    }
-
-    private string GetCurrentPhaseLabel()
-    {
-        return runtime.Phase switch
-        {
-            BoomerangSequencePhase.OutboundRecallWindow => "Recall",
-            BoomerangSequencePhase.ReturningToReflectZone => "Return",
-            BoomerangSequencePhase.ReflectWindow => "Reflect",
-            BoomerangSequencePhase.OrbitReward => "Orbit",
-            _ => "Sequence"
-        };
-    }
 }

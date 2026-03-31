@@ -29,6 +29,19 @@ public class WeaponSequenceDefinitionSO : SequenceDefinitionSOBase
     [SerializeField] private TimedSequenceActionRule shootRule = new();
     [SerializeField] private TimedSequenceActionRule dashRule = new();
 
+    [Header("Dash Reset Limits")]
+    [SerializeField] private bool useDashResetLimitPerStep = true;
+
+    [Min(0)]
+    [SerializeField] private int maxDashResetsPerCurrentStep = 1;
+
+    [Header("Sequence Lifetime")]
+    [SerializeField] private bool useMaxSequenceDuration = false;
+
+    [Min(0.1f)]
+    [SerializeField] private float maxSequenceDurationSeconds = 8f;
+
+
     [Header("Fail Rules (Weapon Specific)")]
     [SerializeField] private bool failOnSecondaryInput = true;
     [SerializeField] private bool failOnSwitchWeaponInput = true;
@@ -49,6 +62,11 @@ public class WeaponSequenceDefinitionSO : SequenceDefinitionSOBase
     public WeaponDataSO SequenceWeaponData => sequenceWeaponData;
     public WeaponSlotType TargetSlot => targetSlot;
     public int OverrideAmmoCount => overrideAmmoCount;
+
+    public bool UseDashResetLimitPerStep => useDashResetLimitPerStep;
+    public int MaxDashResetsPerCurrentStep => maxDashResetsPerCurrentStep;
+    public bool UseMaxSequenceDuration => useMaxSequenceDuration;
+    public float MaxSequenceDurationSeconds => maxSequenceDurationSeconds;
     public int RequiredSuccessfulShots => RequiredSteps;
     public TimedSequenceActionRule ShootRule => shootRule;
     public TimedSequenceActionRule DashRule => dashRule;

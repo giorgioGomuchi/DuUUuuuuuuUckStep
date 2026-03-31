@@ -982,6 +982,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapons: {fileID: 6295541557169382276}
   boomerangSequence: {fileID: 2827324200393827760}
+  weaponSequenceController: {fileID: 1968841603986365090}
 --- !u!114 &5625972972980401305
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2301,7 +2302,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 8.173584, z: 0, w: 0}
+  m_margin: {x: 0, y: 8.173584, z: -153.43286, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -4832,7 +4833,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c2afa5ac724c954890e28ad33a534ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponData: {fileID: 11400000, guid: 5428d5a0cbe8e0c45b10190cf8b9c313, type: 2}
+  weaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
   firePoint: {fileID: 7420243928870926338}
   weaponVisual: {fileID: 6804898307386719841}
   debugLogs: 1
@@ -5260,6 +5261,7 @@ MonoBehaviour:
   movement: {fileID: 2894091310462672857}
   health: {fileID: 4511489452296112092}
   dashVfx: {fileID: 9205514326308009542}
+  playerReferences: {fileID: 4205475652766426246}
 --- !u!1 &9077316444937556359
 GameObject:
   m_ObjectHideFlags: 0

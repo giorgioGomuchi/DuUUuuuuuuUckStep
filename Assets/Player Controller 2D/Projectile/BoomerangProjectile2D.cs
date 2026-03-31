@@ -19,7 +19,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     private Transform owner;
     private Transform ownerRoot;
-    private BoomerangSequenceBridge sequenceBridge;
+    private BoomerangSequenceController sequenceBridge;
     private BoomerangProjectileConfig config;
     private bool finishedNotified;
 
@@ -81,7 +81,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         NotifyFinished();
     }
 
-    public void SetSequenceBridge(BoomerangSequenceBridge bridge)
+    public void SetSequenceBridge(BoomerangSequenceController bridge)
     {
         sequenceBridge = bridge;
     }

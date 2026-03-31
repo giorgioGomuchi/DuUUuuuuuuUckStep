@@ -9,6 +9,7 @@ public class PlayerDashController : MonoBehaviour
     [SerializeField] private PlayerMovement movement;
     [SerializeField] private PlayerHealth health;
     [SerializeField] private DashVfxController dashVfx;
+    [SerializeField] private PlayerReferences playerReferences;
 
     private Vector2 dashDirection = Vector2.right;
     private float startTime;
@@ -28,7 +29,18 @@ public class PlayerDashController : MonoBehaviour
         if (movement == null) movement = GetComponentInChildren<PlayerMovement>();
         if (health == null) health = GetComponentInParent<PlayerHealth>();
         if (dashVfx == null) dashVfx = GetComponentInChildren<DashVfxController>();
+        if (playerReferences == null) playerReferences = GetComponentInParent<PlayerReferences>();
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (movement == null) movement = GetComponentInChildren<PlayerMovement>();
+        if (health == null) health = GetComponentInParent<PlayerHealth>();
+        if (dashVfx == null) dashVfx = GetComponentInChildren<DashVfxController>();
+        if (playerReferences == null) playerReferences = GetComponentInParent<PlayerReferences>();
+    }
+#endif
 
     public void SetConfig(PlayerConfigSO playerConfig)
     {
@@ -49,6 +61,9 @@ public class PlayerDashController : MonoBehaviour
             health.SetInvulnerable(true);
 
         ApplyDashVelocity();
+
+        // Notifica al sistema modular de secuencia SOLO cuando el dash ya ha arrancado.
+        playerReferences?.WeaponSequenceControllerV2?.NotifySuccessfulDashDuringSequence();
     }
 
     public void Tick()

@@ -12,6 +12,10 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
     [SerializeField] private bool verboseLogs = false;
 
     private readonly WeaponSequencePerformanceTracker tracker = new();
+    private int dashResetsUsedInCurrentStep;
+   
+    //OJO que aqui estamos metiendo timpo para limitar el tiempo de la secuencia cuidao que igual sobra
+    private float sequenceStartTime;
 
     protected override void Update()
     {
@@ -40,6 +44,16 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         float normalizedTime = runtime.GetWindowNormalizedTime();
         UpdateWindowUI(normalizedTime);
 
+        if (definition.UseMaxSequenceDuration)
+        {
+            float elapsed = Time.time - sequenceStartTime;
+            if (elapsed >= definition.MaxSequenceDurationSeconds)
+            {
+                FailSequence(SequenceFailReason.Timeout);
+                return;
+            }
+        }
+
         if (definition.FailOnSwitchWeaponInput && input.ConsumeSwitchWeaponPressed())
         {
             FailSequence(SequenceFailReason.ForbiddenInput);
@@ -58,11 +72,8 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
             return;
         }
 
-        if (input.ConsumeDashPressed())
-        {
-            HandleDash(normalizedTime);
-            return;
-        }
+        
+
     }
 
     public bool StartSequence(WeaponSequenceDefinitionSO definition)
@@ -81,6 +92,10 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         bool started = BeginSequenceInternal(definition, tracker, actorAdapterComponent);
         if (!started)
             return false;
+
+        //OJO que aqui estamos metiendo timpo para limitar el tiempo de la secuencia cuidao que igual sobra
+        dashResetsUsedInCurrentStep = 0;
+        sequenceStartTime = Time.time;
 
         uiController?.Show(definition, playerReferences);
 
@@ -101,6 +116,69 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         tracker.RegisterShotHit(target, 0f);
     }
 
+    public void NotifySuccessfulDashDuringSequence()
+    {
+        if (!runtime.IsRunning || runtime.Phase != SequencePhase.StepWindow)
+            return;
+
+        WeaponSequenceDefinitionSO definition = activeDefinition as WeaponSequenceDefinitionSO;
+        if (definition == null || !definition.DashRule.Enabled)
+            return;
+
+        float normalizedTime = runtime.GetWindowNormalizedTime();
+        TimingJudgement judgement = EvaluateTiming(normalizedTime, definition.DashRule);
+
+        if (judgement == TimingJudgement.Fail)
+        {
+            if (definition.FailOnWrongAction)
+                FailSequence(SequenceFailReason.WrongAction);
+
+            return;
+        }
+
+        if (definition.UseDashResetLimitPerStep &&
+            dashResetsUsedInCurrentStep >= definition.MaxDashResetsPerCurrentStep)
+        {
+            if (definition.FailOnWrongAction)
+                FailSequence(SequenceFailReason.WrongAction);
+
+            return;
+        }
+
+        tracker.RegisterDash(judgement);
+        dashResetsUsedInCurrentStep++;
+
+        uiController?.FlashJudgement(judgement);
+
+        // Reinicia solo la ventana del step actual sin perder el progreso ya conseguido.
+        runtime.OpenCurrentStepWindow();
+        playerReferences?.Input?.ClearBufferedInputs();
+
+        if (verboseLogs)
+        {
+            Debug.Log(
+                $"[WeaponSequenceControllerV2] Dash reset current shot window -> step={runtime.CurrentStepIndex} completed={runtime.CompletedSteps} dashResetsUsed={dashResetsUsedInCurrentStep}",
+                this);
+        }
+    }
+
+    private static TimingJudgement EvaluateTiming(float normalizedTime, TimedSequenceActionRule rule)
+    {
+        if (rule == null || !rule.Enabled)
+            return TimingJudgement.Fail;
+
+        float center = 0.5f;
+        float distance = Mathf.Abs(normalizedTime - center);
+
+        if (rule.AllowPerfect && distance <= rule.PerfectHalfWindowNormalized)
+            return TimingJudgement.Perfect;
+
+        if (distance <= rule.GoodHalfWindowNormalized)
+            return TimingJudgement.Good;
+
+        return TimingJudgement.Fail;
+    }
+
     protected override void TickStepWindow()
     {
         base.TickStepWindow();
@@ -111,15 +189,23 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
 
     protected override void CompleteSequenceNow()
     {
-        tracker.EndShotIfOpen();
 
+        base.CompleteSequenceNow();
+    }
+
+    protected override void OnSequenceCompletingStarted()
+    {
+        tracker.EndShotIfOpen();
         uiController?.Hide();
         aimGuideController?.HideGuide();
-        base.CompleteSequenceNow();
     }
 
     protected override void FailSequence(SequenceFailReason reason)
     {
+
+       
+
+
         tracker.EndShotIfOpen();
 
         uiController?.Hide();
@@ -129,6 +215,8 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
 
     protected override void CancelSequenceInternal(bool notifyActor = true)
     {
+      
+
         tracker.EndShotIfOpen();
 
         uiController?.Hide();
@@ -213,33 +301,7 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
 
         runtime.MarkCurrentStepCompleted();
 
-        if (runtime.Phase == SequencePhase.Completed)
-        {
-            CompleteSequenceNow();
-            return;
-        }
-
-        if (runtime.IsRunning && runtime.Phase == SequencePhase.StepWindow)
-            playerReferences?.Input?.ClearBufferedInputs();
-    }
-
-    private void HandleDash(float normalizedTime)
-    {
-        WeaponSequenceDefinitionSO definition = activeDefinition as WeaponSequenceDefinitionSO;
-        if (definition == null)
-            return;
-
-        SequenceActionResult result = actorAdapter.TryHandleDashAction(normalizedTime);
-        if (!result.accepted)
-        {
-            if (definition.FailOnWrongAction)
-                FailSequence(SequenceFailReason.WrongAction);
-
-            return;
-        }
-
-        tracker.RegisterDash(result.perfect ? TimingJudgement.Perfect : TimingJudgement.Good);
-        runtime.MarkCurrentStepCompleted();
+        dashResetsUsedInCurrentStep = 0;
 
         if (runtime.Phase == SequencePhase.Completed)
         {
@@ -250,7 +312,6 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         if (runtime.IsRunning && runtime.Phase == SequencePhase.StepWindow)
             playerReferences?.Input?.ClearBufferedInputs();
     }
-
 
 
     private void UpdateWindowUI(float normalizedTime)
@@ -265,7 +326,7 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         SequenceRewardPreviewInfo previewInfo = BuildRewardPreviewInfo(definition);
 
         SequencePerformanceUISnapshot snapshot = tracker.BuildUISnapshot(
-            currentProgress: tracker.SuccessfulActions,
+            currentProgress: runtime.CompletedSteps,
             requiredProgress: definition.RequiredSuccessfulShots,
             rewardEligible: previewInfo.stateText == "READY");
 
@@ -298,19 +359,4 @@ public class WeaponSequenceControllerV2 : SequenceControllerBase
         return definition.RewardPolicy.BuildPreview(previewContext, definition, previewResolution);
     }
 
-    private bool EvaluateRewardEligibilityPreview(WeaponSequenceDefinitionSO definition)
-    {
-        if (definition == null || definition.RewardPolicy == null)
-            return false;
-
-        SequenceRewardContextBase previewContext = tracker.BuildRewardContext(
-            sequenceCompleted: true,
-            completedSteps: runtime.CompletedSteps,
-            attemptedSteps: runtime.CurrentStepIndex + 1);
-
-        SequenceRewardResolution preview =
-            definition.RewardPolicy.Evaluate(previewContext, definition);
-
-        return preview.shouldApply;
-    }
 }

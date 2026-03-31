@@ -32,7 +32,6 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
     private SerializedProperty modularRewardPolicyProp;
     private SerializedProperty useOrbitRewardProp;
     private SerializedProperty orbitDurationProp;
-    private SerializedProperty orbitTurnsProp;
     private SerializedProperty rewardPolicyProp;
 
     private void OnEnable()
@@ -65,7 +64,6 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
         modularRewardPolicyProp = serializedObject.FindProperty("rewardPolicy");
         useOrbitRewardProp = serializedObject.FindProperty("useOrbitReward");
         orbitDurationProp = serializedObject.FindProperty("orbitDuration");
-        orbitTurnsProp = serializedObject.FindProperty("orbitTurns");
     }
 
     public override void OnInspectorGUI()
@@ -121,10 +119,6 @@ public class BoomerangSequenceDefinitionSOEditor : Editor
         if (useOrbitRewardProp.boolValue)
         {
             EditorGUILayout.PropertyField(orbitDurationProp);
-            EditorGUILayout.PropertyField(orbitTurnsProp);
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField("Legacy Reward Policy", EditorStyles.miniBoldLabel);
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Modular Reward Policy", EditorStyles.miniBoldLabel);

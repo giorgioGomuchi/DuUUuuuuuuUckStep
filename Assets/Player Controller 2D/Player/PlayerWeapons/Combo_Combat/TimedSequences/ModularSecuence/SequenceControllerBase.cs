@@ -11,6 +11,7 @@ public abstract class SequenceControllerBase : MonoBehaviour
     protected SequencePerformanceTrackerBase performanceTracker;
     protected ISequenceActorAdapter actorAdapter;
 
+    private bool completingStartedHandled;
     public bool IsSequenceActive => runtime.IsRunning;
     public SequencePhase ActivePhase => runtime.Phase;
     public SequenceDefinitionSOBase ActiveDefinition => activeDefinition;
@@ -57,6 +58,7 @@ public abstract class SequenceControllerBase : MonoBehaviour
         activeDefinition = definition;
         performanceTracker = tracker;
         actorAdapter = adapter;
+        completingStartedHandled = false;
 
         performanceTracker.ResetTracker();
         actorAdapter.Bind();
@@ -87,6 +89,7 @@ public abstract class SequenceControllerBase : MonoBehaviour
         activeDefinition = null;
         performanceTracker = null;
         actorAdapter = null;
+        completingStartedHandled = false;
     }
 
     protected virtual void TickStepWindow()
@@ -105,6 +108,12 @@ public abstract class SequenceControllerBase : MonoBehaviour
 
     protected virtual void TickCompleting()
     {
+        if (!completingStartedHandled)
+        {
+            completingStartedHandled = true;
+            OnSequenceCompletingStarted();
+        }
+
         if (!runtime.IsCompletionDelayElapsed())
             return;
 
@@ -196,10 +205,15 @@ public abstract class SequenceControllerBase : MonoBehaviour
         activeDefinition = null;
         performanceTracker = null;
         actorAdapter = null;
+        completingStartedHandled = false;
     }
 
     private void HandleExternalFail(SequenceFailReason reason)
     {
         FailSequence(reason);
+    }
+
+    protected virtual void OnSequenceCompletingStarted()
+    {
     }
 }

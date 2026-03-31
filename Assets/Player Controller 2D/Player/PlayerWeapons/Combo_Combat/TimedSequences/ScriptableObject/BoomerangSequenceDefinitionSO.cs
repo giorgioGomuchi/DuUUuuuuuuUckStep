@@ -39,8 +39,7 @@ public class BoomerangSequenceDefinitionSO : SequenceDefinitionSOBase
     [SerializeField] private bool useOrbitReward = true;
     [Min(0.05f)]
     [SerializeField] private float orbitDuration = 3.5f;
-    [Min(0)]
-    [SerializeField] private int orbitTurns = 0;
+
 
 
     [Header("Projectile Cleanup")]
@@ -68,8 +67,6 @@ public class BoomerangSequenceDefinitionSO : SequenceDefinitionSOBase
 
     public bool UseOrbitReward => useOrbitReward;
     public float OrbitDuration => orbitDuration;
-    public int OrbitTurns => orbitTurns;
-
     public bool DestroyProjectileOnFail => destroyProjectileOnFail;
     public float DestroyProjectileOnFailDelay => Mathf.Max(0f, destroyProjectileOnFailDelay);
 

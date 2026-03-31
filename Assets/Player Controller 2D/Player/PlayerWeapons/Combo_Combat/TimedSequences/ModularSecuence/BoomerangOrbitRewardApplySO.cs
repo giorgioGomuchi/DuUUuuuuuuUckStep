@@ -5,9 +5,6 @@ using UnityEngine;
     menuName = "Game/Player/Timed Sequence Rewards/Boomerang Orbit Reward Apply")]
 public class BoomerangOrbitRewardApplySO : SequenceRewardSOBase
 {
-    [Header("Defaults")]
-    [SerializeField] private int defaultOrbitTurns = 0;
-
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -16,16 +13,14 @@ public class BoomerangOrbitRewardApplySO : SequenceRewardSOBase
         SequenceRewardResolution resolution,
         ISequenceActorAdapter actorAdapter)
     {
-        // No se usa por el boomerang, porque su adapter aún no entra en ISequenceActorAdapter.
-        Debug.LogWarning("[BoomerangOrbitRewardApplySO] Generic Apply not used in boomerang flow.");
+        Debug.LogWarning("[BoomerangOrbitRewardApplySO] Generic Apply is not used by boomerang flow.");
     }
 
     public void ApplyToBoomerang(
         SequenceRewardContextBase context,
         SequenceRewardResolution resolution,
         BoomerangSequenceActorAdapter actorAdapter,
-        float fallbackDuration,
-        int fallbackTurns)
+        float fallbackDuration)
     {
         if (actorAdapter == null || !actorAdapter.IsValid)
         {
@@ -36,15 +31,16 @@ public class BoomerangOrbitRewardApplySO : SequenceRewardSOBase
         if (!resolution.shouldApply)
             return;
 
-        float finalDuration = resolution.duration > 0f ? resolution.duration : fallbackDuration;
-        int finalTurns = fallbackTurns != 0 ? fallbackTurns : defaultOrbitTurns;
+        float finalDuration = resolution.duration > 0f
+            ? resolution.duration
+            : fallbackDuration;
 
-        actorAdapter.BeginReward(finalDuration, finalTurns);
+        actorAdapter.BeginReward(finalDuration, 0);
 
         if (debugLogs)
         {
             Debug.Log(
-                $"[BoomerangOrbitRewardApplySO] Applied orbit reward | Duration={finalDuration:F2}s | Turns={finalTurns}",
+                $"[BoomerangOrbitRewardApplySO] Applied orbit reward | Duration={finalDuration:F2}s",
                 actorAdapter);
         }
     }

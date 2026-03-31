@@ -32,6 +32,12 @@ public class StartWeaponSequenceComboEffectSO : ComboEffectSO
             return;
         }
 
+        if (sequenceController.IsSequenceActive)
+        {
+            Debug.Log("[StartWeaponSequenceComboEffectSO] Sequence already active -> combo relaunch ignored.");
+            return;
+        }
+
         sequenceController.StartSequence(sequenceDefinition);
     }
 }

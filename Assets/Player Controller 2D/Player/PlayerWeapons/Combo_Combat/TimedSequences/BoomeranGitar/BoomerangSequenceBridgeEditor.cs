@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(BoomerangSequenceBridge))]
+[CustomEditor(typeof(BoomerangSequenceController))]
 public class BoomerangSequenceBridgeEditor : Editor
 {
     private bool showLiveMetrics = true;
@@ -18,7 +18,7 @@ public class BoomerangSequenceBridgeEditor : Editor
         serializedObject.ApplyModifiedProperties();
 
         EditorGUILayout.Space(10f);
-        DrawLiveRuntimePanel((BoomerangSequenceBridge)target);
+        DrawLiveRuntimePanel((BoomerangSequenceController)target);
     }
 
     public override bool RequiresConstantRepaint()
@@ -26,7 +26,7 @@ public class BoomerangSequenceBridgeEditor : Editor
         return Application.isPlaying;
     }
 
-    private void DrawLiveRuntimePanel(BoomerangSequenceBridge bridge)
+    private void DrawLiveRuntimePanel(BoomerangSequenceController bridge)
     {
         EditorGUILayout.BeginVertical("box");
         showLiveMetrics = EditorGUILayout.Foldout(showLiveMetrics, "Live Boomerang Metrics", true);
@@ -52,7 +52,7 @@ public class BoomerangSequenceBridgeEditor : Editor
         EditorGUILayout.EndVertical();
     }
 
-    private void DrawBridgeState(BoomerangSequenceBridge bridge)
+    private void DrawBridgeState(BoomerangSequenceController bridge)
     {
         EditorGUILayout.LabelField("Sequence State", EditorStyles.boldLabel);
 
