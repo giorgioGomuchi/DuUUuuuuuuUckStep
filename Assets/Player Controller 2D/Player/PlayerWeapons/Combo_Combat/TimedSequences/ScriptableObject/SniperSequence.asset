@@ -37,7 +37,7 @@ MonoBehaviour:
     perfectHalfWindowNormalized: 0.013
     allowPerfect: 1
   useDashResetLimitPerStep: 1
-  maxDashResetsPerCurrentStep: 1
+  maxDashResetsPerCurrentStep: 2
   useMaxSequenceDuration: 0
   maxSequenceDurationSeconds: 8
   failOnSecondaryInput: 1

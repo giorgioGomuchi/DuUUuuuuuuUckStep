@@ -26,13 +26,19 @@ public class WeaponOverrideRewardApplySO : SequenceRewardSOBase
             return;
         }
 
-        if (actorAdapter is not WeaponSequenceActorAdapter weaponAdapter)
+        WeaponOverrideController overrideController = null;
+
+        if (actorAdapter is WeaponSequenceActorAdapter weaponAdapter)
+            overrideController = weaponAdapter.OverrideController;
+        else if (actorAdapter is ShotgunSequenceActorAdapter shotgunAdapter)
+            overrideController = shotgunAdapter.OverrideController;
+
+        if (overrideController == null)
         {
-            Debug.LogError("[WeaponOverrideRewardApplySO] Invalid actor adapter.");
+            Debug.LogError("[WeaponOverrideRewardApplySO] WeaponOverrideController missing or invalid actor adapter.");
             return;
         }
 
-        WeaponOverrideController overrideController = weaponAdapter.OverrideController;
         if (overrideController == null)
         {
             Debug.LogError("[WeaponOverrideRewardApplySO] WeaponOverrideController missing.");

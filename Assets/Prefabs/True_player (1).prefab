@@ -920,9 +920,6 @@ GameObject:
   - component: {fileID: 3422088453861232411}
   - component: {fileID: 8251211869354748819}
   - component: {fileID: 3874706556504247585}
-  - component: {fileID: 2827324200393827760}
-  - component: {fileID: 1968841603986365090}
-  - component: {fileID: 4160674865027311179}
   m_Layer: 6
   m_Name: PlayerCombat
   m_TagString: Untagged
@@ -945,6 +942,9 @@ Transform:
   m_Children:
   - {fileID: 749612932477420949}
   - {fileID: 4593398709265976279}
+  - {fileID: 7669511024441765557}
+  - {fileID: 6032735522673140284}
+  - {fileID: 6776152549909704013}
   m_Father: {fileID: 1875487373884636734}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6295541557169382276
@@ -981,8 +981,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   weapons: {fileID: 6295541557169382276}
-  boomerangSequence: {fileID: 2827324200393827760}
-  weaponSequenceController: {fileID: 1968841603986365090}
+  boomerangSequence: {fileID: 3086422640467051416}
+  weaponSequenceController: {fileID: 756166197286248037}
+  shotgunSequenceController: {fileID: 2580036127352959094}
 --- !u!114 &5625972972980401305
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1043,98 +1044,6 @@ MonoBehaviour:
   mainWeapon: {fileID: 3101465929028004509}
   secondaryWeapon: {fileID: 7980566681440241740}
   debugLogs: 0
---- !u!114 &2827324200393827760
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1224670118773425219}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2e624e8248d4774c936496a97ebd9e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerReferences: {fileID: 4205475652766426246}
-  sequenceUI: {fileID: 8318554948651735393}
-  debugLogs: 1
-  runtime:
-    phase: 0
-    windowStartTime: 0
-    windowDuration: 0
-    completedCycles: 0
-    recallDashSucceededThisWindow: 0
-    reflectDashSucceededThisWindow: 0
-    isRunning: 0
-    isInOrbitReward: 0
-  pendingTransition:
-    type: 0
-    executeAtTime: 0
-    reflectDirection: {x: 0, y: 0}
-  performanceTracker:
-    performance:
-      totalHitEvents: 0
-      totalUniqueEnemiesDamaged: 0
-      currentCycleNumber: 0
-      currentCycleHitEvents: 0
-      currentCycleUniqueEnemiesDamaged: 0
-      currentCycleActionCounters:
-        outboundHitEvents: 0
-        outboundUniqueEnemies: 0
-        returningHitEvents: 0
-        returningUniqueEnemies: 0
-        reflectHoldHitEvents: 0
-        reflectHoldUniqueEnemies: 0
-        reflectedOutboundHitEvents: 0
-        reflectedOutboundUniqueEnemies: 0
-        orbitRewardHitEvents: 0
-        orbitRewardUniqueEnemies: 0
-      totalActionCounters:
-        outboundHitEvents: 0
-        outboundUniqueEnemies: 0
-        returningHitEvents: 0
-        returningUniqueEnemies: 0
-        reflectHoldHitEvents: 0
-        reflectHoldUniqueEnemies: 0
-        reflectedOutboundHitEvents: 0
-        reflectedOutboundUniqueEnemies: 0
-        orbitRewardHitEvents: 0
-        orbitRewardUniqueEnemies: 0
-      completedCycles: []
---- !u!114 &1968841603986365090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1224670118773425219}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6df12843cbb9cb4faaeb03b256054b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  debugLogs: 1
-  playerReferences: {fileID: 4205475652766426246}
-  uiController: {fileID: 8318554948651735393}
-  aimGuideController: {fileID: 4537643925048671725}
-  actorAdapterComponent: {fileID: 4160674865027311179}
-  verboseLogs: 1
---- !u!114 &4160674865027311179
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1224670118773425219}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 055b20636ac270d489c18319e821a51d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerReferences: {fileID: 4205475652766426246}
-  forcePrimarySinglePress: 1
-  forceSecondarySinglePress: 0
-  debugLogs: 1
 --- !u!1 &1237347640591292721
 GameObject:
   m_ObjectHideFlags: 0
@@ -2302,7 +2211,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 8.173584, z: -153.43286, w: 0}
+  m_margin: {x: 0, y: 8.173584, z: -749.09033, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -2691,6 +2600,73 @@ Transform:
   - {fileID: 2274363794822429549}
   m_Father: {fileID: 1875487373884636734}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4470156245757358693
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7669511024441765557}
+  - component: {fileID: 2580036127352959094}
+  - component: {fileID: 4064626963868502926}
+  m_Layer: 6
+  m_Name: ShotgunController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7669511024441765557
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4470156245757358693}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3301886625078872132}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2580036127352959094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4470156245757358693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 943e828ad17d86a42aa7796d76adf70a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugLogs: 1
+  playerReferences: {fileID: 4205475652766426246}
+  uiController: {fileID: 8318554948651735393}
+  actorAdapterComponent: {fileID: 4064626963868502926}
+  targetSlot: 0
+  verboseLogs: 0
+--- !u!114 &4064626963868502926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4470156245757358693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a538573da68130c46b7095065e885b0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerReferences: {fileID: 4205475652766426246}
+  forcePrimarySinglePress: 1
+  forceSecondarySinglePress: 0
+  debugLogs: 0
 --- !u!1 &4542314977014504152
 GameObject:
   m_ObjectHideFlags: 0
@@ -2850,7 +2826,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 8.173584, z: 0, w: 0}
+  m_margin: {x: 0, y: 8.173584, z: -522.00635, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -3156,7 +3132,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 8.173584, z: 0, w: 0}
+  m_margin: {x: 0, y: 8.173584, z: -687.7527, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -3906,7 +3882,7 @@ MonoBehaviour:
   playerReferences: {fileID: 4205475652766426246}
   bindings:
   - recipe: {fileID: 11400000, guid: 454cc550789ad784d880723a0230b045, type: 2}
-    effect: {fileID: 11400000, guid: fa807131066cba14f895da1119e2a474, type: 2}
+    effect: {fileID: 11400000, guid: d95913158bad9b041bbc0a87ada2d363, type: 2}
   - recipe: {fileID: 11400000, guid: 00b2c79aa5b876849addfc6b8acd319d, type: 2}
     effect: {fileID: 11400000, guid: 122363d9d7e3c8949b33c2a0ba1b1a5b, type: 2}
   - recipe: {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
@@ -4439,8 +4415,9 @@ MonoBehaviour:
   weaponSlots: {fileID: 6295541557169382276}
   weaponOverride: {fileID: 5625972972980401305}
   weaponAimGuide: {fileID: 4537643925048671725}
-  weaponSequenceActorAdapter: {fileID: 4160674865027311179}
-  weaponSequenceControllerV2: {fileID: 1968841603986365090}
+  weaponSequenceActorAdapter: {fileID: 9199532683498411841}
+  weaponSequenceControllerV2: {fileID: 756166197286248037}
+  shotgunSequenceController: {fileID: 2580036127352959094}
 --- !u!1 &6916997095360358816
 GameObject:
   m_ObjectHideFlags: 0
@@ -4505,6 +4482,73 @@ MonoBehaviour:
   animator: {fileID: 8977848999197135804}
   movement: {fileID: 2894091310462672857}
   speedParameter: Speed
+--- !u!1 &6938752876394539277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6776152549909704013}
+  - component: {fileID: 756166197286248037}
+  - component: {fileID: 9199532683498411841}
+  m_Layer: 6
+  m_Name: SniperController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6776152549909704013
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6938752876394539277}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3301886625078872132}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &756166197286248037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6938752876394539277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6df12843cbb9cb4faaeb03b256054b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugLogs: 1
+  playerReferences: {fileID: 4205475652766426246}
+  uiController: {fileID: 8318554948651735393}
+  aimGuideController: {fileID: 4537643925048671725}
+  actorAdapterComponent: {fileID: 9199532683498411841}
+  verboseLogs: 1
+--- !u!114 &9199532683498411841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6938752876394539277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 055b20636ac270d489c18319e821a51d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerReferences: {fileID: 4205475652766426246}
+  forcePrimarySinglePress: 1
+  forceSecondarySinglePress: 0
+  debugLogs: 1
 --- !u!1 &7366469592043103927
 GameObject:
   m_ObjectHideFlags: 0
@@ -4787,6 +4831,96 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &7443935218136688827
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6032735522673140284}
+  - component: {fileID: 3086422640467051416}
+  m_Layer: 6
+  m_Name: GuitarBoomerangController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6032735522673140284
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7443935218136688827}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3301886625078872132}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3086422640467051416
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7443935218136688827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2e624e8248d4774c936496a97ebd9e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerReferences: {fileID: 4205475652766426246}
+  sequenceUI: {fileID: 8318554948651735393}
+  debugLogs: 1
+  runtime:
+    phase: 0
+    windowStartTime: 0
+    windowDuration: 0
+    completedCycles: 0
+    recallDashSucceededThisWindow: 0
+    reflectDashSucceededThisWindow: 0
+    isRunning: 0
+    isInOrbitReward: 0
+  pendingTransition:
+    type: 0
+    executeAtTime: 0
+    reflectDirection: {x: 0, y: 0}
+  performanceTracker:
+    performance:
+      totalHitEvents: 0
+      totalUniqueEnemiesDamaged: 0
+      currentCycleNumber: 0
+      currentCycleHitEvents: 0
+      currentCycleUniqueEnemiesDamaged: 0
+      currentCycleActionCounters:
+        outboundHitEvents: 0
+        outboundUniqueEnemies: 0
+        returningHitEvents: 0
+        returningUniqueEnemies: 0
+        reflectHoldHitEvents: 0
+        reflectHoldUniqueEnemies: 0
+        reflectedOutboundHitEvents: 0
+        reflectedOutboundUniqueEnemies: 0
+        orbitRewardHitEvents: 0
+        orbitRewardUniqueEnemies: 0
+      totalActionCounters:
+        outboundHitEvents: 0
+        outboundUniqueEnemies: 0
+        returningHitEvents: 0
+        returningUniqueEnemies: 0
+        reflectHoldHitEvents: 0
+        reflectHoldUniqueEnemies: 0
+        reflectedOutboundHitEvents: 0
+        reflectedOutboundUniqueEnemies: 0
+        orbitRewardHitEvents: 0
+        orbitRewardUniqueEnemies: 0
+      completedCycles: []
 --- !u!1 &7576561003582785246
 GameObject:
   m_ObjectHideFlags: 0
@@ -4833,7 +4967,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c2afa5ac724c954890e28ad33a534ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  weaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  weaponData: {fileID: 11400000, guid: 5428d5a0cbe8e0c45b10190cf8b9c313, type: 2}
   firePoint: {fileID: 7420243928870926338}
   weaponVisual: {fileID: 6804898307386719841}
   debugLogs: 1
@@ -5021,7 +5155,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 8.173584, z: -663.1356, w: 0}
+  m_margin: {x: 0, y: 8.173584, z: -1364.7295, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

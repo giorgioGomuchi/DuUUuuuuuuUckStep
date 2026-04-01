@@ -229,6 +229,56 @@ public class TimedSequenceUIController : MonoBehaviour
             phaseText.text = phaseLabel;
     }
 
+
+    // ---------------------------------------------------------------------
+    // SHOOTGUN
+    // ---------------------------------------------------------------------
+
+    public void ShowShotgun(ShotgunSequenceDefinitionSO definition, PlayerReferences references)
+    {
+        activeDefinition = null;
+        activeBoomerangDefinition = null;
+        playerReferences = references;
+        activePlayerUIWorldOffset = definition != null ? definition.PlayerUIWorldOffset : Vector3.zero;
+
+        if (references != null && references.Aim != null)
+            worldCamera = references.Aim.MainCamera;
+
+        visible = true;
+        SetCanvasVisible(true);
+        ResetFlashVisuals();
+
+        SetShotgunWindowProgress(
+            normalizedTime: 0f,
+            currentProgress: 0,
+            requiredProgress: definition != null ? definition.RequiredSuccessfulSteps : 0,
+            definition: definition);
+
+        SetPerformanceSnapshot(SequencePerformanceUISnapshot.Empty);
+    }
+
+    public void SetShotgunWindowProgress(
+     float normalizedTime,
+     int currentProgress,
+     int requiredProgress,
+     ShotgunSequenceDefinitionSO definition)
+    {
+        normalizedTime = Mathf.Clamp01(normalizedTime);
+
+        if (playerBarView != null)
+        {
+            playerBarView.SetNeutralMode(false);
+            playerBarView.SetRule(definition != null ? definition.ShootRule : null);
+            playerBarView.SetMarker(normalizedTime);
+        }
+
+        if (progressText != null)
+            progressText.text = $"{currentProgress}/{requiredProgress}";
+
+        if (phaseText != null)
+            phaseText.text = "Shotgun";
+    }
+
     // ---------------------------------------------------------------------
     // COMÚN
     // ---------------------------------------------------------------------

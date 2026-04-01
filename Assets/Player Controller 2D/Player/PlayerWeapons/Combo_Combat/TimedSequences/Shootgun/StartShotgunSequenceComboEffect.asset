@@ -9,10 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98bb54eead4eebf419d56bddef686119, type: 3}
-  m_Name: CE_Override_Shotgun_Main
+  m_Script: {fileID: 11500000, guid: 57337e5293986f749ba4b64efb154933, type: 3}
+  m_Name: StartShotgunSequenceComboEffect
   m_EditorClassIdentifier: 
-  debugLogs: 0
-  overrideWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
-  targetSlot: 0
-  ammoCount: 3
+  debugLogs: 1
+  sequenceDefinition: {fileID: 11400000, guid: 8e6f201744db7de4585ce9bb3a9ff5eb, type: 2}

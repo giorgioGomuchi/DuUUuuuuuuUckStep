@@ -6,6 +6,7 @@ public class PlayerCombatController : MonoBehaviour
     [SerializeField] private WeaponSlotsController weapons;
     [SerializeField] private BoomerangSequenceController boomerangSequence;
     [SerializeField] private WeaponSequenceControllerV2 weaponSequenceController;
+    [SerializeField] private ShotgunSequenceController shotgunSequenceController;
 
     public bool CombatBlocked { get; private set; }
     public BoomerangSequenceController BoomerangSequence => boomerangSequence;
@@ -32,8 +33,10 @@ public class PlayerCombatController : MonoBehaviour
 
         if (weaponSequenceController == null)
             weaponSequenceController = GetComponentInChildren<WeaponSequenceControllerV2>(true);
-    }
 
+        if (shotgunSequenceController == null)
+            shotgunSequenceController = GetComponentInChildren<ShotgunSequenceController>(true);
+    }
     public void SetAim(Vector2 dir)
     {
         weapons?.SetAim(dir);
@@ -56,6 +59,9 @@ public class PlayerCombatController : MonoBehaviour
             return;
 
         if (weaponSequenceController != null && weaponSequenceController.IsSequenceActive)
+            return;
+
+        if (shotgunSequenceController != null && shotgunSequenceController.IsSequenceActive)
             return;
 
         if (boomerangSequence != null && boomerangSequence.IsSequenceActive)

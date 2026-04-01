@@ -54,8 +54,8 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
 
         RotateToDirection();
 
-        if (debugLogs)
-            Debug.Log($"[KinematicProjectile2D] Init dir={direction} speed={speed} dmg={damage} mask={targetLayerMask.value}", this);
+        //if (debugLogs)
+        //    Debug.Log($"[KinematicProjectile2D] Init dir={direction} speed={speed} dmg={damage} mask={targetLayerMask.value}", this);
     }
 
     protected virtual void FixedUpdate()
@@ -67,18 +67,18 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
     // Soporta triggers (parry zones, etc)
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log(
-    $"[KinematicProjectile2D] Trigger/Collision name={name} other={other.name} layer={other.gameObject.layer}",
-    this);
+    //    Debug.Log(
+    //$"[KinematicProjectile2D] Trigger/Collision name={name} other={other.name} layer={other.gameObject.layer}",
+    //this);
         OnHit(other);
     }
 
     // Soporta colisiones físicas (paredes, rebotes, etc)
     protected virtual void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log(
-    $"[KinematicProjectile2D] Trigger/Collision name={name} other={collision.gameObject.name} layer={collision.gameObject.layer}",
-    this);
+    //    Debug.Log(
+    //$"[KinematicProjectile2D] Trigger/Collision name={name} other={collision.gameObject.name} layer={collision.gameObject.layer}",
+    //this);
         if (collision == null || collision.collider == null) return;
         OnHit(collision.collider);
     }
@@ -108,7 +108,7 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
         if (newDir.sqrMagnitude < 0.0001f) return;
         direction = newDir.normalized;
         if (rotate) RotateToDirection();
-        if (debugLogs) Debug.Log($"[KinematicProjectile2D] SetDirection -> {direction}", this);
+        //if (debugLogs) Debug.Log($"[KinematicProjectile2D] SetDirection -> {direction}", this);
     }
 
     // --- DEFLECT UNIFICADO ---
@@ -124,7 +124,7 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
 
         if (debugLogs)
         {
-            Debug.Log($"[KinematicProjectile2D] Deflected by={info.instigator} dir={direction} speed={speed} newMask={targetLayerMask.value}", this);
+            //Debug.Log($"[KinematicProjectile2D] Deflected by={info.instigator} dir={direction} speed={speed} newMask={targetLayerMask.value}", this);
         }
     }
 
@@ -133,7 +133,7 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
 
     protected virtual void Kill()
     {
-        Debug.Log($"[KinematicProjectile2D] Kill name={name} pos={rb.position}", this);
+        //Debug.Log($"[KinematicProjectile2D] Kill name={name} pos={rb.position}", this);
         Destroy(gameObject);
     }
 
@@ -144,13 +144,13 @@ public abstract class KinematicProjectile2D : MonoBehaviour, IDeflectable2D
 
     protected void DebugLayerInfo(Collider2D other)
     {
-        Debug.Log("----- LAYER DEBUG -----");
-        Debug.Log("Other name: " + other.name);
-        Debug.Log("Other layer index: " + other.gameObject.layer);
-        Debug.Log("Other layer name: " + LayerMask.LayerToName(other.gameObject.layer));
-        Debug.Log("Target mask value: " + targetLayerMask.value);
-        Debug.Log("IsInTargetMask: " + IsInTargetMask(other));
-        Debug.Log("Enemy layer index: " + LayerMask.NameToLayer("Enemy"));
+        //Debug.Log("----- LAYER DEBUG -----");
+        //Debug.Log("Other name: " + other.name);
+        //Debug.Log("Other layer index: " + other.gameObject.layer);
+        //Debug.Log("Other layer name: " + LayerMask.LayerToName(other.gameObject.layer));
+        //Debug.Log("Target mask value: " + targetLayerMask.value);
+        //Debug.Log("IsInTargetMask: " + IsInTargetMask(other));
+        //Debug.Log("Enemy layer index: " + LayerMask.NameToLayer("Enemy"));
     }
 
     protected abstract void OnHit(Collider2D other);

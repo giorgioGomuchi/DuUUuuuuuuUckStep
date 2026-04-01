@@ -12,6 +12,12 @@ public class ShotgunWeaponDataSO : RangedWeaponDataSO
     public float minPelletSpeed = 10f;
     public float maxPelletSpeed = 15f;
 
+    [Header("Distance Falloff")]
+    public float fullDamageRange = 3f;
+    public float maxEffectiveRange = 10f;
+    [Range(0.05f, 1f)] public float minDamageMultiplierAtMaxRange = 0.2f;
+    public bool destroyPastMaxRange = false;
+
     [Header("Wall Bounce")]
     public bool enableWallBounce = true;
     public LayerMask wallLayer;

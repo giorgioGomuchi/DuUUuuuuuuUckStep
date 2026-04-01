@@ -22,12 +22,14 @@ public class ShotgunAttackModuleSO : AttackModuleSO
         int baseDamage = weapon.ConsumeFinalDamage(shotgun.damage);
         int pellets = Mathf.Max(1, shotgun.pellets);
 
+        ShotgunSequenceController activeSequence = ResolveActiveShotgunSequenceController(weapon);
+
         for (int i = 0; i < pellets; i++)
         {
             Vector2 dir = GetPelletDirection(weapon.CurrentAim, shotgun, i, pellets);
             float speed = Random.Range(shotgun.minPelletSpeed, shotgun.maxPelletSpeed);
 
-            SpawnPellet(weapon, shotgun, dir, speed, baseDamage);
+            SpawnPellet(weapon, shotgun, dir, speed, baseDamage, activeSequence);
         }
 
         if (debugLogs)
@@ -60,25 +62,65 @@ public class ShotgunAttackModuleSO : AttackModuleSO
         ).normalized;
     }
 
-    private static void SpawnPellet(WeaponBehaviour weapon, ShotgunWeaponDataSO data, Vector2 dir, float speed, int damage)
+    private static void SpawnPellet(
+        WeaponBehaviour weapon,
+        ShotgunWeaponDataSO data,
+        Vector2 dir,
+        float speed,
+        int damage,
+        ShotgunSequenceController activeSequence)
     {
         GameObject go = Object.Instantiate(data.projectilePrefab, weapon.FirePoint.position, Quaternion.identity);
 
-        var proj = go.GetComponent<KinematicProjectile2D>();
+        KinematicProjectile2D proj = go.GetComponent<KinematicProjectile2D>();
         if (proj == null)
         {
             Debug.LogError("[ShotgunAttackModuleSO] Projectile missing KinematicProjectile2D.", weapon);
             return;
         }
 
+        IgnoreOwnerCollisions(go, weapon);
+
         proj.Initialize(dir, speed, damage, data.targetLayer);
 
-        // Rebote paredes (regla independiente al deflect)
+        if (proj is ShotgunSequencePelletProjectile shotgunPellet)
+            shotgunPellet.ConfigurePellet(data, activeSequence);
+
         if (data.enableWallBounce)
         {
-            var bounce = go.GetComponent<IBounceConfigurable>();
+            IBounceConfigurable bounce = go.GetComponent<IBounceConfigurable>();
             if (bounce != null)
                 bounce.ConfigureBounce(data.wallLayer, data.maxBounces, data.bounceSpeedMultiplier);
         }
+    }
+
+    private static void IgnoreOwnerCollisions(GameObject projectile, WeaponBehaviour weapon)
+    {
+        Collider2D projectileCol = projectile.GetComponent<Collider2D>();
+        if (projectileCol == null || weapon == null)
+            return;
+
+        Collider2D[] ownerColliders = weapon.GetComponentsInParent<Collider2D>(true);
+        for (int i = 0; i < ownerColliders.Length; i++)
+        {
+            if (ownerColliders[i] != null)
+                Physics2D.IgnoreCollision(projectileCol, ownerColliders[i], true);
+        }
+    }
+
+    private static ShotgunSequenceController ResolveActiveShotgunSequenceController(WeaponBehaviour weapon)
+    {
+        if (weapon == null)
+            return null;
+
+        PlayerReferences refs = weapon.GetComponentInParent<PlayerReferences>();
+        if (refs == null || refs.Combat == null)
+            return null;
+
+        ShotgunSequenceController controller = refs.Combat.GetComponentInChildren<ShotgunSequenceController>(true);
+        if (controller == null || !controller.IsSequenceActive)
+            return null;
+
+        return controller;
     }
 }

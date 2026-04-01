@@ -9,17 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8ce3b1c72ca9ee4d9e24cd7f212acb4, type: 3}
-  m_Name: Escoputa
+  m_Script: {fileID: 11500000, guid: 9a9d23ea267cb4541a1bb6de744160b4, type: 3}
+  m_Name: Shotgun Burst
   m_EditorClassIdentifier: 
-  attackModule: {fileID: 11400000, guid: 650f33a2bf792cb459e1528699d39f6c, type: 2}
-  useRhythmGate: 1
+  attackModule: {fileID: 11400000, guid: 5a0cab508b8df224a99afdd3dd416391, type: 2}
+  useRhythmGate: 0
   cancelAttackOnFail: 0
   perfectDamageMultiplier: 1.75
   weaponName: 
   weaponIcon: {fileID: 21300000, guid: f2c7c971169f4d54ab13b318aaf16d9a, type: 3}
   damage: 1
-  cooldown: 1
+  cooldown: 0.5
   targetLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -31,8 +31,8 @@ MonoBehaviour:
   projectilePrefab: {fileID: 5341200751948304790, guid: f1715a73c7abff14584a824f2c6ae644, type: 3}
   projectileSpeed: 12
   pellets: 6
-  spreadAngleDegrees: 30
-  randomSpread: 0
+  spreadAngleDegrees: 18
+  randomSpread: 1
   minPelletSpeed: 10
   maxPelletSpeed: 15
   fullDamageRange: 3
@@ -45,3 +45,7 @@ MonoBehaviour:
     m_Bits: 0
   maxBounces: 1
   bounceSpeedMultiplier: 0.85
+  burstShotCount: 3
+  shot1Delay: 0.2
+  shot2Delay: 0.2
+  postBurstRecoveryDelay: 0.4

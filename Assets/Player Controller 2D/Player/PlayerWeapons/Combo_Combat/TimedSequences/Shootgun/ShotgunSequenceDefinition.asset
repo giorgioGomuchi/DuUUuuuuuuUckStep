@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f79e29bc95d6984cb37db73543a012d, type: 3}
+  m_Name: ShotgunSequenceDefinition
+  m_EditorClassIdentifier: 
+  sequenceId: Sequence
+  requiredSteps: 4
+  playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
+  rewardPolicy: {fileID: 11400000, guid: 0b22afdafb2a8ea428e5926a899ea4f1, type: 2}
+  completionReward: {fileID: 11400000, guid: 13ec047e6a95f45488d9bcad1b76b305, type: 2}
+  startupDelay: 0.05
+  decisionWindowDuration: 1
+  completionDelay: 0.05
+  failOnTimeout: 1
+  failOnWrongAction: 1
+  failOnForbiddenInput: 1
+  sequenceWeaponData: {fileID: 11400000, guid: 7417f9f85cd6b1b44ae12e6f508be3f3, type: 2}
+  targetSlot: 0
+  shootRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.18
+    perfectHalfWindowNormalized: 0.06
+    allowPerfect: 1
+  dashRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.18
+    perfectHalfWindowNormalized: 0.06
+    allowPerfect: 1
+  useDashResetLimitPerStep: 1
+  maxDashResetsPerCurrentStep: 1
+  useMaxSequenceDuration: 0
+  maxSequenceDurationSeconds: 1
+  failOnSecondaryInput: 1
+  failOnSwitchWeaponInput: 1

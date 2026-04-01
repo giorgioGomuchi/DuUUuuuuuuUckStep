@@ -62,8 +62,9 @@ public class PlayerDashController : MonoBehaviour
 
         ApplyDashVelocity();
 
-        // Notifica al sistema modular de secuencia SOLO cuando el dash ya ha arrancado.
+        // Notificar una sola vez a cada secuencia activa.
         playerReferences?.WeaponSequenceControllerV2?.NotifySuccessfulDashDuringSequence();
+        playerReferences?.ShotgunSequenceController?.NotifySuccessfulDashDuringSequence();
     }
 
     public void Tick()

@@ -20,6 +20,8 @@ public class PlayerReferences : MonoBehaviour
     [SerializeField] private WeaponSequenceActorAdapter weaponSequenceActorAdapter;
     [SerializeField] private WeaponSequenceControllerV2 weaponSequenceControllerV2;
 
+    [SerializeField] private ShotgunSequenceController shotgunSequenceController;
+
     public PlayerInputReader Input => input;
     public PlayerStateMachine StateMachine => stateMachine;
     public PlayerMovement Movement => movement;
@@ -36,6 +38,9 @@ public class PlayerReferences : MonoBehaviour
     public WeaponAimGuideController WeaponAimGuide => weaponAimGuide;
     public WeaponSequenceActorAdapter WeaponSequenceActorAdapter => weaponSequenceActorAdapter;
     public WeaponSequenceControllerV2 WeaponSequenceControllerV2 => weaponSequenceControllerV2;
+
+    public ShotgunSequenceController ShotgunSequenceController => shotgunSequenceController;
+
 
 #if UNITY_EDITOR
     private void OnValidate()
@@ -56,6 +61,9 @@ public class PlayerReferences : MonoBehaviour
         if (weaponAimGuide == null) weaponAimGuide = GetComponentInChildren<WeaponAimGuideController>(true);
         if (weaponSequenceActorAdapter == null) weaponSequenceActorAdapter = GetComponentInChildren<WeaponSequenceActorAdapter>(true);
         if (weaponSequenceControllerV2 == null) weaponSequenceControllerV2 = GetComponentInChildren<WeaponSequenceControllerV2>(true);
+
+        if (shotgunSequenceController == null) shotgunSequenceController = GetComponentInChildren<ShotgunSequenceController>(true);
+
     }
 #endif
 }
