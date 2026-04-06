@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe246e1661a8ea544992728274e54a05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lifetime: 10
+  lifetime: 20
   debugLogs: 1
   visuals: {fileID: 3018275737260020501}
   ownerCollisionIgnore: {fileID: 6488027233540059081}

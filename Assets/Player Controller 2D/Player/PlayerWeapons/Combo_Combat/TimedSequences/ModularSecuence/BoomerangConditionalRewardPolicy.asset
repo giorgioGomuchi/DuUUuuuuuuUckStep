@@ -16,12 +16,12 @@ MonoBehaviour:
   minUniqueEnemiesDamagedForReward: 2
   minCompletedCyclesForReward: 0
   minCyclesWithHitsForReward: 0
-  scaleDurationByUniqueEnemies: 0
+  scaleDurationByUniqueEnemies: 1
   extraDurationPerUniqueEnemy: 0.35
   scaleDurationByCyclesWithHits: 1
   extraDurationPerCycleWithHits: 0.25
   maxEnemiesCountedForDuration: 10
   clampFinalDuration: 1
-  minFinalDuration: 2
-  maxFinalDuration: 6
+  minFinalDuration: 5
+  maxFinalDuration: 10
   baseDurationSeconds: 2

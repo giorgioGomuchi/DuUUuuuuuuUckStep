@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BoomerangSequence
   m_EditorClassIdentifier: 
   sequenceId: BoomerangSequence
-  requiredSteps: 3
+  requiredSteps: 6
   playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
   rewardPolicy: {fileID: 11400000, guid: ee67d184cd98244488d1132ed11b6def, type: 2}
   completionReward: {fileID: 0}
@@ -43,7 +43,6 @@ MonoBehaviour:
   failOnSwitchWeaponInput: 1
   clearWeaponOverrideOnFail: 1
   useOrbitReward: 1
-  orbitDuration: 2
-  orbitTurns: 0
+  orbitDuration: 5
   destroyProjectileOnFail: 1
   destroyProjectileOnFailDelay: 0.2

@@ -861,17 +861,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c583749f3a204b4aaeb9dbc0c2be7a2, type: 3}
---- !u!114 &746591893 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 2580036127352959094, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-  m_PrefabInstance: {fileID: 5730959013319052137}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 943e828ad17d86a42aa7796d76adf70a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &747587147
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1798,28 +1787,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3fb3443a939352c448d10701cde5bae3, type: 3}
---- !u!114 &1631179883 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 756166197286248037, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-  m_PrefabInstance: {fileID: 5730959013319052137}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6df12843cbb9cb4faaeb03b256054b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1631179885 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 9199532683498411841, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-  m_PrefabInstance: {fileID: 5730959013319052137}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 055b20636ac270d489c18319e821a51d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1640307105 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8050108746308614438, guid: 70bdfef98e524664cb6905b7d07c4507, type: 3}
@@ -237362,17 +237329,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3fb3443a939352c448d10701cde5bae3, type: 3}
---- !u!114 &1720156841 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3086422640467051416, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-  m_PrefabInstance: {fileID: 5730959013319052137}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2e624e8248d4774c936496a97ebd9e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1738244483
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -237961,58 +237917,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2123618401362694408, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: m_margin.z
-      value: -749.09033
-      objectReference: {fileID: 0}
-    - target: {fileID: 3101465929028004509, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: weaponData
-      value: 
-      objectReference: {fileID: 11400000, guid: 5428d5a0cbe8e0c45b10190cf8b9c313, type: 2}
-    - target: {fileID: 4205475652766426246, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: shotgunSequenceController
-      value: 
-      objectReference: {fileID: 746591893}
-    - target: {fileID: 4205475652766426246, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: weaponSequenceActorAdapter
-      value: 
-      objectReference: {fileID: 1631179885}
-    - target: {fileID: 4205475652766426246, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: weaponSequenceControllerV2
-      value: 
-      objectReference: {fileID: 1631179883}
-    - target: {fileID: 5565834751957846849, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: m_margin.z
-      value: -687.7527
-      objectReference: {fileID: 0}
     - target: {fileID: 6841429869749178727, guid: fdbfd746d5d573840b89297d09438168, type: 3}
       propertyPath: m_Name
       value: True_player (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 6909479030222092161, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: boomerangSequence
-      value: 
-      objectReference: {fileID: 1720156841}
-    - target: {fileID: 6909479030222092161, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: weaponSequenceController
-      value: 
-      objectReference: {fileID: 1631179883}
-    - target: {fileID: 6909479030222092161, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: shotgunSequenceController
-      value: 
-      objectReference: {fileID: 746591893}
-    - target: {fileID: 6961940856393011098, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: m_margin.z
-      value: -522.00635
-      objectReference: {fileID: 0}
-    - target: {fileID: 7049526165244838405, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: m_margin.z
-      value: -1364.7295
-      objectReference: {fileID: 0}
-    - target: {fileID: 7516679360772917863, guid: fdbfd746d5d573840b89297d09438168, type: 3}
-      propertyPath: bindings.Array.data[0].effect
-      value: 
-      objectReference: {fileID: 11400000, guid: d95913158bad9b041bbc0a87ada2d363, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
