@@ -9,6 +9,7 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
     [Header("Debug")]
     [SerializeField] private bool debugFireInputLogs = false;
+    [SerializeField] private bool debugBoomerangInputLogs = false;
 
     [Header("Aim")]
     [SerializeField] private float stickDeadzone = 0.2f;
@@ -24,6 +25,7 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     [Header("Trigger Gates")]
     [SerializeField] private AnalogTriggerGate primaryTriggerGate = new();
     [SerializeField] private AnalogTriggerGate secondaryTriggerGate = new();
+    [SerializeField] private AnalogTriggerGate boomerangTriggerGate = new();
 
     public Vector2 Move { get; private set; }
     public Vector2 AimScreen { get; private set; }
@@ -31,6 +33,7 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
     public bool FirePrimaryHeld => primaryTriggerGate.IsHeld;
     public bool FireSecondaryHeld => secondaryTriggerGate.IsHeld;
+    public bool BoomerangHeld => boomerangTriggerGate.IsHeld;
 
     public bool DashPressed { get; private set; }
     public bool SwitchWeaponPressed { get; private set; }
@@ -40,6 +43,8 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
     private bool firePrimaryPressed;
     private bool fireSecondaryPressed;
+    private bool boomerangPressed;
+    private bool boomerangReleased;
 
     private InputSystem_Actions input;
 
@@ -109,8 +114,18 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
                 this);
         }
 
+        if (debugBoomerangInputLogs)
+        {
+            if (boomerangPressed)
+                Debug.Log("[InputReader] Boomerang pressed", this);
+
+            if (boomerangReleased)
+                Debug.Log("[InputReader] Boomerang released", this);
+        }
+
         primaryTriggerGate.ClearFrameFlags();
         secondaryTriggerGate.ClearFrameFlags();
+        boomerangTriggerGate.ClearFrameFlags();
     }
 
     private void UpdateHoldRepeat(
@@ -222,9 +237,12 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     {
         primaryTriggerGate.ForceRelease();
         secondaryTriggerGate.ForceRelease();
+        boomerangTriggerGate.ForceRelease();
 
         firePrimaryPressed = false;
         fireSecondaryPressed = false;
+        boomerangPressed = false;
+        boomerangReleased = false;
 
         primaryHeldTime = 0f;
         secondaryHeldTime = 0f;
@@ -241,6 +259,8 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
         firePrimaryPressed = false;
         fireSecondaryPressed = false;
+        boomerangPressed = false;
+        boomerangReleased = false;
         DashPressed = false;
         SwitchWeaponPressed = false;
 
@@ -252,6 +272,7 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
 
         primaryTriggerGate.ForceRelease();
         secondaryTriggerGate.ForceRelease();
+        boomerangTriggerGate.ForceRelease();
 
         hasForcedPrimaryMode = false;
         hasForcedSecondaryMode = false;
@@ -277,6 +298,24 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
         return true;
     }
 
+    public bool ConsumeBoomerangPressed()
+    {
+        if (!boomerangPressed)
+            return false;
+
+        boomerangPressed = false;
+        return true;
+    }
+
+    public bool ConsumeBoomerangReleased()
+    {
+        if (!boomerangReleased)
+            return false;
+
+        boomerangReleased = false;
+        return true;
+    }
+
     public bool ConsumeDashPressed()
     {
         if (!DashPressed)
@@ -299,6 +338,8 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     {
         firePrimaryPressed = false;
         fireSecondaryPressed = false;
+        boomerangPressed = false;
+        boomerangReleased = false;
         DashPressed = false;
         SwitchWeaponPressed = false;
     }
@@ -338,28 +379,30 @@ public class PlayerInputReader : MonoBehaviour, InputSystem_Actions.IPlayerActio
     {
         float rawValue = context.ReadValue<float>();
         primaryTriggerGate.UpdateValue(rawValue);
-
-        if (debugFireInputLogs)
-        {
-            Debug.Log(
-                $"[InputReader] Primary raw={rawValue:F3} held={primaryTriggerGate.IsHeld} " +
-                $"pressedFrame={primaryTriggerGate.PressedThisFrame} releasedFrame={primaryTriggerGate.ReleasedThisFrame} " +
-                $"mode={primaryFireMode}",
-                this);
-        }
     }
 
     public void OnFireSecondary(InputAction.CallbackContext context)
     {
         float rawValue = context.ReadValue<float>();
         secondaryTriggerGate.UpdateValue(rawValue);
+    }
 
-        if (debugFireInputLogs)
+    public void OnBoomerang(InputAction.CallbackContext context)
+    {
+        float rawValue = context.ReadValue<float>();
+        boomerangTriggerGate.UpdateValue(rawValue);
+
+        if (boomerangTriggerGate.PressedThisFrame)
+            boomerangPressed = true;
+
+        if (boomerangTriggerGate.ReleasedThisFrame)
+            boomerangReleased = true;
+
+        if (debugBoomerangInputLogs)
         {
             Debug.Log(
-                $"[InputReader] Secondary raw={rawValue:F3} held={secondaryTriggerGate.IsHeld} " +
-                $"pressedFrame={secondaryTriggerGate.PressedThisFrame} releasedFrame={secondaryTriggerGate.ReleasedThisFrame} " +
-                $"mode={secondaryFireMode}",
+                $"[InputReader] Boomerang raw={rawValue:F3} held={boomerangTriggerGate.IsHeld} " +
+                $"pressedFrame={boomerangTriggerGate.PressedThisFrame} releasedFrame={boomerangTriggerGate.ReleasedThisFrame}",
                 this);
         }
     }

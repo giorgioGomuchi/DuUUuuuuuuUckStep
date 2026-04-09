@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c6c335438444c45af16a0c28436962, type: 3}
+  m_Name: BoomerangLoopWeaponData
+  m_EditorClassIdentifier: 
+  attackModule: {fileID: 11400000, guid: e939caf31c03a714e97bb7c3455a5118, type: 2}
+  useRhythmGate: 0
+  cancelAttackOnFail: 0
+  perfectDamageMultiplier: 1.75
+  weaponName: 
+  weaponIcon: {fileID: 21300000, guid: a13b1bde2efef0341bba8a14164c0abd, type: 3}
+  damage: 1
+  cooldown: 0.5
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  cameraShakeDuration: 0.1
+  cameraShakeStrength: 0.15
+  knockbackForce: 2.5
+  preferredFireInputMode: 0
+  cadenceMode: 0
+  projectilePrefab: {fileID: 828991490477125810, guid: 31c259f8a84b5c843a506f7ce26b8c22, type: 3}
+  projectileSpeed: 12
+  sequenceDefinition: {fileID: 0}
+  projectileConfig:
+    outboundDistance: 12
+    outboundDistanceAfterDeflect: 12
+    deflectOnlyWhileReturning: 1
+    holdReflectAtOwnerCenter: 1
+    timedReturnArcStrength: 0.08
+    timedReturnPresentationDistance: 0.55
+    driftDeceleration: 18
+    dashReturnSpeedMultiplierBonus: 0.35
+    dashReturnSteeringBonus: 5
+    dashReflectSpeedMultiplierBonus: 1.35
+    destroyEnemyProjectileMask:
+      serializedVersion: 2
+      m_Bits: 512
+    orbitStartRadius: 0.8
+    orbitRadiusGrowthPerSecond: 1
+    orbitMaxRadius: 4
+    orbitAngularSpeedDegPerSec: 360
+    orbitSpeedMultiplier: 1.4
+    orbitClockwise: 1
+    orbitContactDamageInterval: 0.2
+    returningColor: {r: 1, g: 1, b: 1, a: 1}
+    reflectableColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+    reflectableFlashDuration: 0.12
+    orbitStartFlashColor: {r: 0.3, g: 1, b: 1, a: 1}
+    orbitStartFlashDuration: 0.18
+    orbitStartPulseScaleMultiplier: 1.35
+    orbitStartPulseDuration: 0.2
+    enableSpin: 1
+    spinDegPerSec: 720
+  loopSequenceDefinition: {fileID: 11400000, guid: a91f8929cfc64aa47b4fbdb9782d95a5, type: 2}

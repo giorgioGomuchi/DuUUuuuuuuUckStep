@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BoomerangSequenceController : MonoBehaviour
+public class BoomerangSequenceController : MonoBehaviour, IBoomerangSequenceBridge
 {
     [Header("Refs")]
     [SerializeField] private PlayerReferences playerReferences;

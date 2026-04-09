@@ -5,11 +5,13 @@ public class PlayerCombatController : MonoBehaviour
     [Header("Refs")]
     [SerializeField] private WeaponSlotsController weapons;
     [SerializeField] private BoomerangSequenceController boomerangSequence;
+    [SerializeField] private BoomerangLoopController boomerangLoop;
     [SerializeField] private WeaponSequenceControllerV2 weaponSequenceController;
     [SerializeField] private ShotgunSequenceController shotgunSequenceController;
 
     public bool CombatBlocked { get; private set; }
     public BoomerangSequenceController BoomerangSequence => boomerangSequence;
+    public BoomerangLoopController BoomerangLoop => boomerangLoop;
 
     private void Awake()
     {
@@ -31,15 +33,20 @@ public class PlayerCombatController : MonoBehaviour
         if (boomerangSequence == null)
             boomerangSequence = GetComponentInChildren<BoomerangSequenceController>(true);
 
+        if (boomerangLoop == null)
+            boomerangLoop = GetComponentInChildren<BoomerangLoopController>(true);
+
         if (weaponSequenceController == null)
             weaponSequenceController = GetComponentInChildren<WeaponSequenceControllerV2>(true);
 
         if (shotgunSequenceController == null)
             shotgunSequenceController = GetComponentInChildren<ShotgunSequenceController>(true);
     }
+
     public void SetAim(Vector2 dir)
     {
         weapons?.SetAim(dir);
+        boomerangLoop?.SetAim(dir);
     }
 
     public void SetCombatBlocked(bool blocked)
@@ -79,6 +86,9 @@ public class PlayerCombatController : MonoBehaviour
             HandleSecondary(input);
             return;
         }
+
+        if (boomerangLoop != null)
+            boomerangLoop.TickLoop(input);
 
         HandlePrimary(input);
         HandleSecondary(input);

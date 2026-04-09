@@ -47,6 +47,7 @@ public class BoomerangProjectileMotor
     public bool IsOrbiting => state == BoomerangProjectileMotorState.Orbiting;
 
     public event Action OnBecameReflectable;
+    public event Action OnReachedHoldTarget;
     public event Action OnOrbitFinished;
     public event Action OnLost;
     public event Action OnFinished;
@@ -244,6 +245,7 @@ public class BoomerangProjectileMotor
         {
             rb.position = holdTarget;
             state = BoomerangProjectileMotorState.ReflectHold;
+            OnReachedHoldTarget?.Invoke();
             OnBecameReflectable?.Invoke();
         }
     }
@@ -372,4 +374,44 @@ public class BoomerangProjectileMotor
         float omt = 1f - t;
         return omt * omt * a + 2f * omt * t * b + t * t * c;
     }
+
+    public void Relaunch(Vector2 newDirection)
+    {
+        Vector2 finalDirection = newDirection.sqrMagnitude > 0.0001f
+            ? newDirection.normalized
+            : (direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right);
+
+        direction = finalDirection;
+
+        // Para relaunch NO usamos la distancia corta de deflect.
+        outboundStartPos = rb.position;
+        outboundLimitDistance = Mathf.Max(0.1f, config.outboundDistance);
+
+        runtimeReturnSteeringBonus = 0f;
+        runtimeNextReflectSpeedMultiplier = 1f;
+
+        state = BoomerangProjectileMotorState.Outbound;
+    }
+
+    public void LoopReflect(Vector2 newDirection)
+    {
+        Vector2 finalDirection = newDirection.sqrMagnitude > 0.0001f
+            ? newDirection.normalized
+            : (direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right);
+
+        direction = finalDirection;
+        speed *= Mathf.Max(0.01f, runtimeNextReflectSpeedMultiplier);
+
+        outboundStartPos = rb.position;
+
+        // Para el reflect del loop usamos una distancia suficientemente larga
+        // para que el jugador tenga otro recall real.
+        outboundLimitDistance = Mathf.Max(0.1f, config.outboundDistance);
+
+        runtimeReturnSteeringBonus = 0f;
+        runtimeNextReflectSpeedMultiplier = 1f;
+
+        state = BoomerangProjectileMotorState.ReflectedOutbound;
+    }
+
 }

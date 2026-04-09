@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "BoomerangWeaponData", menuName = "Game/Weapons/Boomerang Weapon Data")]
+[CreateAssetMenu(fileName = "BoomerangWeaponData", menuName = "Game/Boomerang/Boomerang Weapon Data")]
 public class BoomerangWeaponDataSO : RangedWeaponDataSO
 {
     [Header("Sequence")]

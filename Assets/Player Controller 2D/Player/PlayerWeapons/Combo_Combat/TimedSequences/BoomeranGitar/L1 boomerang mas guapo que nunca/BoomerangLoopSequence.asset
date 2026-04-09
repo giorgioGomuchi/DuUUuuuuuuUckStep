@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1514661b2517db47aafc84f2ba1ace3, type: 3}
+  m_Name: BoomerangLoopSequence
+  m_EditorClassIdentifier: 
+  sequenceId: Sequence
+  requiredSteps: 1
+  playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
+  rewardPolicy: {fileID: 0}
+  completionReward: {fileID: 0}
+  recallRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.199
+    perfectHalfWindowNormalized: 0.126
+    allowPerfect: 1
+  reflectRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.278
+    perfectHalfWindowNormalized: 0.137
+    allowPerfect: 1
+  dashRule:
+    enabled: 1
+    goodHalfWindowNormalized: 0.261
+    perfectHalfWindowNormalized: 0.113
+    allowPerfect: 1
+  recallWindowDuration: 1
+  returnToReflectDuration: 0.6
+  reflectWindowDuration: 1
+  uiPhaseTransitionHoldDuration: 0.08
+  reflectActivationNormalized: 0.3
+  allowDashDuringRecall: 1
+  allowDashDuringReflect: 1
+  failOnBadDash: 0
+  failOnSwitchWeaponInput: 1
+  clearWeaponOverrideOnFail: 1
+  useOrbitReward: 1
+  orbitDuration: 3.5
+  destroyProjectileOnFail: 1
+  destroyProjectileOnFailDelay: 5
+  recall:
+    recallRule:
+      enabled: 1
+      goodHalfWindowNormalized: 0.251
+      perfectHalfWindowNormalized: 0.103
+      allowPerfect: 1
+    recallWindowDuration: 1
+  catchDecision:
+    returnHoldDuration: 0.6
+    releaseRule:
+      enabled: 1
+      goodHalfWindowNormalized: 0.273
+      perfectHalfWindowNormalized: 0.148
+      allowPerfect: 0
+    releaseWindowDuration: 0.5
+    reflectDelayAfterCatch: 0.15
+  reflect:
+    reflectRule:
+      enabled: 1
+      goodHalfWindowNormalized: 0.264
+      perfectHalfWindowNormalized: 0.094
+      allowPerfect: 1
+    reflectWindowDuration: 1
+    reflectActivationNormalized: 0.3
+  recovery:
+    recoveryCooldownOnEarlyRelease: 0.25
+    allowDashDuringRecall: 1
+    allowDashDuringReflect: 1
+    failOnBadDash: 0
+    failOnSwitchWeaponInput: 1
+    clearWeaponOverrideOnFail: 1
+  reward:
+    useOrbitReward: 1
+    orbitDuration: 3.5
+    requiredWeightedScore: 3
+    relaunchScoreWeight: 1
+    reflectScoreWeight: 1.5
+  cleanup:
+    destroyProjectileOnFail: 1
+    destroyProjectileOnFailDelay: 0

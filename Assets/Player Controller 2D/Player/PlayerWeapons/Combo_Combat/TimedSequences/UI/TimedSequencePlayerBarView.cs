@@ -12,10 +12,22 @@ public class TimedSequencePlayerBarView : MonoBehaviour
     [SerializeField] private RectTransform failRightZone;
     [SerializeField] private RectTransform marker;
     [SerializeField] private Image barBackground;
+    [SerializeField] private Image decisionLine;
+    [SerializeField] private Image catchPulse;
 
     [Header("Background Colors")]
     [SerializeField] private Color activeBackgroundColor = new Color(0f, 0f, 0f, 0.55f);
     [SerializeField] private Color neutralBackgroundColor = new Color(0.18f, 0.18f, 0.18f, 0.7f);
+    [SerializeField] private Image[] tintedZoneImages;
+
+
+    private Color currentBarTint = Color.white;
+
+    [Header("Marker Colors")]
+    [SerializeField] private Image markerImage;
+    [SerializeField] private Color defaultMarkerColor = Color.white;
+    [SerializeField] private Color releaseMarkerColor = new Color(0.55f, 1f, 0.55f, 1f);
+    [SerializeField] private Color reflectMarkerColor = new Color(1f, 0.92f, 0.35f, 1f);
 
     public void SetDefinition(WeaponSequenceDefinitionSO definition)
     {
@@ -45,7 +57,7 @@ public class TimedSequencePlayerBarView : MonoBehaviour
         if (barBackground == null)
             return;
 
-        barBackground.color = neutral ? neutralBackgroundColor : activeBackgroundColor;
+        barBackground.color = neutral ? neutralBackgroundColor : currentBarTint;
     }
 
     public void SetMarker(float normalizedTime)
@@ -117,5 +129,54 @@ public class TimedSequencePlayerBarView : MonoBehaviour
         zone.pivot = new Vector2(0f, 0.5f);
         zone.anchoredPosition = new Vector2(xMin, zone.anchoredPosition.y);
         zone.sizeDelta = new Vector2(zoneWidth, zone.sizeDelta.y);
+    }
+
+    public void SetMarkerColor(Color color)
+    {
+        if (markerImage != null)
+            markerImage.color = color;
+    }
+
+    public void SetBarTint(Color color)
+    {
+        currentBarTint = color;
+
+        if (barBackground != null)
+            barBackground.color = color;
+    }
+
+    public void ClearBarTint()
+    {
+        currentBarTint = activeBackgroundColor;
+
+        if (barBackground != null)
+            barBackground.color = activeBackgroundColor;
+    }
+
+    public void SetDecisionLineVisible(bool visible)
+    {
+        if (decisionLine != null)
+            decisionLine.enabled = visible;
+    }
+
+    public void SetDecisionLineColor(Color color)
+    {
+        if (decisionLine != null)
+            decisionLine.color = color;
+    }
+
+    public void FlashCatchPulse(Color color)
+    {
+        if (catchPulse != null)
+        {
+            catchPulse.enabled = true;
+            catchPulse.color = color;
+        }
+    }
+
+    public void SetCatchPulseVisible(bool visible)
+    {
+        if (catchPulse != null)
+            catchPulse.enabled = visible;
     }
 }

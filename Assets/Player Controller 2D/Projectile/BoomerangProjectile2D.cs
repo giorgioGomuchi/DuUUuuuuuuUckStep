@@ -12,6 +12,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     public Action<BoomerangProjectile2D> onFinished;
     public Action<BoomerangProjectile2D> onReturnedToOwner;
+    public Action<BoomerangProjectile2D> onReachedHoldTarget;
     public Action<BoomerangProjectile2D> onEnteredReturning;
     public Action<BoomerangProjectile2D> onBecameReflectable;
     public Action<BoomerangProjectile2D> onLost;
@@ -19,7 +20,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     private Transform owner;
     private Transform ownerRoot;
-    private BoomerangSequenceController sequenceBridge;
+    private IBoomerangSequenceBridge sequenceBridge;
     private BoomerangProjectileConfig config;
     private bool finishedNotified;
 
@@ -81,7 +82,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         NotifyFinished();
     }
 
-    public void SetSequenceBridge(BoomerangSequenceController bridge)
+    public void SetSequenceBridge(IBoomerangSequenceBridge bridge)
     {
         sequenceBridge = bridge;
     }
@@ -156,6 +157,20 @@ public class BoomerangProjectile2D : KinematicProjectile2D
         SetReturnWindowActive(false);
     }
 
+    public void Relaunch(Vector2 newDirection)
+    {
+        motor.Relaunch(newDirection);
+        SyncVisualState();
+        SetReturnWindowActive(false);
+    }
+
+    public void LoopReflectFromMelee(Vector2 newDirection)
+    {
+        motor.LoopReflect(newDirection);
+        SyncVisualState();
+        SetReturnWindowActive(false);
+    }
+
     public override void Deflect(DeflectInfo info)
     {
         if (!CanBeDeflected)
@@ -226,10 +241,17 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
     private void HookMotorEvents()
     {
+        motor.OnReachedHoldTarget += HandleReachedHoldTarget;
         motor.OnBecameReflectable += HandleMotorBecameReflectable;
         motor.OnOrbitFinished += HandleMotorOrbitFinished;
         motor.OnLost += HandleMotorLost;
         motor.OnFinished += HandleMotorFinished;
+    }
+
+    private void HandleReachedHoldTarget()
+    {
+        SyncVisualState();
+        onReachedHoldTarget?.Invoke(this);
     }
 
     private void HandleMotorBecameReflectable()

@@ -31,6 +31,15 @@ public class TimedSequenceUIController : MonoBehaviour
     [SerializeField] private TMP_Text rewardFormulaText;
     [SerializeField] private TMP_Text rewardResultText;
 
+    [Header("Phase Colors")]
+    [SerializeField] private Color recallPhaseColor = new Color(0.55f, 0.8f, 1f, 1f);
+    [SerializeField] private Color holdPhaseColor = new Color(0.85f, 0.85f, 0.95f, 1f);
+    [SerializeField] private Color releasePhaseColor = new Color(0.5f, 1f, 0.6f, 1f);
+    [SerializeField] private Color confirmPhaseColor = new Color(0.95f, 0.75f, 1f, 1f);
+    [SerializeField] private Color reflectPhaseColor = new Color(1f, 0.92f, 0.35f, 1f);
+    [SerializeField] private Color recoveryPhaseColor = new Color(1f, 0.55f, 0.55f, 1f);
+    [SerializeField] private Color orbitPhaseColor = new Color(0.3f, 1f, 1f, 1f);
+
     [Header("Behaviour")]
     [SerializeField] private bool hideWhenInactive = true;
     [SerializeField] private bool cursorUIOnlyForScreenAim = true;
@@ -189,21 +198,7 @@ public class TimedSequenceUIController : MonoBehaviour
             useNeutralBar: false);
     }
 
-    public void SetBoomerangWindowProgress(
-        float normalizedTime,
-        int currentCycles,
-        int requiredCycles,
-        TimedSequenceActionRule activeRule,
-        string phaseLabel)
-    {
-        SetBoomerangWindowProgress(
-            normalizedTime,
-            currentCycles,
-            requiredCycles,
-            activeRule,
-            phaseLabel,
-            false);
-    }
+   
 
     public void SetBoomerangWindowProgress(
         float normalizedTime,
@@ -227,6 +222,106 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (phaseText != null)
             phaseText.text = phaseLabel;
+
+        ApplyBoomerangPhaseStyle(phaseLabel);
+        ApplyBoomerangBarStyle(phaseLabel, useNeutralBar);
+    }
+
+
+    private void ApplyBoomerangPhaseStyle(string phaseLabel)
+    {
+        Color color = phaseLabel switch
+        {
+            "Recall" => recallPhaseColor,
+            "Hold" => holdPhaseColor,
+            "Release" => releasePhaseColor,
+            "Reflect" => reflectPhaseColor,
+            "Recovery" => recoveryPhaseColor,
+            "Orbit" => orbitPhaseColor,
+            _ => Color.white
+        };
+
+        if (phaseText != null)
+            phaseText.color = new Color(color.r, color.g, color.b, 0.85f);
+
+        if (rewardStateText != null)
+            rewardStateText.color = color;
+    }
+
+    private void ApplyBoomerangBarStyle(string phaseLabel, bool useNeutralBar)
+    {
+        if (playerBarView == null)
+            return;
+
+        if (useNeutralBar)
+        {
+            playerBarView.SetNeutralMode(true);
+            playerBarView.SetMarkerColor(Color.white);
+            playerBarView.SetBarTint(new Color(0.22f, 0.22f, 0.22f, 0.78f));
+            playerBarView.SetDecisionLineVisible(false);
+            return;
+        }
+
+        playerBarView.SetNeutralMode(false);
+
+        Color markerColor = phaseLabel switch
+        {
+            "Release" => new Color(0.55f, 1f, 0.55f, 1f),
+            "Reflect" => new Color(1f, 0.92f, 0.35f, 1f),
+            "Recall" => new Color(0.6f, 0.85f, 1f, 1f),
+            "Catch" => new Color(1f, 0.92f, 0.35f, 1f),
+            _ => Color.white
+        };
+
+        Color barTint = phaseLabel switch
+        {
+            "Release" => new Color(0.16f, 0.28f, 0.16f, 0.78f),
+            "Reflect" => new Color(0.3f, 0.24f, 0.08f, 0.82f),
+            "Recall" => new Color(0.1f, 0.18f, 0.28f, 0.78f),
+            "Catch" => new Color(0.24f, 0.2f, 0.08f, 0.78f),
+            _ => new Color(0f, 0f, 0f, 0.55f)
+        };
+
+        playerBarView.SetMarkerColor(markerColor);
+        playerBarView.SetBarTint(barTint);
+
+        bool showDecisionLine = phaseLabel == "Release" || phaseLabel == "Reflect" || phaseLabel == "Catch";
+        playerBarView.SetDecisionLineVisible(showDecisionLine);
+
+        if (phaseLabel == "Release")
+            playerBarView.SetDecisionLineColor(new Color(0.55f, 1f, 0.55f, 1f));
+        else if (phaseLabel == "Reflect" || phaseLabel == "Catch")
+            playerBarView.SetDecisionLineColor(new Color(1f, 0.92f, 0.35f, 1f));
+        else
+            playerBarView.SetDecisionLineColor(Color.white);
+    }
+
+
+    public void SetDecisionLineVisible(bool visible)
+    {
+        playerBarView?.SetDecisionLineVisible(visible);
+    }
+
+    public void SetDecisionLineColor(Color color)
+    {
+        playerBarView?.SetDecisionLineColor(color);
+    }
+
+    public void SetCatchPulseVisible(bool visible)
+    {
+        playerBarView?.SetCatchPulseVisible(visible);
+    }
+
+    public void FlashCatchCue(Color color)
+    {
+        if (playerJudgementFlash != null)
+        {
+            playerJudgementFlash.color = color;
+            playerJudgementFlash.enabled = true;
+        }
+
+        playerBarView?.FlashCatchPulse(color);
+        flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
     }
 
 
@@ -315,22 +410,23 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (rewardStateText != null)
         {
-            string label = string.IsNullOrWhiteSpace(snapshot.rewardLabel) ? "Reward" : snapshot.rewardLabel;
-            string state = string.IsNullOrWhiteSpace(snapshot.rewardStateText)
-                ? (snapshot.rewardEligible ? "READY" : "LOCKED")
-                : snapshot.rewardStateText;
-
-            rewardStateText.text = $"{label}: {state}";
-            rewardStateText.color = state == "READY"
-                ? new Color(0.4f, 1f, 0.4f, 1f)
-                : new Color(1f, 0.55f, 0.55f, 1f);
+            rewardStateText.text = snapshot.rewardStateText ?? string.Empty;
+            rewardStateText.color = Color.white;
         }
 
         if (rewardFormulaText != null)
+        {
             rewardFormulaText.text = snapshot.rewardFormulaText ?? string.Empty;
+            rewardFormulaText.color = new Color(0.82f, 0.82f, 0.82f, 1f);
+        }
 
         if (rewardResultText != null)
+        {
             rewardResultText.text = snapshot.rewardResultText ?? string.Empty;
+            rewardResultText.color = snapshot.rewardEligible
+                ? new Color(0.4f, 1f, 0.4f, 1f)
+                : new Color(1f, 0.55f, 0.55f, 1f);
+        }
     }
 
     private string FormatMetric(string label, string value)
