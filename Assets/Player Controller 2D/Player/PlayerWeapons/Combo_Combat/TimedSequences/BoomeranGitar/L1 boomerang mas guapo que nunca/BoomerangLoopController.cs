@@ -8,10 +8,16 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     [SerializeField] private WeaponBehaviour boomerangWeapon;
     [SerializeField] private Transform catchAnchor;
 
+    [Header("Decision Reflect Visual")]
+    [SerializeField] private MeleeAnimatedWeaponDataSO decisionReflectVisualData;
+    [SerializeField] private Transform decisionReflectSpawnPoint;
+    [SerializeField] private bool playDecisionReflectVisual = true;
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
     [Header("Runtime")]
+    [SerializeField] private float decisionReleaseToReflectGraceSeconds = 0.05f;
     [SerializeField] private BoomerangLoopSequenceRuntime runtime = new();
     [SerializeField] private BoomerangSequencePerformanceTracker performanceTracker = new();
 
@@ -28,6 +34,20 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     private int reflectPerfectCount;
     private float weightedScore;
 
+    private bool lastLoggedRewardReady;
+    private float lastLoggedRewardScore = -1f;
+    private int lastLoggedRewardLoops = -1;
+    private int lastLoggedRewardReflects = -1;
+
+    private bool pendingDecisionRelease;
+    private float pendingDecisionReleaseTime;
+    private TimingJudgement pendingDecisionReleaseJudgement;
+
+    private string lastDecisionInputText = "-";
+    private string lastDecisionWindowStateText = "-";
+
+    private string failReasonText = string.Empty;
+    private bool suppressProjectileLostFail;
     public bool IsSequenceActive => runtime.IsRunning;
     public bool HasActiveProjectile => activeProjectile != null;
     public bool IsInOrbitReward => runtime.IsInOrbitReward;
@@ -75,21 +95,16 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
                 TickReturningHold(input);
                 break;
 
-            case BoomerangLoopSequencePhase.CatchReleaseWindow:
-                TickCatchReleaseWindow(input);
-                break;
-
-
-            case BoomerangLoopSequencePhase.CatchHold:
-                TickCatchHold();
-                break;
-
-            case BoomerangLoopSequencePhase.ReflectWindow:
-                TickReflectWindow();
+            case BoomerangLoopSequencePhase.CatchDecisionWindow:
+                TickCatchDecisionWindow(input);
                 break;
 
             case BoomerangLoopSequencePhase.Recovery:
                 TickRecovery();
+                break;
+
+            case BoomerangLoopSequencePhase.FailCooldown:
+                TickFailCooldown();
                 break;
         }
     }
@@ -113,6 +128,13 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         reflectPerfectCount = 0;
         weightedScore = 0f;
 
+        pendingDecisionRelease = false;
+        pendingDecisionReleaseTime = 0f;
+        pendingDecisionReleaseJudgement = default;
+
+        lastDecisionInputText = "-";
+        lastDecisionWindowStateText = "-";
+
         performanceTracker.ResetSequence();
         performanceTracker.BeginCycle(1);
 
@@ -132,42 +154,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
     public bool TryResolveMeleeReflect(BoomerangProjectile2D projectile, DeflectInfo info)
     {
-        if (!runtime.IsRunning || projectile == null || projectile != activeProjectile || activeDefinition == null)
-            return false;
-
-        if (runtime.Phase != BoomerangLoopSequencePhase.ReflectWindow)
-            return true;
-
-        TimingJudgement judgement = EvaluateTiming(
-            runtime.GetWindowNormalizedTime(),
-            activeDefinition.ReflectRule);
-
-        sequenceUI?.FlashJudgement(judgement);
-
-        if (!IsSuccess(judgement))
-        {
-            FinishAtCatch();
-            return true;
-        }
-
-        if (judgement == TimingJudgement.Perfect)
-            reflectPerfectCount++;
-
-        reflectSuccessCount++;
-        weightedScore += activeDefinition.ReflectScoreWeight;
-
-        performanceTracker.CommitCurrentCycle();
-        performanceTracker.BeginCycle(relaunchSuccessCount + reflectSuccessCount + 1);
-
-        //projectile.ReflectFromMelee(info.newDirection);
-        projectile.LoopReflectFromMelee(info.newDirection);
-        runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
-        UpdateUI();
-
-        if (debugLogs)
-            Debug.Log($"[BoomerangLoopController] Reflect success. score={weightedScore:F2}", this);
-
-        return true;
+        return false;
     }
 
     public void RegisterBoomerangDamage(BoomerangProjectile2D projectile, Collider2D other, BoomerangFlightState flightState)
@@ -187,6 +174,8 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         performanceTracker.RegisterDamage(other, actionType);
     }
+
+
 
     private void TryStartFromIdle(PlayerInputReader input)
     {
@@ -218,8 +207,10 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             if (debugLogs)
                 Debug.Log("[BoomerangLoopController] Recall window expired -> fail.", this);
 
+            suppressProjectileLostFail = true;
             activeProjectile.EnterDriftLost();
-            FailSequence();
+            EnterFailCooldown("TIME OUT");
+            suppressProjectileLostFail = false;
             return;
         }
 
@@ -237,8 +228,10 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             if (debugLogs)
                 Debug.Log($"[BoomerangLoopController] Recall failed. judgement={judgement}", this);
 
+            suppressProjectileLostFail = true;
             activeProjectile.EnterDriftLost();
-            FailSequence();
+            EnterFailCooldown("MISS");
+            suppressProjectileLostFail = false;
             return;
         }
 
@@ -248,6 +241,20 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         activeProjectile.StartCurvedReturn(activeDefinition.ReturnHoldDuration, 1f);
         runtime.BeginReturningHold(activeDefinition.ReturnHoldDuration);
         UpdateUI();
+    }
+
+    private void OnProjectileLost(BoomerangProjectile2D projectile)
+    {
+        if (projectile != activeProjectile)
+            return;
+
+        if (suppressProjectileLostFail)
+            return;
+
+        if (debugLogs)
+            Debug.Log("[BoomerangLoopController] Projectile lost -> fail.", this);
+
+        EnterFailCooldown("LOST");
     }
 
     private void TickReturningHold(PlayerInputReader input)
@@ -266,9 +273,13 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             runtime.BeginRecovery(activeDefinition.RecoveryCooldownOnEarlyRelease);
             UpdateUI();
         }
+
+        if (TryActivateOrbitReward(BoomerangLoopRewardTriggerInput.OnHoldL1))
+            return;
     }
 
-    private void TickCatchReleaseWindow(PlayerInputReader input)
+
+    private void TickCatchDecisionWindow(PlayerInputReader input)
     {
         if (activeDefinition == null || activeProjectile == null)
         {
@@ -276,24 +287,121 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             return;
         }
 
+        // 1) RELEASE L1 => Good o Perfect => relaunch
         if (input.ConsumeBoomerangReleased())
         {
             TimingJudgement judgement = EvaluateTiming(
-                 runtime.GetWindowNormalizedTime(),
-                 activeDefinition.ReleaseRule); ;
+                runtime.GetWindowNormalizedTime(),
+                activeDefinition.CatchDecisionRule);
+
+            lastDecisionInputText = "L1 RELEASE (QUEUED)";
+
+            lastDecisionWindowStateText = judgement switch
+            {
+                TimingJudgement.Perfect => "PERFECT",
+                TimingJudgement.Good => "GOOD",
+                _ => "NONE"
+            };
 
             sequenceUI?.FlashJudgement(judgement);
 
             if (debugLogs)
-                Debug.Log($"[BoomerangLoopController] Release input. judgement={judgement}", this);
+                Debug.Log($"[BoomerangLoopController] Catch decision L1 release. judgement={judgement}", this);
 
-            if (IsSuccess(judgement) && activeDefinition.AllowRelaunchBranch)
+            if (judgement == TimingJudgement.Good || judgement == TimingJudgement.Perfect)
             {
+                pendingDecisionRelease = true;
+                pendingDecisionReleaseTime = Time.time;
+                pendingDecisionReleaseJudgement = judgement;
+
                 if (debugLogs)
-                    Debug.Log($"[BoomerangLoopController] Release success -> relaunch. judgement={judgement}", this);
-                
+                    Debug.Log("[BoomerangLoopController] L1 release queued, waiting short grace for possible L2 override.", this);
+
+                return;
+            }
+
+            if (debugLogs)
+                Debug.Log("[BoomerangLoopController] Bad L1 release ignored. Decision window stays open.", this);
+
+            return;
+        }
+
+        // 2) L2 => solo Perfect => reflect
+        if (TryConsumeReflectDecisionInput(input))
+        {
+            TimingJudgement judgement = EvaluateTiming(
+                runtime.GetWindowNormalizedTime(),
+                activeDefinition.CatchDecisionRule);
+
+            lastDecisionInputText = "L2";
+            lastDecisionWindowStateText = judgement switch
+            {
+                TimingJudgement.Perfect => "PERFECT",
+                TimingJudgement.Good => "GOOD",
+                _ => "NONE"
+            };
+
+            sequenceUI?.FlashJudgement(judgement);
+
+            if (debugLogs)
+                Debug.Log($"[BoomerangLoopController] Catch decision L2 input. judgement={judgement}", this);
+
+            //Si l2 se hace en good la secuencia falla 
+            //if (judgement != TimingJudgement.Perfect)
+            //{
+            //    sequenceUI?.SetCatchPulseVisible(false);
+            //    EnterFailCooldown("BAD INPUT");
+            //    return;
+            //}
+
+            if (judgement == TimingJudgement.Perfect)
+            {
                 sequenceUI?.SetCatchPulseVisible(false);
-                PerformRelaunch(judgement);
+
+                pendingDecisionRelease = false;
+                pendingDecisionReleaseTime = 0f;
+                pendingDecisionReleaseJudgement = default;
+
+                PlayDecisionReflectMeleeVisual();
+
+                if (TryActivateOrbitReward(BoomerangLoopRewardTriggerInput.OnReflectL2))
+                    return;
+
+                PerformPerfectReflectFromDecision();
+                UpdateUI();
+                return;
+            }
+        }
+
+        if (pendingDecisionRelease)
+        {
+            float elapsed = Time.time - pendingDecisionReleaseTime;
+            if (elapsed >= decisionReleaseToReflectGraceSeconds)
+            {
+                sequenceUI?.SetCatchPulseVisible(false);
+
+                if (TryActivateOrbitReward(BoomerangLoopRewardTriggerInput.OnReleaseL1))
+                {
+                    pendingDecisionRelease = false;
+                    pendingDecisionReleaseTime = 0f;
+                    pendingDecisionReleaseJudgement = default;
+                    return;
+                }
+
+                lastDecisionInputText = "L1 RELEASE (COMMIT)";
+                lastDecisionWindowStateText = pendingDecisionReleaseJudgement switch
+                {
+                    TimingJudgement.Perfect => "PERFECT",
+                    TimingJudgement.Good => "GOOD",
+                    _ => "NONE"
+                };
+
+                PerformRelaunch(pendingDecisionReleaseJudgement);
+
+                pendingDecisionRelease = false;
+                pendingDecisionReleaseTime = 0f;
+                pendingDecisionReleaseJudgement = default;
+
                 UpdateUI();
                 return;
             }
@@ -302,51 +410,257 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         if (runtime.IsWindowExpired())
         {
             if (debugLogs)
-                Debug.Log("[BoomerangLoopController] Release window expired -> post catch flow.", this);
+                Debug.Log("[BoomerangLoopController] Catch decision expired -> fail cooldown.", this);
+
             sequenceUI?.SetCatchPulseVisible(false);
-            EnterPostCatchFlow();
-        }
-    }
-
-    
-
-    private void TickCatchHold()
-    {
-        if (activeDefinition == null || activeProjectile == null)
-        {
-            ForceStop();
+            EnterFailCooldown("TOO LATE");
             return;
         }
-
-        if (runtime.IsWindowExpired())
-        {
-            if (activeDefinition.AllowReflectBranch)
-            {
-                if (debugLogs)
-                    Debug.Log("[BoomerangLoopController] Reflect window opened.", this);
-
-                runtime.BeginReflectWindow(activeDefinition.ReflectWindowDuration);
-            }
-            else
-            {
-                FinishAtCatch();
-            }
-
-            UpdateUI();
-        }
     }
 
-    private void TickReflectWindow()
+    private bool TryConsumeReflectDecisionInput(PlayerInputReader input)
     {
-        if (activeDefinition == null || activeProjectile == null)
+        if (input == null)
+            return false;
+
+        return input.ConsumeSecondaryFireRequest();
+    }
+
+    private void PerformPerfectReflectFromDecision()
+    {
+        if (debugLogs)
         {
-            ForceStop();
-            return;
+            Debug.Log(
+                $"[BoomerangLoopController] ENTER PerformPerfectReflectFromDecision " +
+                $"before increment: reflects={reflectSuccessCount} score={weightedScore:F2}",
+                this);
         }
 
-        if (runtime.IsWindowExpired())
-            FinishAtCatch();
+        if (activeProjectile == null || activeDefinition == null || activeWeapon == null)
+            return;
+
+        reflectPerfectCount++;
+        reflectSuccessCount++;
+        weightedScore += activeDefinition.ReflectScoreWeight;
+
+        performanceTracker.CommitCurrentCycle();
+        performanceTracker.BeginCycle(relaunchSuccessCount + reflectSuccessCount + 1);
+
+        Vector2 aim = activeWeapon.CurrentAim;
+        activeProjectile.LoopReflectFromMelee(aim);
+
+        runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
+        UpdateUI();
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Perfect L2 reflect from catch decision. score={weightedScore:F2}", this);
+
+        if (debugLogs)
+            Debug.Log(
+                $"[BoomerangLoopController] Perfect L2 reflect from catch decision. " +
+                $"score={weightedScore:F2} " +
+                $"loops={GetCompletedLoopCount()} " +
+                $"reflects={reflectSuccessCount}",
+                this);
     }
+
+    private bool TryActivateOrbitReward(BoomerangLoopRewardTriggerInput trigger)
+    {
+        if (!IsRewardReady())
+            return false;
+
+        if (!CanTriggerRewardNow(trigger))
+            return false;
+
+        if (activeProjectile == null)
+            return false;
+
+        runtime.BeginOrbitReward();
+        sequenceUI?.Hide();
+
+        float duration = activeDefinition != null ? activeDefinition.OrbitDuration : 3f;
+        activeProjectile.BeginOrbitReward(duration, 0);
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Orbit reward triggered by {trigger}.", this);
+
+        return true;
+    }
+
+    private bool CanTriggerRewardNow(BoomerangLoopRewardTriggerInput trigger)
+    {
+        if (activeDefinition == null)
+            return false;
+
+        if (!activeDefinition.RequireExplicitRewardTrigger)
+            return true;
+
+        return activeDefinition.RewardTriggerInput == trigger;
+    }
+
+    private bool IsRewardReady()
+    {
+        bool shouldLogState =
+    lastLoggedRewardScore != weightedScore ||
+    lastLoggedRewardLoops != GetCompletedLoopCount() ||
+    lastLoggedRewardReflects != reflectSuccessCount;
+
+        if (debugLogs && shouldLogState)
+        {
+            Debug.Log(
+                $"[BoomerangLoopController] IsRewardReady? " +
+                $"useOrbit={activeDefinition.UseOrbitReward} " +
+                $"score={weightedScore:F2}/{activeDefinition.RequiredWeightedScore:F2} " +
+                $"loops={GetCompletedLoopCount()}/{activeDefinition.MinSuccessfulLoopsForReward} " +
+                $"reflects={reflectSuccessCount}/{activeDefinition.MinReflectSuccessesForReward} " +
+                $"requireLoopCount={activeDefinition.RequireSuccessfulLoopCount} " +
+                $"requireExplicitTrigger={activeDefinition.RequireExplicitRewardTrigger}",
+                this);
+
+            lastLoggedRewardScore = weightedScore;
+            lastLoggedRewardLoops = GetCompletedLoopCount();
+            lastLoggedRewardReflects = reflectSuccessCount;
+        }
+
+        //if (!activeDefinition.UseOrbitReward)
+        //{
+        //    if (debugLogs) Debug.Log("[BoomerangLoopController] Reward blocked: UseOrbitReward=false", this);
+        //    return false;
+        //}
+
+        //if (weightedScore < activeDefinition.RequiredWeightedScore)
+        //{
+        //    if (debugLogs) Debug.Log("[BoomerangLoopController] Reward blocked: insufficient weighted score", this);
+        //    return false;
+        //}
+
+        //if (activeDefinition.RequireSuccessfulLoopCount &&
+        //    GetCompletedLoopCount() < activeDefinition.MinSuccessfulLoopsForReward)
+        //{
+        //    if (debugLogs) Debug.Log("[BoomerangLoopController] Reward blocked: insufficient completed loops", this);
+        //    return false;
+        //}
+
+        //if (reflectSuccessCount < activeDefinition.MinReflectSuccessesForReward)
+        //{
+        //    if (debugLogs) Debug.Log("[BoomerangLoopController] Reward blocked: insufficient reflect successes", this);
+        //    return false;
+        //}
+
+        if (activeDefinition == null || !activeDefinition.UseOrbitReward)
+            return false;
+
+        if (weightedScore < activeDefinition.RequiredWeightedScore)
+            return false;
+
+        if (activeDefinition.RequireSuccessfulLoopCount &&
+            GetCompletedLoopCount() < activeDefinition.MinSuccessfulLoopsForReward)
+            return false;
+
+        if (reflectSuccessCount < activeDefinition.MinReflectSuccessesForReward)
+            return false;
+
+        SequenceRewardContextBase rewardContext = BuildLoopRewardContext();
+
+        if (rewardContext == null)
+            return true;
+
+        SequenceRewardResolution resolution =
+            rewardEvaluator.Evaluate(activeDefinition.RewardPolicy, rewardContext);
+
+        if (activeDefinition.RewardPolicy == null)
+        {
+            if (debugLogs) Debug.Log("[BoomerangLoopController] Reward ready: no extra policy assigned", this);
+            return true;
+        }
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Reward policy result: shouldApply={resolution.shouldApply}", this);
+
+        if (activeDefinition.RewardPolicy == null)
+            return true;
+
+        return resolution.shouldApply;
+    }
+
+    private SequenceRewardContextBase BuildLoopRewardContext()
+    {
+        SequenceRewardContextBase context =
+            rewardEvaluator.BuildContext(
+                performanceTracker.Performance,
+                GetCompletedLoopCount(),
+                GetCompletedLoopCount());
+
+        if (context == null)
+            return null;
+
+        context.SetInt("boomerang_loop_relaunch_successes", relaunchSuccessCount);
+        context.SetInt("boomerang_loop_reflect_successes", reflectSuccessCount);
+        context.SetInt("boomerang_loop_relaunch_perfects", relaunchPerfectCount);
+        context.SetInt("boomerang_loop_reflect_perfects", reflectPerfectCount);
+        context.SetFloat("boomerang_loop_weighted_score", weightedScore);
+        context.SetInt("boomerang_loop_completed_loops", GetCompletedLoopCount());
+
+        return context;
+    }
+
+    private void PlayDecisionReflectMeleeVisual()
+    {
+        if (!playDecisionReflectVisual)
+            return;
+
+        if (decisionReflectVisualData == null || decisionReflectVisualData.hitPrefab == null)
+            return;
+
+        if (decisionReflectSpawnPoint == null)
+            return;
+
+        Quaternion rotation =
+            decisionReflectSpawnPoint.rotation *
+            Quaternion.Euler(0f, 0f, decisionReflectVisualData.spriteAngleOffset);
+
+        GameObject go = Instantiate(
+            decisionReflectVisualData.hitPrefab,
+            decisionReflectSpawnPoint.position,
+            rotation);
+
+        Collider2D[] colliders = go.GetComponentsInChildren<Collider2D>(true);
+        for (int i = 0; i < colliders.Length; i++)
+            colliders[i].enabled = false;
+
+        float lifetime = Mathf.Max(0.01f, decisionReflectVisualData.hitLifetime);
+
+        if (decisionReflectVisualData.attackAnimation != null)
+        {
+            lifetime = Mathf.Max(0.01f, decisionReflectVisualData.attackAnimation.length);
+        }
+        else
+        {
+            Animator animator = go.GetComponent<Animator>();
+            if (animator == null)
+                animator = go.GetComponentInChildren<Animator>(true);
+
+            if (animator != null &&
+                animator.runtimeAnimatorController != null &&
+                animator.runtimeAnimatorController.animationClips.Length > 0)
+            {
+                lifetime = Mathf.Max(
+                    0.01f,
+                    animator.runtimeAnimatorController.animationClips[0].length);
+            }
+        }
+
+        Destroy(go, lifetime);
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Spawned decision reflect melee visual. lifetime={lifetime:F3}", this);
+    }
+
+    private int GetCompletedLoopCount()
+    {
+        return relaunchSuccessCount + reflectSuccessCount;
+    }
+
 
     private void TickRecovery()
     {
@@ -385,28 +699,18 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         if (debugLogs)
             Debug.Log($"[BoomerangLoopController] Relaunch success. score={weightedScore:F2}", this);
+
+        if (debugLogs)
+            Debug.Log(
+                $"[BoomerangLoopController] Relaunch success. " +
+                $"judgement={judgement} " +
+                $"score={weightedScore:F2} " +
+                $"loops={GetCompletedLoopCount()} " +
+                $"reflects={reflectSuccessCount}",
+                this);
     }
 
-    private void EnterPostCatchFlow()
-    {
-        if (activeDefinition == null)
-            return;
-
-        if (activeDefinition.AllowReflectBranch && activeDefinition.ReflectDelayAfterCatch > 0f)
-        {
-            runtime.BeginCatchHold(activeDefinition.ReflectDelayAfterCatch);
-        }
-        else if (activeDefinition.AllowReflectBranch)
-        {
-            runtime.BeginReflectWindow(activeDefinition.ReflectWindowDuration);
-        }
-        else
-        {
-            FinishAtCatch();
-        }
-
-        UpdateUI();
-    }
+   
 
     private void OnProjectileReachedHoldTarget(BoomerangProjectile2D projectile)
     {
@@ -420,6 +724,10 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         if (debugLogs)
             Debug.Log("[BoomerangLoopController] Catch reached.", this);
+        
+        
+        lastDecisionInputText = "WAITING";
+        lastDecisionWindowStateText = "NONE";
 
         if (runtime.Phase == BoomerangLoopSequencePhase.Recovery)
         {
@@ -427,7 +735,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             return;
         }
 
-        runtime.BeginCatchReleaseWindow(activeDefinition.CatchReleaseWindowDuration);
+        runtime.BeginCatchDecisionWindow(activeDefinition.CatchDecisionWindowDuration);
         UpdateUI();
     }
 
@@ -442,16 +750,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         CleanupStateOnly();
     }
 
-    private void OnProjectileLost(BoomerangProjectile2D projectile)
-    {
-        if (projectile != activeProjectile)
-            return;
-
-        if (debugLogs)
-            Debug.Log("[BoomerangLoopController] Projectile lost -> fail.", this);
-
-        FailSequence();
-    }
+   
 
     private void OnOrbitRewardFinished(BoomerangProjectile2D projectile)
     {
@@ -464,6 +763,17 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
     private void FinishAtCatch()
     {
+        if (debugLogs)
+        {
+            Debug.Log(
+                $"[BoomerangLoopController] FinishAtCatch. " +
+                $"activeProjectile={(activeProjectile != null)} " +
+                $"score={weightedScore:F2} " +
+                $"loops={GetCompletedLoopCount()} " +
+                $"reflects={reflectSuccessCount}",
+                this);
+        }
+
         if (activeProjectile == null)
         {
             CleanupStateOnly();
@@ -483,35 +793,32 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
             return;
         }
-
+        if (debugLogs)
+            Debug.Log("[BoomerangLoopController] FinishAtCatch -> no reward, destroying projectile.", this);
         Destroy(activeProjectile.gameObject);
         CleanupStateOnly();
     }
 
     private bool ShouldStartOrbitReward()
     {
-        if (activeDefinition == null || !activeDefinition.UseOrbitReward)
+        if (activeDefinition == null)
+        {
+            if (debugLogs) Debug.Log("[BoomerangLoopController] ShouldStartOrbitReward -> false (no active definition)", this);
             return false;
+        }
 
-        if (weightedScore < activeDefinition.RequiredWeightedScore)
+        if (activeDefinition.RequireExplicitRewardTrigger)
+        {
+            if (debugLogs) Debug.Log("[BoomerangLoopController] ShouldStartOrbitReward -> false (explicit trigger required)", this);
             return false;
+        }
 
-        SequenceRewardContextBase rewardContext =
-            rewardEvaluator.BuildContext(
-                performanceTracker.Performance,
-                relaunchSuccessCount + reflectSuccessCount,
-                relaunchSuccessCount + reflectSuccessCount);
+        bool ready = IsRewardReady();
 
-        if (rewardContext == null)
-            return true;
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] ShouldStartOrbitReward -> {ready}", this);
 
-        SequenceRewardResolution resolution =
-            rewardEvaluator.Evaluate(activeDefinition.RewardPolicy, rewardContext);
-
-        if (activeDefinition.RewardPolicy == null)
-            return true;
-
-        return resolution.shouldApply;
+        return ready;
     }
 
     private void FailSequence()
@@ -550,6 +857,15 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         reflectPerfectCount = 0;
         weightedScore = 0f;
 
+        pendingDecisionRelease = false;
+        pendingDecisionReleaseTime = 0f;
+        pendingDecisionReleaseJudgement = default;
+
+        lastDecisionInputText = "-";
+        lastDecisionWindowStateText = "-";
+
+        failReasonText = string.Empty;
+
         sequenceUI?.Hide();
     }
 
@@ -584,9 +900,16 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         string phaseLabel = GetCurrentPhaseLabel();
         float normalized = GetCurrentNormalizedTime();
 
+        bool decisionPerfectActive =
+    runtime.Phase == BoomerangLoopSequencePhase.CatchDecisionWindow &&
+    activeDefinition != null &&
+    activeDefinition.CatchDecisionRule != null &&
+    activeDefinition.CatchDecisionRule.AllowPerfect &&
+    Mathf.Abs(normalized - 0.5f) <= activeDefinition.CatchDecisionRule.PerfectHalfWindowNormalized;
+
 
         bool useNeutralBar = runtime.Phase == BoomerangLoopSequencePhase.ReturningHold ||
-                             runtime.Phase == BoomerangLoopSequencePhase.Recovery;
+                     runtime.Phase == BoomerangLoopSequencePhase.Recovery;
 
         string instructionText = GetCurrentInstructionText();
 
@@ -598,7 +921,16 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             phaseLabel,
             useNeutralBar);
 
-      
+        if (runtime.Phase == BoomerangLoopSequencePhase.CatchDecisionWindow)
+        {
+            lastDecisionWindowStateText = GetDecisionWindowStateText();
+        }
+
+        sequenceUI.SetBoomerangDecisionDebug(lastDecisionInputText, lastDecisionWindowStateText);
+
+        sequenceUI.SetDecisionPerfectActive(decisionPerfectActive);
+
+        
 
         SequencePerformanceUISnapshot snapshot =
             performanceTracker.Performance.BuildGenericUISnapshot(
@@ -620,9 +952,15 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         snapshot.rewardLabel = "Orbit";
         snapshot.rewardStateText = instructionText;
-        snapshot.rewardFormulaText = $"Score {weightedScore:F1}/{activeDefinition.RequiredWeightedScore:F1}";
-        snapshot.rewardResultText = weightedScore >= activeDefinition.RequiredWeightedScore ? "Ready" : "Locked";
+        snapshot.rewardFormulaText =
+    $"Score {weightedScore:F1}/{activeDefinition.RequiredWeightedScore:F1}\n" +
+    $"Reflects {reflectSuccessCount}/{activeDefinition.MinReflectSuccessesForReward}";
 
+        bool rewardReady = IsRewardReady();
+
+        snapshot.rewardResultText = rewardReady
+            ? (activeDefinition.RequireExplicitRewardTrigger ? "ARMED" : "READY")
+            : "LOCKED";
         sequenceUI.SetPerformanceSnapshot(snapshot);
     }
 
@@ -634,8 +972,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         return runtime.Phase switch
         {
             BoomerangLoopSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
-            BoomerangLoopSequencePhase.CatchReleaseWindow => activeDefinition.ReleaseRule,
-            BoomerangLoopSequencePhase.ReflectWindow => activeDefinition.ReflectRule,
+            BoomerangLoopSequencePhase.CatchDecisionWindow => activeDefinition.CatchDecisionRule,
             _ => null
         };
     }
@@ -646,10 +983,9 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         {
             BoomerangLoopSequencePhase.OutboundRecallWindow => "Recall",
             BoomerangLoopSequencePhase.ReturningHold => "Hold",
-            BoomerangLoopSequencePhase.CatchReleaseWindow => "Release",
-            BoomerangLoopSequencePhase.CatchHold => "Catch",
-            BoomerangLoopSequencePhase.ReflectWindow => "Reflect",
+            BoomerangLoopSequencePhase.CatchDecisionWindow => "Decision",
             BoomerangLoopSequencePhase.Recovery => "Recovery",
+            BoomerangLoopSequencePhase.FailCooldown => "Failed",
             BoomerangLoopSequencePhase.OrbitReward => "Orbit",
             _ => "Boomerang"
         };
@@ -688,12 +1024,62 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         {
             BoomerangLoopSequencePhase.OutboundRecallWindow => "PRESS L1",
             BoomerangLoopSequencePhase.ReturningHold => "HOLD L1",
-            BoomerangLoopSequencePhase.CatchReleaseWindow => "RELEASE L1",
-            BoomerangLoopSequencePhase.CatchHold => "GET READY",
-            BoomerangLoopSequencePhase.ReflectWindow => "PRESS L2",
+            BoomerangLoopSequencePhase.CatchDecisionWindow => "L1 GOOD / L2 PERFECT",
             BoomerangLoopSequencePhase.Recovery => "RECOVERY",
+            BoomerangLoopSequencePhase.FailCooldown => string.IsNullOrEmpty(failReasonText) ? "FAILED" : failReasonText,
             BoomerangLoopSequencePhase.OrbitReward => "ORBIT",
             _ => "BOOMERANG"
         };
     }
+
+    private void EnterFailCooldown(string reason)
+    {
+        if (activeDefinition == null)
+        {
+            FailSequence();
+            return;
+        }
+
+        failReasonText = reason;
+        runtime.BeginFailCooldown(activeDefinition.FailCooldownDuration);
+
+        sequenceUI?.FlashJudgement(default);
+
+        if (!activeDefinition.KeepUIVisibleDuringFailCooldown)
+        {
+            sequenceUI?.Hide();
+        }
+        else
+        {
+            UpdateUI();
+        }
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Enter fail cooldown. reason={reason}", this);
+    }
+
+    private void TickFailCooldown()
+    {
+        if (runtime.IsWindowExpired())
+        {
+            FailSequence();
+        }
+    }
+    private string GetDecisionWindowStateText()
+    {
+        if (runtime.Phase != BoomerangLoopSequencePhase.CatchDecisionWindow || activeDefinition == null)
+            return "-";
+
+        TimingJudgement currentJudgement = EvaluateTiming(
+            runtime.GetWindowNormalizedTime(),
+            activeDefinition.CatchDecisionRule);
+
+        return currentJudgement switch
+        {
+            TimingJudgement.Perfect => "PERFECT",
+            TimingJudgement.Good => "GOOD",
+            _ => "NONE"
+        };
+    }
+    
 }

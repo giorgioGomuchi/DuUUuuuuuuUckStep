@@ -55,24 +55,12 @@ public class BoomerangLoopSequenceRuntime
         catchTime = Time.time;
     }
 
-    public void BeginCatchReleaseWindow(float duration)
+    public void BeginCatchDecisionWindow(float duration)
     {
-        phase = BoomerangLoopSequencePhase.CatchReleaseWindow;
+        phase = BoomerangLoopSequencePhase.CatchDecisionWindow;
         BeginWindow(duration);
     }
 
-
-    public void BeginCatchHold(float duration)
-    {
-        phase = BoomerangLoopSequencePhase.CatchHold;
-        BeginWindow(duration);
-    }
-
-    public void BeginReflectWindow(float duration)
-    {
-        phase = BoomerangLoopSequencePhase.ReflectWindow;
-        BeginWindow(duration);
-    }
 
     public void BeginRecovery(float duration)
     {
@@ -138,5 +126,13 @@ public class BoomerangLoopSequenceRuntime
     {
         windowStartTime = Time.time;
         windowDuration = Mathf.Max(0.0001f, duration);
+    }
+
+    public void BeginFailCooldown(float duration)
+    {
+        isRunning = true;
+        isInOrbitReward = false;
+        phase = BoomerangLoopSequencePhase.FailCooldown;
+        BeginWindow(duration);
     }
 }

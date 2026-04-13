@@ -21,6 +21,8 @@ public class TimedSequenceUIController : MonoBehaviour
     [Header("Text")]
     [SerializeField] private TMP_Text progressText;
     [SerializeField] private TMP_Text phaseText;
+    [SerializeField] private TMP_Text decisionInputText;
+    [SerializeField] private TMP_Text decisionStateText;
 
     [Header("Performance Text")]
     [SerializeField] private TMP_Text hitsText;
@@ -39,6 +41,13 @@ public class TimedSequenceUIController : MonoBehaviour
     [SerializeField] private Color reflectPhaseColor = new Color(1f, 0.92f, 0.35f, 1f);
     [SerializeField] private Color recoveryPhaseColor = new Color(1f, 0.55f, 0.55f, 1f);
     [SerializeField] private Color orbitPhaseColor = new Color(0.3f, 1f, 1f, 1f);
+    [SerializeField] private Color failPhaseColor = new Color(1f, 0.35f, 0.35f, 1f);
+
+    [Header("Bommerang X <")]
+    [SerializeField] private Image playerSuccessIcon;
+    [SerializeField] private Image playerFailIcon;
+
+
 
     [Header("Behaviour")]
     [SerializeField] private bool hideWhenInactive = true;
@@ -46,6 +55,7 @@ public class TimedSequenceUIController : MonoBehaviour
 
     [Header("Flash")]
     [SerializeField] private float flashDuration = 0.08f;
+    [SerializeField] private float outcomeIconDuration = 0.18f;
 
     private PlayerReferences playerReferences;
     private WeaponSequenceDefinitionSO activeDefinition;
@@ -54,6 +64,7 @@ public class TimedSequenceUIController : MonoBehaviour
     private bool visible;
     private float flashEndTime;
     private Vector3 activePlayerUIWorldOffset;
+    private float outcomeIconEndTime;
 
     private void Awake()
     {
@@ -62,6 +73,12 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (canvasGroup == null)
             canvasGroup = GetComponent<CanvasGroup>();
+
+        if (playerSuccessIcon != null)
+            playerSuccessIcon.enabled = false;
+
+        if (playerFailIcon != null)
+            playerFailIcon.enabled = false;
 
         visible = false;
         activeDefinition = null;
@@ -79,6 +96,17 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             flashEndTime = 0f;
             ResetFlashVisuals();
+        }
+
+        if (outcomeIconEndTime > 0f && Time.time >= outcomeIconEndTime)
+        {
+            outcomeIconEndTime = 0f;
+
+            if (playerSuccessIcon != null)
+                playerSuccessIcon.enabled = false;
+
+            if (playerFailIcon != null)
+                playerFailIcon.enabled = false;
         }
     }
 
@@ -234,9 +262,9 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             "Recall" => recallPhaseColor,
             "Hold" => holdPhaseColor,
-            "Release" => releasePhaseColor,
-            "Reflect" => reflectPhaseColor,
+            "Decision" => new Color(0.8f, 1f, 0.55f, 1f),
             "Recovery" => recoveryPhaseColor,
+            "Failed" => failPhaseColor,
             "Orbit" => orbitPhaseColor,
             _ => Color.white
         };
@@ -266,32 +294,31 @@ public class TimedSequenceUIController : MonoBehaviour
 
         Color markerColor = phaseLabel switch
         {
-            "Release" => new Color(0.55f, 1f, 0.55f, 1f),
-            "Reflect" => new Color(1f, 0.92f, 0.35f, 1f),
+            "Decision" => new Color(0.8f, 1f, 0.55f, 1f),
             "Recall" => new Color(0.6f, 0.85f, 1f, 1f),
-            "Catch" => new Color(1f, 0.92f, 0.35f, 1f),
+            "Failed" => new Color(1f, 0.45f, 0.45f, 1f),
+            "Orbit" => new Color(0.3f, 1f, 1f, 1f),
             _ => Color.white
         };
 
         Color barTint = phaseLabel switch
         {
-            "Release" => new Color(0.16f, 0.28f, 0.16f, 0.78f),
-            "Reflect" => new Color(0.3f, 0.24f, 0.08f, 0.82f),
+            "Decision" => new Color(0.18f, 0.30f, 0.14f, 0.82f),
             "Recall" => new Color(0.1f, 0.18f, 0.28f, 0.78f),
-            "Catch" => new Color(0.24f, 0.2f, 0.08f, 0.78f),
+            "Failed" => new Color(0.35f, 0.08f, 0.08f, 0.85f),
+            "Orbit" => new Color(0.08f, 0.26f, 0.26f, 0.82f),
             _ => new Color(0f, 0f, 0f, 0.55f)
         };
 
         playerBarView.SetMarkerColor(markerColor);
         playerBarView.SetBarTint(barTint);
 
-        bool showDecisionLine = phaseLabel == "Release" || phaseLabel == "Reflect" || phaseLabel == "Catch";
+        bool showDecisionLine = phaseLabel == "Decision";
         playerBarView.SetDecisionLineVisible(showDecisionLine);
+        playerBarView.SetDecisionLineWidth(phaseLabel == "Decision" ? 6f : 2f);
 
-        if (phaseLabel == "Release")
-            playerBarView.SetDecisionLineColor(new Color(0.55f, 1f, 0.55f, 1f));
-        else if (phaseLabel == "Reflect" || phaseLabel == "Catch")
-            playerBarView.SetDecisionLineColor(new Color(1f, 0.92f, 0.35f, 1f));
+        if (phaseLabel == "Decision")
+            playerBarView.SetDecisionLineColor(new Color(1f, 0.95f, 0.2f, 1f));
         else
             playerBarView.SetDecisionLineColor(Color.white);
     }
@@ -322,6 +349,28 @@ public class TimedSequenceUIController : MonoBehaviour
 
         playerBarView?.FlashCatchPulse(color);
         flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
+    }
+
+
+    private void ShowOutcomeIcon(bool success)
+    {
+        if (playerSuccessIcon != null)
+            playerSuccessIcon.enabled = success;
+
+        if (playerFailIcon != null)
+            playerFailIcon.enabled = !success;
+
+        outcomeIconEndTime = Time.time + Mathf.Max(0.01f, outcomeIconDuration);
+    }
+
+
+    public void SetBoomerangDecisionDebug(string inputText, string stateText)
+    {
+        if (decisionInputText != null)
+            decisionInputText.text = string.IsNullOrEmpty(inputText) ? string.Empty : $"Input: {inputText}";
+
+        if (decisionStateText != null)
+            decisionStateText.text = string.IsNullOrEmpty(stateText) ? string.Empty : $"Window: {stateText}";
     }
 
 
@@ -411,7 +460,6 @@ public class TimedSequenceUIController : MonoBehaviour
         if (rewardStateText != null)
         {
             rewardStateText.text = snapshot.rewardStateText ?? string.Empty;
-            rewardStateText.color = Color.white;
         }
 
         if (rewardFormulaText != null)
@@ -461,6 +509,8 @@ public class TimedSequenceUIController : MonoBehaviour
             playerJudgementFlash.enabled = true;
         }
 
+        ShowOutcomeIcon(judgement == TimingJudgement.Good || judgement == TimingJudgement.Perfect);
+
         flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
     }
 
@@ -495,6 +545,12 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (playerJudgementFlash != null)
             playerJudgementFlash.enabled = false;
+
+        if (playerSuccessIcon != null)
+            playerSuccessIcon.enabled = false;
+
+        if (playerFailIcon != null)
+            playerFailIcon.enabled = false;
     }
 
     private void SetCanvasVisible(bool isVisible)
@@ -521,5 +577,13 @@ public class TimedSequenceUIController : MonoBehaviour
 
         if (rewardFormulaText != null) rewardFormulaText.text = string.Empty;
         if (rewardResultText != null) rewardResultText.text = string.Empty;
+
+        if (decisionInputText != null) decisionInputText.text = string.Empty;
+        if (decisionStateText != null) decisionStateText.text = string.Empty;
+    }
+
+    public void SetDecisionPerfectActive(bool active)
+    {
+        playerBarView?.SetDecisionPerfectActive(active);
     }
 }

@@ -37,27 +37,31 @@ public class BoomerangLoopSequenceDefinitionSO : BoomerangSequenceDefinitionSO
     public new TimedSequenceActionRule RecallRule => recall.recallRule;
     public new float RecallWindowDuration => recall.recallWindowDuration;
 
-    public new TimedSequenceActionRule ReflectRule => reflect.reflectRule;
-    public new float ReflectWindowDuration => reflect.reflectWindowDuration;
-    public new float ReflectActivationNormalized => reflect.reflectActivationNormalized;
+    //public new TimedSequenceActionRule ReflectRule => reflect.reflectRule;
+    //public new float ReflectWindowDuration => reflect.reflectWindowDuration;
+    //public new float ReflectActivationNormalized => reflect.reflectActivationNormalized;
 
-
-    public TimedSequenceActionRule ReleaseRule => catchDecision.releaseRule;
+    public TimedSequenceActionRule CatchDecisionRule => catchDecision.decisionRule;
+    public float CatchDecisionWindowDuration => catchDecision.decisionWindowDuration;
     public float ReturnHoldDuration => catchDecision.returnHoldDuration;
-    public float CatchReleaseWindowDuration => catchDecision.releaseWindowDuration;
-    public float ReflectDelayAfterCatch => catchDecision.reflectDelayAfterCatch;
 
+    public bool RequireExplicitRewardTrigger => reward.requireExplicitRewardTrigger;
+    public BoomerangLoopRewardTriggerInput RewardTriggerInput => reward.rewardTriggerInput;
+    public bool RequireSuccessfulLoopCount => reward.requireSuccessfulLoopCount;
+    public int MinSuccessfulLoopsForReward => reward.minSuccessfulLoopsForReward;
+    public int MinReflectSuccessesForReward => reward.minReflectSuccessesForReward;
 
+    public float FailCooldownDuration => recovery.failCooldownDuration;
+
+    public bool KeepUIVisibleDuringFailCooldown => recovery.keepUIVisibleDuringFailCooldown;
 
 
     public override bool IsValid()
     {
         return RecallWindowDuration > 0f &&
                ReturnHoldDuration > 0f &&
-               CatchReleaseWindowDuration > 0f &&
-               ReflectWindowDuration > 0f &&
+               CatchDecisionWindowDuration > 0f &&
                RecallRule != null &&
-               ReleaseRule != null &&
-               ReflectRule != null;
+               CatchDecisionRule != null;
     }
 }

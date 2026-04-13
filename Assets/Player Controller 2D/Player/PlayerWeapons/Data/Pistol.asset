@@ -29,4 +29,4 @@ MonoBehaviour:
   preferredFireInputMode: 0
   cadenceMode: 0
   projectilePrefab: {fileID: 5341200751948304790, guid: 0c2d5e3f98a54f8409dbff0765723fca, type: 3}
-  projectileSpeed: 12
+  projectileSpeed: 30

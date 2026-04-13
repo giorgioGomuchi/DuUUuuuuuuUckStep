@@ -179,4 +179,30 @@ public class TimedSequencePlayerBarView : MonoBehaviour
         if (catchPulse != null)
             catchPulse.enabled = visible;
     }
+
+    public void SetDecisionLineWidth(float width)
+    {
+        if (decisionLine == null)
+            return;
+
+        RectTransform rt = decisionLine.rectTransform;
+        Vector2 size = rt.sizeDelta;
+        size.x = width;
+        rt.sizeDelta = size;
+    }
+
+    public void SetDecisionPerfectActive(bool active)
+    {
+        if (decisionLine != null)
+            decisionLine.color = active
+                ? new Color(1f, 0.95f, 0.2f, 1f)
+                : Color.white;
+
+        if (markerImage != null)
+            markerImage.color = active
+                ? new Color(1f, 0.95f, 0.2f, 1f)
+                : defaultMarkerColor;
+
+        SetDecisionLineWidth(active ? 10f : 5f);
+    }
 }

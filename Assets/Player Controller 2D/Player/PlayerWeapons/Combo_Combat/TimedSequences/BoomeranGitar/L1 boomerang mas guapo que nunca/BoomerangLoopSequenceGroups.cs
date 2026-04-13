@@ -15,13 +15,10 @@ public class BoomerangLoopCatchSettings
     [Min(0.05f)]
     public float returnHoldDuration = 0.6f;
 
-    public TimedSequenceActionRule releaseRule = new();
+    public TimedSequenceActionRule decisionRule = new();
 
     [Min(0.05f)]
-    public float releaseWindowDuration = 0.35f;
-
-    [Min(0f)]
-    public float reflectDelayAfterCatch = 0.15f;
+    public float decisionWindowDuration = 0.5f;
 }
 
 [System.Serializable]
@@ -47,11 +44,26 @@ public class BoomerangLoopRecoverySettings
     public bool failOnBadDash = false;
     public bool failOnSwitchWeaponInput = true;
     public bool clearWeaponOverrideOnFail = true;
+    
+    [Min(0f)]
+    public float failCooldownDuration = 0.5f;
+
+    public bool keepUIVisibleDuringFailCooldown = true;
 }
 
 [System.Serializable]
 public class BoomerangLoopRewardSettings
 {
+    public bool requireExplicitRewardTrigger = false;
+
+    public BoomerangLoopRewardTriggerInput rewardTriggerInput = BoomerangLoopRewardTriggerInput.OnReflectL2;
+
+    public bool requireSuccessfulLoopCount = true;
+
+    public int minSuccessfulLoopsForReward = 3;
+
+    public int minReflectSuccessesForReward = 1;
+
     public bool useOrbitReward = true;
 
     [Min(0.05f)]
