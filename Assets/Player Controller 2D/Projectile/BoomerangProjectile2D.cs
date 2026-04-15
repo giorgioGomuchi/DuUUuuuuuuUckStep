@@ -10,6 +10,11 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     [Header("Runtime")]
     [SerializeField] private BoomerangProjectileMotor motor = new();
 
+    [SerializeField] private CircleCollider2D hitCollider;
+
+    private float baseHitRadius;
+    private bool shotRedirectDamageBoostActive;
+
     public Action<BoomerangProjectile2D> onFinished;
     public Action<BoomerangProjectile2D> onReturnedToOwner;
     public Action<BoomerangProjectile2D> onReachedHoldTarget;
@@ -24,6 +29,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     private BoomerangProjectileConfig config;
     private bool finishedNotified;
 
+    public Vector2 CurrentDirection => motor.Direction;
     public Transform Owner => owner;
     public bool IsReflectable => motor.IsReflectable;
     public bool IsOrbitRewardActive => motor.IsOrbiting;
@@ -71,6 +77,12 @@ public class BoomerangProjectile2D : KinematicProjectile2D
 
         if (ownerCollisionIgnore == null)
             ownerCollisionIgnore = GetComponent<BoomerangOwnerCollisionIgnore2D>();
+
+        if (hitCollider == null)
+            hitCollider = GetComponent<CircleCollider2D>();
+
+        if (hitCollider != null)
+            baseHitRadius = hitCollider.radius;
 
         HookMotorEvents();
         visuals?.ResetVisuals();
@@ -135,6 +147,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     public void BeginOrbitReward(float duration, int targetTurns)
     {
         motor.BeginOrbit(duration, targetTurns);
+        visuals?.SetOrbitTrail();
         SyncVisualState();
         SetReturnWindowActive(false);
 
@@ -146,6 +159,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     public void EnterDriftLost()
     {
         motor.EnterDriftLost();
+        visuals?.SetFailedTrail();
         SyncVisualState();
         SetReturnWindowActive(false);
     }
@@ -153,20 +167,71 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     public void ReflectFromMelee(Vector2 newDirection)
     {
         motor.Reflect(newDirection);
+        visuals?.SetMeleeReflectTrail();
         SyncVisualState();
         SetReturnWindowActive(false);
+    }
+
+    public void SetShotRedirectDamageBoost(float radiusMultiplier)
+    {
+        shotRedirectDamageBoostActive = true;
+
+        if (hitCollider != null)
+            hitCollider.radius = baseHitRadius * Mathf.Max(1f, radiusMultiplier);
+    }
+
+    public void ClearShotRedirectDamageBoost()
+    {
+        shotRedirectDamageBoostActive = false;
+
+        if (hitCollider != null)
+            hitCollider.radius = baseHitRadius;
     }
 
     public void Relaunch(Vector2 newDirection)
     {
         motor.Relaunch(newDirection);
+        visuals?.SetDefaultLoopTrail();
         SyncVisualState();
         SetReturnWindowActive(false);
+    }
+
+    public void ApplyShotRedirect(
+    Vector2 newDirection,
+    float blend,
+    float blendDuration,
+    float damageRadiusMultiplier,
+    float auraSpinSpeedDegPerSec)
+    {
+        motor.LoopReflectRedirect(newDirection, blend, blendDuration);
+        visuals?.SetShotRedirectTrail();
+
+        SetShotRedirectDamageBoost(damageRadiusMultiplier);
+
+        float boostedRadius = hitCollider != null
+            ? hitCollider.radius
+            : baseHitRadius * Mathf.Max(1f, damageRadiusMultiplier);
+
+        float visualOrbitRadius = boostedRadius * 0.65f;
+
+        visuals?.SetShotRedirectAuraActive(
+            true,
+            visualOrbitRadius,
+            auraSpinSpeedDegPerSec,
+            selfSpinMultiplier: 1.5f,
+            radiusPulseAmplitude: 0.12f,
+            radiusPulseSpeed: 20f);
+
+        SyncVisualState();
+        SetReturnWindowActive(false);
+
+        visuals?.TriggerReflectableFlash(config.reflectableFlashDuration * 0.75f);
     }
 
     public void LoopReflectFromMelee(Vector2 newDirection)
     {
         motor.LoopReflect(newDirection);
+        visuals?.SetMeleeReflectTrail();
         SyncVisualState();
         SetReturnWindowActive(false);
     }
@@ -200,7 +265,7 @@ public class BoomerangProjectile2D : KinematicProjectile2D
             return;
         }
 
-        motor.Tick(Time.deltaTime, Time.fixedDeltaTime);
+        motor.Tick(Time.fixedDeltaTime, Time.fixedDeltaTime);
         SyncVisualState();
     }
 
@@ -282,6 +347,12 @@ public class BoomerangProjectile2D : KinematicProjectile2D
     private void SyncVisualState()
     {
         visuals?.SetMotorState(motor.State);
+
+        if (motor.State != BoomerangProjectileMotorState.ReflectedOutbound && shotRedirectDamageBoostActive)
+        {
+            ClearShotRedirectDamageBoost();
+            visuals?.SetShotRedirectAuraActive(false, 0f, 0f);
+        }
     }
 
     private void SetReturnWindowActive(bool active)

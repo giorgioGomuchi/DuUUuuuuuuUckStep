@@ -136,6 +136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lifetime: 5
   debugLogs: 0
+  spriteAngleOffset: -90
 --- !u!50 &5608136717209487095
 Rigidbody2D:
   serializedVersion: 4

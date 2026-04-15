@@ -8,7 +8,6 @@ public class BoomerangLoopSequenceRuntime
     [SerializeField] private bool isRunning;
     [SerializeField] private bool isInOrbitReward;
     [SerializeField] private bool catchReached;
-    [SerializeField] private bool earlyReleaseTriggered;
 
     [SerializeField] private float windowStartTime;
     [SerializeField] private float windowDuration;
@@ -18,7 +17,6 @@ public class BoomerangLoopSequenceRuntime
     public bool IsRunning => isRunning;
     public bool IsInOrbitReward => isInOrbitReward;
     public bool CatchReached => catchReached;
-    public bool EarlyReleaseTriggered => earlyReleaseTriggered;
     public float CatchTime => catchTime;
 
     public void Reset()
@@ -27,7 +25,6 @@ public class BoomerangLoopSequenceRuntime
         isRunning = false;
         isInOrbitReward = false;
         catchReached = false;
-        earlyReleaseTriggered = false;
         windowStartTime = 0f;
         windowDuration = 0f;
         catchTime = 0f;
@@ -38,7 +35,6 @@ public class BoomerangLoopSequenceRuntime
         isRunning = true;
         isInOrbitReward = false;
         catchReached = false;
-        earlyReleaseTriggered = false;
         phase = BoomerangLoopSequencePhase.OutboundRecallWindow;
         BeginWindow(duration);
     }
@@ -64,7 +60,6 @@ public class BoomerangLoopSequenceRuntime
 
     public void BeginRecovery(float duration)
     {
-        earlyReleaseTriggered = true;
         phase = BoomerangLoopSequencePhase.Recovery;
         BeginWindow(duration);
     }
@@ -86,13 +81,10 @@ public class BoomerangLoopSequenceRuntime
         windowDuration = 0f;
     }
 
-    public void Fail()
+    public void BeginShotRedirectedOutbound(float duration)
     {
-        isRunning = false;
-        isInOrbitReward = false;
-        phase = BoomerangLoopSequencePhase.Failed;
-        windowStartTime = 0f;
-        windowDuration = 0f;
+        phase = BoomerangLoopSequencePhase.ShotRedirectedOutbound;
+        BeginWindow(duration);
     }
 
     public bool IsWindowExpired()
@@ -111,16 +103,7 @@ public class BoomerangLoopSequenceRuntime
         return Mathf.Clamp01((Time.time - windowStartTime) / windowDuration);
     }
 
-    public float GetReleaseNormalizedTimeFromCatch()
-    {
-        if (windowDuration <= 0.0001f)
-            return 1f;
-
-        float elapsedSinceCatch = Mathf.Max(0f, Time.time - catchTime);
-        float halfDuration = Mathf.Max(0.0001f, windowDuration * 0.5f);
-
-        return Mathf.Clamp01(0.5f + (elapsedSinceCatch / halfDuration) * 0.5f);
-    }
+ 
 
     private void BeginWindow(float duration)
     {

@@ -17,35 +17,6 @@ MonoBehaviour:
   playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
   rewardPolicy: {fileID: 0}
   completionReward: {fileID: 0}
-  recallRule:
-    enabled: 1
-    goodHalfWindowNormalized: 0.199
-    perfectHalfWindowNormalized: 0.126
-    allowPerfect: 1
-  reflectRule:
-    enabled: 1
-    goodHalfWindowNormalized: 0.278
-    perfectHalfWindowNormalized: 0.137
-    allowPerfect: 1
-  dashRule:
-    enabled: 1
-    goodHalfWindowNormalized: 0.261
-    perfectHalfWindowNormalized: 0.113
-    allowPerfect: 1
-  recallWindowDuration: 1
-  returnToReflectDuration: 0.6
-  reflectWindowDuration: 1
-  uiPhaseTransitionHoldDuration: 0.08
-  reflectActivationNormalized: 0.3
-  allowDashDuringRecall: 1
-  allowDashDuringReflect: 1
-  failOnBadDash: 0
-  failOnSwitchWeaponInput: 1
-  clearWeaponOverrideOnFail: 1
-  useOrbitReward: 1
-  orbitDuration: 3.5
-  destroyProjectileOnFail: 1
-  destroyProjectileOnFailDelay: 5
   recall:
     recallRule:
       enabled: 1
@@ -53,6 +24,15 @@ MonoBehaviour:
       perfectHalfWindowNormalized: 0.103
       allowPerfect: 1
     recallWindowDuration: 1
+  redirectShot:
+    damageRadiusMultiplier: 2
+    auraSpinSpeedDegPerSec: 192
+    redirectAngleDegrees: 85
+    redirectDirectionBlend: 0.393
+    redirectBlendDuration: 0.15
+    redirectWindowDuration: 0.3
+    redirectedOutboundDuration: 0.2
+    postRedirectRecallWindowDuration: 1
   catchDecision:
     returnHoldDuration: 0.6
     decisionRule:
@@ -61,14 +41,8 @@ MonoBehaviour:
       perfectHalfWindowNormalized: 0.06
       allowPerfect: 1
     decisionWindowDuration: 0.5
-  reflect:
-    reflectRule:
-      enabled: 1
-      goodHalfWindowNormalized: 0.264
-      perfectHalfWindowNormalized: 0.094
-      allowPerfect: 1
-    reflectWindowDuration: 1
-    reflectActivationNormalized: 0.3
+  decision:
+    releaseToReflectGraceSeconds: 0.05
   recovery:
     recoveryCooldownOnEarlyRelease: 0.25
     allowDashDuringRecall: 1
@@ -80,9 +54,9 @@ MonoBehaviour:
     keepUIVisibleDuringFailCooldown: 1
   reward:
     requireExplicitRewardTrigger: 0
-    rewardTriggerInput: 2
+    rewardTriggerInput: 1
     requireSuccessfulLoopCount: 1
-    minSuccessfulLoopsForReward: 3
+    minSuccessfulLoopsForReward: 4
     minReflectSuccessesForReward: 1
     useOrbitReward: 1
     orbitDuration: 3.5

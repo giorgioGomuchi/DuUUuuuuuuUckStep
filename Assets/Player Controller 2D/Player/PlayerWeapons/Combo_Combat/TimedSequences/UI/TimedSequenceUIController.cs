@@ -1,4 +1,5 @@
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -59,7 +60,7 @@ public class TimedSequenceUIController : MonoBehaviour
 
     private PlayerReferences playerReferences;
     private WeaponSequenceDefinitionSO activeDefinition;
-    private BoomerangSequenceDefinitionSO activeBoomerangDefinition;
+    private BoomerangLoopSequenceDefinitionSO activeBoomerangDefinition;
     private Camera worldCamera;
     private bool visible;
     private float flashEndTime;
@@ -203,10 +204,11 @@ public class TimedSequenceUIController : MonoBehaviour
     // BOOMERANG
     // ---------------------------------------------------------------------
 
+
     public void ShowBoomerang(BoomerangSequenceDefinitionSO definition, PlayerReferences references)
     {
         activeDefinition = null;
-        activeBoomerangDefinition = definition;
+        activeBoomerangDefinition = null;
         playerReferences = references;
         activePlayerUIWorldOffset = definition != null ? definition.PlayerUIWorldOffset : Vector3.zero;
 
@@ -224,9 +226,36 @@ public class TimedSequenceUIController : MonoBehaviour
             activeRule: definition != null ? definition.RecallRule : null,
             phaseLabel: "Recall",
             useNeutralBar: false);
+
+        SetPerformanceSnapshot(SequencePerformanceUISnapshot.Empty);
     }
 
-   
+    public void ShowBoomerang(BoomerangLoopSequenceDefinitionSO definition, PlayerReferences references)
+    {
+        activeDefinition = null;
+        activeBoomerangDefinition = definition;
+        playerReferences = references;
+        activePlayerUIWorldOffset = definition != null ? definition.PlayerUIWorldOffset : Vector3.zero;
+
+        if (references != null && references.Aim != null)
+            worldCamera = references.Aim.MainCamera;
+
+        visible = true;
+        SetCanvasVisible(true);
+        ResetFlashVisuals();
+
+        SetBoomerangWindowProgress(
+            normalizedTime: 0f,
+            currentCycles: 0,
+            requiredCycles: definition != null ? definition.RequiredSteps : 0,
+            activeRule: definition != null ? definition.RecallRule : null,
+            phaseLabel: "Recall",
+            useNeutralBar: false);
+
+        SetPerformanceSnapshot(SequencePerformanceUISnapshot.Empty);
+    }
+
+
 
     public void SetBoomerangWindowProgress(
         float normalizedTime,
@@ -261,6 +290,8 @@ public class TimedSequenceUIController : MonoBehaviour
         Color color = phaseLabel switch
         {
             "Recall" => recallPhaseColor,
+            "Recall 2" => recallPhaseColor,
+            "Redirect" => new Color(0.35f, 0.85f, 1f, 1f),
             "Hold" => holdPhaseColor,
             "Decision" => new Color(0.8f, 1f, 0.55f, 1f),
             "Recovery" => recoveryPhaseColor,
@@ -296,6 +327,8 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             "Decision" => new Color(0.8f, 1f, 0.55f, 1f),
             "Recall" => new Color(0.6f, 0.85f, 1f, 1f),
+            "Recall 2" => new Color(0.6f, 1f, 0.8f, 1f),
+            "Redirect" => new Color(0.35f, 0.85f, 1f, 1f),
             "Failed" => new Color(1f, 0.45f, 0.45f, 1f),
             "Orbit" => new Color(0.3f, 1f, 1f, 1f),
             _ => Color.white
@@ -305,6 +338,8 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             "Decision" => new Color(0.18f, 0.30f, 0.14f, 0.82f),
             "Recall" => new Color(0.1f, 0.18f, 0.28f, 0.78f),
+            "Recall 2" => new Color(0.08f, 0.24f, 0.18f, 0.80f),
+            "Redirect" => new Color(0.08f, 0.18f, 0.30f, 0.82f),
             "Failed" => new Color(0.35f, 0.08f, 0.08f, 0.85f),
             "Orbit" => new Color(0.08f, 0.26f, 0.26f, 0.82f),
             _ => new Color(0f, 0f, 0f, 0.55f)
@@ -494,24 +529,37 @@ public class TimedSequenceUIController : MonoBehaviour
         {
             TimingJudgement.Perfect => new Color(1f, 0.95f, 0.2f, 0.9f),
             TimingJudgement.Good => new Color(0.9f, 1f, 0.9f, 0.85f),
-            _ => new Color(1f, 0.3f, 0.3f, 0.9f)
+            TimingJudgement.Fail => new Color(1f, 0.3f, 0.3f, 0.9f),
+            _ => new Color(1f, 1f, 1f, 0f)
         };
+
+        bool showFlash = judgement == TimingJudgement.Perfect ||
+                         judgement == TimingJudgement.Good ||
+                         judgement == TimingJudgement.Fail;
 
         if (cursorJudgementFlash != null)
         {
             cursorJudgementFlash.color = color;
-            cursorJudgementFlash.enabled = true;
+            cursorJudgementFlash.enabled = showFlash;
         }
 
         if (playerJudgementFlash != null)
         {
             playerJudgementFlash.color = color;
-            playerJudgementFlash.enabled = true;
+            playerJudgementFlash.enabled = showFlash;
         }
 
-        ShowOutcomeIcon(judgement == TimingJudgement.Good || judgement == TimingJudgement.Perfect);
+        if (judgement == TimingJudgement.Perfect || judgement == TimingJudgement.Good)
+        {
+            ShowOutcomeIcon(true);
+        }
+        else if (judgement == TimingJudgement.Fail)
+        {
+            ShowOutcomeIcon(false);
+        }
 
-        flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
+        if (showFlash)
+            flashEndTime = Time.time + Mathf.Max(0.01f, flashDuration);
     }
 
     private void UpdateCursorPosition()

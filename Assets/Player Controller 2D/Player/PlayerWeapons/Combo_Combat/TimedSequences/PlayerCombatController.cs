@@ -101,8 +101,17 @@ public class PlayerCombatController : MonoBehaviour
         if (mainData == null)
             return;
 
-        if (WeaponFireRequestUtility.ShouldFirePrimaryThisFrame(input, mainData))
-            weapons.FirePrimary();
+        if (!WeaponFireRequestUtility.ShouldFirePrimaryThisFrame(input, mainData))
+            return;
+
+        // Si el redirect ya está armado, no dejamos disparar más balas durante esta ventana.
+        if (boomerangLoop != null && boomerangLoop.HasPendingRecallShotRedirect())
+            return;
+
+        weapons.FirePrimary();
+
+        if (boomerangLoop != null)
+            boomerangLoop.TryArmRecallShotRedirectFromPrimaryFire();
     }
 
     private void HandleSecondary(PlayerInputReader input)

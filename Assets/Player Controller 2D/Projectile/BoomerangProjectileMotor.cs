@@ -38,6 +38,14 @@ public class BoomerangProjectileMotor
     private float orbitAccumulatedRadians;
     private readonly Dictionary<int, float> orbitDamageCooldownByColliderId = new();
 
+    private float redirectBlendSpeedBoost = 1.08f;
+
+    private bool redirectBlendActive;
+    private Vector2 redirectBlendStartDirection;
+    private Vector2 redirectBlendTargetDirection;
+    private float redirectBlendElapsed;
+    private float redirectBlendDuration;
+
     public BoomerangProjectileMotorState State => state;
     public Vector2 Direction => direction;
     public float Speed => speed;
@@ -84,6 +92,12 @@ public class BoomerangProjectileMotor
 
         driftSpeed = speed;
         orbitDamageCooldownByColliderId.Clear();
+
+        redirectBlendActive = false;
+        redirectBlendStartDirection = direction;
+        redirectBlendTargetDirection = direction;
+        redirectBlendElapsed = 0f;
+        redirectBlendDuration = 0f;
     }
 
     public void Tick(float deltaTime, float fixedDeltaTime)
@@ -113,6 +127,48 @@ public class BoomerangProjectileMotor
         }
     }
 
+    public void LoopReflectRedirect(Vector2 newDirection, float initialBlend, float blendDuration)
+    {
+        Vector2 finalDirection = newDirection.sqrMagnitude > 0.0001f
+            ? newDirection.normalized
+            : (direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right);
+
+        Vector2 startDirection = Vector2.Lerp(
+            direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right,
+            finalDirection,
+            Mathf.Clamp01(initialBlend)).normalized;
+
+        if (startDirection.sqrMagnitude <= 0.0001f)
+            startDirection = finalDirection;
+
+        direction = startDirection;
+        speed *= Mathf.Max(0.01f, runtimeNextReflectSpeedMultiplier) * redirectBlendSpeedBoost;
+
+
+        outboundStartPos = rb.position;
+        outboundLimitDistance = Mathf.Max(0.1f, config.outboundDistance);
+
+        runtimeReturnSteeringBonus = 0f;
+        runtimeNextReflectSpeedMultiplier = 1f;
+
+        redirectBlendActive = blendDuration > 0.0001f && Vector2.Dot(startDirection, finalDirection) < 0.9999f;
+        redirectBlendStartDirection = startDirection;
+        redirectBlendTargetDirection = finalDirection;
+        redirectBlendElapsed = 0f;
+        redirectBlendDuration = Mathf.Max(0.01f, blendDuration);
+
+        state = BoomerangProjectileMotorState.ReflectedOutbound;
+    }
+
+    private void ResetRedirectBlend()
+    {
+        redirectBlendActive = false;
+        redirectBlendStartDirection = direction;
+        redirectBlendTargetDirection = direction;
+        redirectBlendElapsed = 0f;
+        redirectBlendDuration = 0f;
+    }
+
     public void StartTimedReturn(float duration)
     {
         if (owner == null || rb == null)
@@ -122,6 +178,7 @@ public class BoomerangProjectileMotor
         returnStartTime = Time.time;
         returnStartPos = rb.position;
         returnInitialDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.right;
+        ResetRedirectBlend();
         state = BoomerangProjectileMotorState.Returning;
     }
 
@@ -139,6 +196,8 @@ public class BoomerangProjectileMotor
 
         runtimeReturnSteeringBonus = 0f;
         runtimeNextReflectSpeedMultiplier = 1f;
+
+        ResetRedirectBlend();
 
         state = BoomerangProjectileMotorState.ReflectedOutbound;
     }
@@ -168,6 +227,8 @@ public class BoomerangProjectileMotor
         orbitAngularSpeedRad = orbitAngularSpeedDeg * Mathf.Deg2Rad;
         if (config.orbitClockwise)
             orbitAngularSpeedRad *= -1f;
+        
+        ResetRedirectBlend();
 
         state = BoomerangProjectileMotorState.Orbiting;
     }
@@ -176,6 +237,9 @@ public class BoomerangProjectileMotor
     {
         driftSpeed = Mathf.Max(0f, speed);
         state = BoomerangProjectileMotorState.DriftingLost;
+
+        ResetRedirectBlend();
+
         OnLost?.Invoke();
     }
 
@@ -214,6 +278,28 @@ public class BoomerangProjectileMotor
 
     private void TickOutbound(float fixedDeltaTime)
     {
+        if (redirectBlendActive)
+        {
+            redirectBlendElapsed += fixedDeltaTime;
+            float t = Mathf.Clamp01(redirectBlendElapsed / Mathf.Max(0.0001f, redirectBlendDuration));
+
+            // Ease out suave: empieza curvando más y termina asentándose.
+            float eased = 1f - Mathf.Pow(1f - t, 2f);
+
+            Vector2 blendedDirection = Vector2.Lerp(
+                redirectBlendStartDirection,
+                redirectBlendTargetDirection,
+                eased);
+
+            if (blendedDirection.sqrMagnitude > 0.0001f)
+                direction = blendedDirection.normalized;
+            else
+                direction = redirectBlendTargetDirection;
+
+            if (t >= 1f)
+                redirectBlendActive = false;
+        }
+
         rb.MovePosition(rb.position + direction * speed * fixedDeltaTime);
 
         float traveled = Vector2.Distance(outboundStartPos, rb.position);
@@ -390,6 +476,8 @@ public class BoomerangProjectileMotor
         runtimeReturnSteeringBonus = 0f;
         runtimeNextReflectSpeedMultiplier = 1f;
 
+        ResetRedirectBlend();
+
         state = BoomerangProjectileMotorState.Outbound;
     }
 
@@ -410,6 +498,8 @@ public class BoomerangProjectileMotor
 
         runtimeReturnSteeringBonus = 0f;
         runtimeNextReflectSpeedMultiplier = 1f;
+
+        ResetRedirectBlend();
 
         state = BoomerangProjectileMotorState.ReflectedOutbound;
     }
