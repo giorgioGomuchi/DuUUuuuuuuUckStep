@@ -848,8 +848,8 @@ MonoBehaviour:
   playerBarView: {fileID: 9208216241433186538}
   progressText: {fileID: 388261103049426519}
   phaseText: {fileID: 8996953697134322650}
-  decisionInputText: {fileID: 0}
-  decisionStateText: {fileID: 0}
+  decisionInputText: {fileID: 4244551023829546688}
+  decisionStateText: {fileID: 3805567262019855330}
   hitsText: {fileID: 5112100226981672620}
   uniqueTargetsText: {fileID: 5411724354100324838}
   perfectShotsText: {fileID: 1306032875867351221}
@@ -865,8 +865,8 @@ MonoBehaviour:
   recoveryPhaseColor: {r: 1, g: 0.55, b: 0.55, a: 1}
   orbitPhaseColor: {r: 0.3, g: 1, b: 1, a: 1}
   failPhaseColor: {r: 1, g: 0.35, b: 0.35, a: 1}
-  playerSuccessIcon: {fileID: 0}
-  playerFailIcon: {fileID: 0}
+  playerSuccessIcon: {fileID: 504317150394561040}
+  playerFailIcon: {fileID: 7637882990261764128}
   hideWhenInactive: 1
   cursorUIOnlyForScreenAim: 1
   flashDuration: 0.08
@@ -4493,7 +4493,7 @@ MonoBehaviour:
   - recipe: {fileID: 11400000, guid: 00b2c79aa5b876849addfc6b8acd319d, type: 2}
     effect: {fileID: 11400000, guid: 122363d9d7e3c8949b33c2a0ba1b1a5b, type: 2}
   - recipe: {fileID: 11400000, guid: bc7374b89d264ef4e99a40442319a4f1, type: 2}
-    effect: {fileID: 11400000, guid: 866c6d1922616fa4987ade6114260408, type: 2}
+    effect: {fileID: 0}
   debugLogs: 1
 --- !u!1 &6052688968983993364
 GameObject:
@@ -5668,17 +5668,16 @@ MonoBehaviour:
   sequenceUI: {fileID: 8318554948651735393}
   boomerangWeapon: {fileID: 243321841299359157}
   catchAnchor: {fileID: 8516380595554295068}
-  decisionReflectVisualData: {fileID: 0}
-  decisionReflectSpawnPoint: {fileID: 0}
+  decisionReflectVisualData: {fileID: 11400000, guid: f56c94d9f6bd4d7428fd0595571285a8, type: 2}
+  decisionReflectSpawnPoint: {fileID: 5754922086650223405}
   playDecisionReflectVisual: 1
   debugLogs: 1
-  decisionReleaseToReflectGraceSeconds: 0.05
+  debugRewardLogs: 0
   runtime:
     phase: 0
     isRunning: 0
     isInOrbitReward: 0
     catchReached: 0
-    earlyReleaseTriggered: 0
     windowStartTime: 0
     windowDuration: 0
     catchTime: 0
@@ -5806,8 +5805,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b09872c8e9a57e4fa27ce9551a31e6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debugFireInputLogs: 1
-  debugBoomerangInputLogs: 1
+  debugFireInputLogs: 0
+  debugBoomerangInputLogs: 0
   stickDeadzone: 0.2
   defaultPrimaryFireMode: 0
   defaultSecondaryFireMode: 0
