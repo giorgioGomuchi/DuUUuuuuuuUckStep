@@ -17,11 +17,23 @@ MonoBehaviour:
   playerUIWorldOffset: {x: 0, y: 1.4, z: 0}
   rewardPolicy: {fileID: 0}
   completionReward: {fileID: 0}
+  requireRhythmOnInitialLaunch: 1
+  useBeatBasedDecisionTiming: 0
+  returnHoldDurationBeats: 1
+  catchDecisionWindowBeats: 1
+  decisionReleaseToReflectGraceBeats: 0.375
+  useBeatSteppedRecall: 1
+  recallBeatOpportunities: 3
+  postRedirectRecallBeatOpportunities: 2
+  recallStepWindowBeats: 1
+  postRedirectRecallStepWindowBeats: 1
+  waitForNextBeatOnRecall: 0
+  waitForNextBeatOnDecision: 0
   recall:
     recallRule:
       enabled: 1
-      goodHalfWindowNormalized: 0.251
-      perfectHalfWindowNormalized: 0.103
+      goodHalfWindowNormalized: 0.3
+      perfectHalfWindowNormalized: 0.18
       allowPerfect: 1
     recallWindowDuration: 1
   redirectShot:
@@ -37,8 +49,8 @@ MonoBehaviour:
     returnHoldDuration: 0.6
     decisionRule:
       enabled: 1
-      goodHalfWindowNormalized: 0.18
-      perfectHalfWindowNormalized: 0.06
+      goodHalfWindowNormalized: 0.3
+      perfectHalfWindowNormalized: 0.18
       allowPerfect: 1
     decisionWindowDuration: 0.5
   decision:

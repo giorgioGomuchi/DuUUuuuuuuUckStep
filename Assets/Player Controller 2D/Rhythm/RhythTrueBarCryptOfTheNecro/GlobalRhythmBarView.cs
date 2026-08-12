@@ -21,11 +21,25 @@ public class GlobalRhythmBarView : MonoBehaviour
 
     [Header("Prompt")]
     [SerializeField] private TMP_Text promptText;
+    [SerializeField] private TMP_Text judgementText;
+    [SerializeField] private float judgementTextDuration = 0.5f;
+
 
     [Header("Pulse Pool")]
     [SerializeField] private RectTransform leftPulseContainer;
     [SerializeField] private RectTransform rightPulseContainer;
     [SerializeField] private GlobalRhythmPulseView pulsePrefab;
+
+    [Header("Action Overlay")]
+    [SerializeField] private RectTransform actionOverlayRoot;
+
+    [SerializeField] private RectTransform leftHoldOuterMarker;
+    [SerializeField] private RectTransform leftHoldInnerMarker;
+    [SerializeField] private RectTransform leftHoldFill;
+
+    [SerializeField] private RectTransform rightHoldInnerMarker;
+    [SerializeField] private RectTransform rightHoldOuterMarker;
+    [SerializeField] private RectTransform rightHoldFill;
 
     [Header("Feedback")]
     [SerializeField] private Image feedbackFlash;
@@ -34,9 +48,16 @@ public class GlobalRhythmBarView : MonoBehaviour
     private readonly List<GlobalRhythmPulseView> leftPulses = new();
     private readonly List<GlobalRhythmPulseView> rightPulses = new();
 
+    private string promptTextOverride;
+    private GlobalRhythmPromptType lastPromptType = GlobalRhythmPromptType.None;
+    private Color lastPromptColor = Color.white;
+    private bool lastShowPromptText;
+
     private float feedbackEndTime;
 
     public RectTransform GetCenterRoot() => centerRoot;
+    private float judgementTextEndTime;
+
 
     public float RailWidth => railArea != null ? railArea.rect.width : 0f;
 
@@ -44,6 +65,12 @@ public class GlobalRhythmBarView : MonoBehaviour
     {
         if (feedbackFlash != null && feedbackFlash.enabled && Time.time >= feedbackEndTime)
             feedbackFlash.enabled = false;
+
+        if (judgementText != null && judgementText.enabled && Time.time >= judgementTextEndTime)
+        {
+            judgementText.enabled = false;
+            judgementText.text = string.Empty;
+        }
     }
 
     public void EnsurePulsePool(int countPerSide)
@@ -93,12 +120,14 @@ public class GlobalRhythmBarView : MonoBehaviour
 
         if (promptText != null)
         {
-            promptText.enabled = state.showPromptText;
-            promptText.text = BuildPromptText(state.promptType);
-            promptText.color = state.centerColor;
+            lastShowPromptText = state.showPromptText;
+            lastPromptType = state.promptType;
+            lastPromptColor = state.centerColor;
+            RefreshPromptText();
         }
 
-        SetPulseColor(state.pulseColor);
+        SetPulseColor(state.pulseFillColor);
+        SetPulseOutlineColor(state.pulseOutlineColor);
 
         if (centerRoot != null)
             centerRoot.localScale = state.emphasizeCenter ? Vector3.one * 1.08f : Vector3.one;
@@ -113,7 +142,7 @@ public class GlobalRhythmBarView : MonoBehaviour
             rightPulses[i].SetColor(color);
     }
 
-    public void SetPulseState(bool isLeft, int index, float normalizedX, float scale, bool visible)
+    public void SetPulseState(bool isLeft, int index, float normalizedX, float scale, float alpha, bool visible)
     {
         List<GlobalRhythmPulseView> list = isLeft ? leftPulses : rightPulses;
         if (index < 0 || index >= list.Count || railArea == null)
@@ -130,6 +159,16 @@ public class GlobalRhythmBarView : MonoBehaviour
 
         pulse.SetAnchoredPosition(x, 0f);
         pulse.SetScale(scale);
+        pulse.SetAlpha(alpha);
+    }
+
+    public void SetPulseOutlineColor(Color color)
+    {
+        for (int i = 0; i < leftPulses.Count; i++)
+            leftPulses[i].SetOutlineColor(color);
+
+        for (int i = 0; i < rightPulses.Count; i++)
+            rightPulses[i].SetOutlineColor(color);
     }
 
     public void HideAllPulses()
@@ -231,4 +270,159 @@ public class GlobalRhythmBarView : MonoBehaviour
         if (image != null)
             image.color = color;
     }
+
+    public void ShowHoldOverlay(
+     float leftOuterNormalized,
+     float leftInnerNormalized,
+     float rightInnerNormalized,
+     float rightOuterNormalized,
+     Color color)
+    {
+        if (railArea == null)
+            return;
+
+        if (actionOverlayRoot != null && !actionOverlayRoot.gameObject.activeSelf)
+            actionOverlayRoot.gameObject.SetActive(true);
+
+        SetMarkerPosition(leftHoldOuterMarker, leftOuterNormalized);
+        SetMarkerPosition(leftHoldInnerMarker, leftInnerNormalized);
+        SetMarkerPosition(rightHoldInnerMarker, rightInnerNormalized);
+        SetMarkerPosition(rightHoldOuterMarker, rightOuterNormalized);
+
+        SetFillBetweenBounds(leftHoldFill, leftOuterNormalized, leftInnerNormalized);
+        SetFillBetweenBounds(rightHoldFill, rightInnerNormalized, rightOuterNormalized);
+
+        SetOverlayColor(leftHoldOuterMarker, color);
+        SetOverlayColor(leftHoldInnerMarker, color);
+        SetOverlayColor(leftHoldFill, color);
+
+        SetOverlayColor(rightHoldInnerMarker, color);
+        SetOverlayColor(rightHoldOuterMarker, color);
+        SetOverlayColor(rightHoldFill, color);
+
+        SetOverlayVisible(leftHoldOuterMarker, true);
+        SetOverlayVisible(leftHoldInnerMarker, true);
+        SetOverlayVisible(leftHoldFill, true);
+
+        SetOverlayVisible(rightHoldInnerMarker, true);
+        SetOverlayVisible(rightHoldOuterMarker, true);
+        SetOverlayVisible(rightHoldFill, true);
+    }
+
+    public void HideHoldOverlay()
+    {
+        SetOverlayVisible(leftHoldOuterMarker, false);
+        SetOverlayVisible(leftHoldInnerMarker, false);
+        SetOverlayVisible(leftHoldFill, false);
+
+        SetOverlayVisible(rightHoldInnerMarker, false);
+        SetOverlayVisible(rightHoldOuterMarker, false);
+        SetOverlayVisible(rightHoldFill, false);
+
+        if (actionOverlayRoot != null)
+            actionOverlayRoot.gameObject.SetActive(false);
+    }
+
+    private void SetMarkerPosition(RectTransform marker, float normalizedX)
+    {
+        if (marker == null || railArea == null)
+            return;
+
+        float width = railArea.rect.width;
+        float x = Mathf.Lerp(-width * 0.5f, width * 0.5f, Mathf.Clamp01(normalizedX));
+
+        Vector2 pos = marker.anchoredPosition;
+        pos.x = x;
+        marker.anchoredPosition = pos;
+    }
+
+    private void SetFillBetweenBounds(RectTransform fill, float startNormalized, float endNormalized)
+    {
+        if (fill == null || railArea == null)
+            return;
+
+        float width = railArea.rect.width;
+
+        float startX = Mathf.Lerp(-width * 0.5f, width * 0.5f, Mathf.Clamp01(startNormalized));
+        float endX = Mathf.Lerp(-width * 0.5f, width * 0.5f, Mathf.Clamp01(endNormalized));
+
+        if (endX < startX)
+        {
+            float temp = startX;
+            startX = endX;
+            endX = temp;
+        }
+
+        float totalWidth = Mathf.Max(0f, endX - startX);
+
+        fill.anchorMin = new Vector2(0.5f, fill.anchorMin.y);
+        fill.anchorMax = new Vector2(0.5f, fill.anchorMax.y);
+        fill.pivot = new Vector2(0f, 0.5f);
+        fill.anchoredPosition = new Vector2(startX, fill.anchoredPosition.y);
+        fill.sizeDelta = new Vector2(totalWidth, fill.sizeDelta.y);
+    }
+
+    private void SetOverlayColor(RectTransform target, Color color)
+    {
+        if (target == null)
+            return;
+
+        Image image = target.GetComponent<Image>();
+        if (image != null)
+            image.color = color;
+    }
+
+    private void SetOverlayVisible(RectTransform target, bool visible)
+    {
+        if (target != null && target.gameObject.activeSelf != visible)
+            target.gameObject.SetActive(visible);
+    }
+
+    public void ShowJudgementInfo(string label, TimingJudgement judgement)
+    {
+        if (judgementText == null)
+            return;
+
+        string judgementLabel = judgement switch
+        {
+            TimingJudgement.Perfect => "PERFECT",
+            TimingJudgement.Good => "GOOD",
+            _ => "FAIL"
+        };
+
+        Color color = judgement switch
+        {
+            TimingJudgement.Perfect => new Color(1f, 0.95f, 0.2f, 1f),
+            TimingJudgement.Good => new Color(0.5f, 1f, 0.6f, 1f),
+            _ => new Color(1f, 0.35f, 0.35f, 1f)
+        };
+
+        judgementText.text = $"{label} {judgementLabel}";
+        judgementText.color = color;
+        judgementText.enabled = true;
+        judgementTextEndTime = Time.time + Mathf.Max(0.05f, judgementTextDuration);
+    }
+
+    public void SetPromptTextOverride(string text)
+    {
+        promptTextOverride = text;
+        RefreshPromptText();
+    }
+
+    private void RefreshPromptText()
+    {
+        if (promptText == null)
+            return;
+
+        promptText.enabled = lastShowPromptText || !string.IsNullOrEmpty(promptTextOverride);
+
+        if (!string.IsNullOrEmpty(promptTextOverride))
+            promptText.text = promptTextOverride;
+        else
+            promptText.text = BuildPromptText(lastPromptType);
+
+        promptText.color = lastPromptColor;
+    }
+
+
 }

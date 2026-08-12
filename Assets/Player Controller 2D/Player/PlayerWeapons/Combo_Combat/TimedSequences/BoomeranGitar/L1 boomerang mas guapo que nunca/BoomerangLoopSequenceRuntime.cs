@@ -118,4 +118,21 @@ public class BoomerangLoopSequenceRuntime
         phase = BoomerangLoopSequencePhase.FailCooldown;
         BeginWindow(duration);
     }
+
+    public void BeginRecallPendingBeat()
+    {
+        isRunning = true;
+        isInOrbitReward = false;
+        catchReached = false;
+        phase = BoomerangLoopSequencePhase.RecallPendingBeat;
+        windowStartTime = 0f;
+        windowDuration = 0f;
+    }
+
+    public void BeginDecisionPendingBeat()
+    {
+        phase = BoomerangLoopSequencePhase.DecisionPendingBeat;
+        windowStartTime = 0f;
+        windowDuration = 0f;
+    }
 }

@@ -325,7 +325,7 @@ public class TimedSequenceUIController : MonoBehaviour
 
         Color markerColor = phaseLabel switch
         {
-            "Decision" => new Color(0.8f, 1f, 0.55f, 1f),
+            "Decision" => new Color(1f, 0.95f, 0.2f, 1f),
             "Recall" => new Color(0.6f, 0.85f, 1f, 1f),
             "Recall 2" => new Color(0.6f, 1f, 0.8f, 1f),
             "Redirect" => new Color(0.35f, 0.85f, 1f, 1f),
@@ -634,4 +634,9 @@ public class TimedSequenceUIController : MonoBehaviour
     {
         playerBarView?.SetDecisionPerfectActive(active);
     }
+
+    public void SetPlayerBarMarkerVisible(bool visible)
+{
+    playerBarView?.SetMarkerVisible(visible);
+}
 }

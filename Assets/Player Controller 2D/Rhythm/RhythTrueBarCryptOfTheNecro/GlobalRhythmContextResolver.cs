@@ -85,4 +85,24 @@ public class GlobalRhythmContextResolver : MonoBehaviour
 
         barController.ShowInputFeedback(result.quality);
     }
+
+    public GlobalRhythmBarController GetBarController()
+    {
+        return barController;
+    }
+
+    public void ShowJudgementInfo(string label, TimingJudgement judgement)
+    {
+        barController?.ShowJudgementInfo(label, judgement);
+    }
+
+    public void SetWindowRule(TimedSequenceActionRule rule)
+    {
+        barController?.SetWindowRule(rule);
+    }
+
+    public void SetPromptTextOverride(string text)
+    {
+        barController?.SetPromptTextOverride(text);
+    }
 }

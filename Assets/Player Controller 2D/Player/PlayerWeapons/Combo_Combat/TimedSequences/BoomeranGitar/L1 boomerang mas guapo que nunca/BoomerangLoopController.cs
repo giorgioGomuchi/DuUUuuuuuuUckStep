@@ -8,11 +8,23 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     [SerializeField] private WeaponBehaviour boomerangWeapon;
     [SerializeField] private Transform catchAnchor;
 
+    [SerializeField] private RhythmCombatController rhythmCombat;
+    [SerializeField] private GlobalRhythmContextResolver globalRhythmContext;
+    [SerializeField] private RhythmClock rhythmClock;
+
+    [SerializeField] private Color globalHoldOverlayColor = new Color(0.35f, 1f, 0.7f, 0.95f);
+    [SerializeField, Min(0f)] private float globalHoldReleaseBeatOffset = 1f;
+    [SerializeField] private Color globalDecisionOverlayColor = new Color(1f, 0.9f, 0.3f, 0.95f);
+
+
+    [SerializeField] private float decisionReleaseInputLockSeconds = 0.04f;
+
+
     [Header("Decision Reflect Visual")]
     [SerializeField] private MeleeAnimatedWeaponDataSO decisionReflectVisualData;
     [SerializeField] private Transform decisionReflectSpawnPoint;
     [SerializeField] private bool playDecisionReflectVisual = true;
-    
+
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
@@ -36,6 +48,29 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     private int shotRedirectSuccessCount;
     private int shotRedirectPerfectCount;
     private float weightedScore;
+
+
+    private GlobalRhythmPromptType lastAppliedGlobalPrompt = GlobalRhythmPromptType.None;
+    private bool globalBoomerangContextApplied;
+    private float catchDecisionStartTime;
+    private bool sawBoomerangHeldInDecision;
+    private int recallAttemptsRemaining;
+    private int recallAttemptsTotal;
+
+    private bool pendingRecallPostRedirect;
+    private bool waitingForRecallBeat;
+    private bool waitingForDecisionBeat;
+
+    private bool recallIntentBuffered;
+    private bool releaseIntentBuffered;
+    private bool reflectIntentBuffered;
+
+    private float recallIntentBufferedTime;
+    private float releaseIntentBufferedTime;
+    private float reflectIntentBufferedTime;
+    private bool allowHeldRecallAfterDecision;
+    private float heldRecallAfterDecisionGraceEndTime;
+    [SerializeField] private float heldRecallAfterDecisionGraceSeconds = 0.25f;
 
 
     private bool pendingDecisionRelease;
@@ -68,6 +103,15 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         if (sequenceUI == null)
             sequenceUI = GetComponentInChildren<TimedSequenceUIController>(true);
 
+        if (rhythmCombat == null)
+            rhythmCombat = FindFirstObjectByType<RhythmCombatController>();
+
+        if (globalRhythmContext == null)
+            globalRhythmContext = FindFirstObjectByType<GlobalRhythmContextResolver>();
+
+        if (rhythmClock == null)
+            rhythmClock = FindFirstObjectByType<RhythmClock>();
+
         rewardEvaluator = new BoomerangSequenceRewardEvaluator();
     }
 
@@ -83,6 +127,8 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         if (input == null)
             return;
 
+        CaptureInputIntents(input);
+
         if (!runtime.IsRunning)
         {
             TryStartFromIdle(input);
@@ -90,6 +136,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         }
 
         UpdateUI();
+        UpdateGlobalRhythmContext();
 
         switch (runtime.Phase)
         {
@@ -113,10 +160,53 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
                 TickRecovery();
                 break;
 
+            case BoomerangLoopSequencePhase.RecallPendingBeat:
+                TickRecallPendingBeat();
+                break;
+
+            case BoomerangLoopSequencePhase.DecisionPendingBeat:
+                TickDecisionPendingBeat(input);
+                break;
+
             case BoomerangLoopSequencePhase.FailCooldown:
                 TickFailCooldown();
                 break;
         }
+    }
+
+    private void CaptureInputIntents(PlayerInputReader input)
+    {
+        if (input == null)
+            return;
+
+        if (input.ConsumeBoomerangPressed())
+        {
+            recallIntentBuffered = true;
+            recallIntentBufferedTime = Time.time;
+        }
+
+        if (input.ConsumeBoomerangReleased())
+        {
+            releaseIntentBuffered = true;
+            releaseIntentBufferedTime = Time.time;
+        }
+
+        if (input.ConsumeSecondaryFireRequest())
+        {
+            reflectIntentBuffered = true;
+            reflectIntentBufferedTime = Time.time;
+        }
+    }
+
+    private void ClearBufferedIntents()
+    {
+        recallIntentBuffered = false;
+        releaseIntentBuffered = false;
+        reflectIntentBuffered = false;
+
+        recallIntentBufferedTime = 0f;
+        releaseIntentBufferedTime = 0f;
+        reflectIntentBufferedTime = 0f;
     }
 
     public bool BeginLoop(BoomerangProjectile2D projectile, WeaponBehaviour weapon, BoomerangLoopWeaponDataSO weaponData)
@@ -141,10 +231,15 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         BindProjectileEvents();
 
         runtime.Reset();
-        runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
 
         sequenceUI?.ShowBoomerang(activeDefinition, playerReferences);
-        UpdateUI();
+        BeginRecallPhase(false);
+
+        ApplyBoomerangWeaponContext();
+        UpdateGlobalRhythmContext();
+
+        allowHeldRecallAfterDecision = false;
+        heldRecallAfterDecisionGraceEndTime = 0f;
 
         if (debugLogs)
             Debug.Log("[BoomerangLoopController] Loop started.", this);
@@ -188,8 +283,51 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             return;
         }
 
-        if (!input.ConsumeBoomerangPressed())
+        if (!recallIntentBuffered)
             return;
+
+        recallIntentBuffered = false;
+        recallIntentBufferedTime = 0f;
+
+        BoomerangLoopWeaponDataSO loopData = boomerangWeapon.WeaponData as BoomerangLoopWeaponDataSO;
+        BoomerangLoopSequenceDefinitionSO definition = loopData != null ? loopData.loopSequenceDefinition : null;
+
+        bool requireRhythmGate = definition != null && definition.RequireRhythmOnInitialLaunch;
+
+        if (requireRhythmGate && rhythmCombat != null)
+        {
+            RhythmInputResult result = rhythmCombat.RegisterAttack(CombatAction.Special);
+
+            bool launchAccepted =
+                result.quality == RhythmHitQuality.Good ||
+                result.quality == RhythmHitQuality.Perfect;
+
+            if (!launchAccepted)
+            {
+                if (debugLogs)
+                {
+                    Debug.Log(
+                        $"[BoomerangLoopController] Initial launch blocked by rhythm gate. quality={result.quality} dist={result.distanceToBeat:F3}s",
+                        this);
+                }
+                ShowGlobalJudgementInfo("LAUNCH", default);
+                return;
+            }
+
+            ShowGlobalJudgementInfo("LAUNCH", result.quality switch
+            {
+                RhythmHitQuality.Perfect => TimingJudgement.Perfect,
+                RhythmHitQuality.Good => TimingJudgement.Good,
+                _ => default
+            });
+
+            if (debugLogs)
+            {
+                Debug.Log(
+                    $"[BoomerangLoopController] Initial launch accepted by rhythm gate. quality={result.quality} dist={result.distanceToBeat:F3}s",
+                    this);
+            }
+        }
 
         Debug.Log("[BoomerangLoopController] Boomerang pressed consumed. Trying to fire.", this);
 
@@ -225,6 +363,9 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         if (runtime.IsWindowExpired())
         {
+            if (AdvanceRecallAttemptWindow())
+                return;
+
             if (debugLogs)
                 Debug.Log("[BoomerangLoopController] Recall window expired -> fail.", this);
 
@@ -241,14 +382,22 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             return;
 
         // 2) L1: recall normal.
-        if (!input.ConsumeBoomerangPressed())
+        bool recallIntent = recallIntentBuffered;
+
+        if (!recallIntent && allowHeldRecallAfterDecision && input != null && input.BoomerangHeld)
+            recallIntent = true;
+
+        if (!recallIntent)
             return;
 
-        TimingJudgement recallJudgement = EvaluateTiming(
-            runtime.GetWindowNormalizedTime(),
-            activeDefinition.RecallRule);
+        recallIntentBuffered = false;
+        recallIntentBufferedTime = 0f;
+
+        TimingJudgement recallJudgement = EvaluateRecallJudgement();
 
         sequenceUI?.FlashJudgement(recallJudgement);
+
+        ShowGlobalJudgementInfo("RECALL", recallJudgement);
 
         if (!IsSuccess(recallJudgement))
         {
@@ -267,8 +416,11 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         isPostRedirectRecall = false;
 
-        activeProjectile.StartCurvedReturn(activeDefinition.ReturnHoldDuration, 1f);
-        runtime.BeginReturningHold(activeDefinition.ReturnHoldDuration);
+        float holdDuration = activeDefinition.ResolveReturnHoldDuration(rhythmClock);
+
+        activeProjectile.StartCurvedReturn(holdDuration, 1f);
+        runtime.BeginReturningHold(holdDuration);
+
         UpdateUI();
     }
 
@@ -287,8 +439,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             if (debugLogs)
                 Debug.Log("[BoomerangLoopController] Redirect finished -> entering Recall 2.", this);
 
-            runtime.BeginRecallWindow(activeDefinition.PostRedirectRecallWindowDuration);
-            UpdateUI();
+            BeginRecallPhase(true);
         }
     }
 
@@ -307,9 +458,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         if (!CanArmRecallShotRedirect())
             return false;
 
-        TimingJudgement shotJudgement = EvaluateTiming(
-            runtime.GetWindowNormalizedTime(),
-            activeDefinition.RecallRule);
+        TimingJudgement shotJudgement = EvaluateRecallJudgement();
 
         sequenceUI?.FlashJudgement(shotJudgement);
 
@@ -380,11 +529,32 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         }
 
         // 1) RELEASE L1 => Good o Perfect => relaunch
-        if (input.ConsumeBoomerangReleased())
+        if (input.BoomerangHeld)
+            sawBoomerangHeldInDecision = true;
+
+        bool rawReleasedThisFrame = releaseIntentBuffered;
+
+        bool releaseAllowed =
+            sawBoomerangHeldInDecision &&
+            rawReleasedThisFrame &&
+            Time.time >= catchDecisionStartTime + Mathf.Max(0f, decisionReleaseInputLockSeconds);
+
+        if (rawReleasedThisFrame && debugLogs)
         {
-            TimingJudgement judgement = EvaluateTiming(
-                runtime.GetWindowNormalizedTime(),
-                activeDefinition.CatchDecisionRule);
+            Debug.Log(
+                $"[BoomerangLoopController] ConsumeBoomerangReleased() = TRUE | " +
+                $"releaseAllowed={releaseAllowed} " +
+                $"sawHeldInDecision={sawBoomerangHeldInDecision} " +
+                $"timeSinceDecisionStart={(Time.time - catchDecisionStartTime):F3}",
+                this);
+        }
+
+        if (rawReleasedThisFrame && releaseAllowed)
+        {
+            releaseIntentBuffered = false;
+            releaseIntentBufferedTime = 0f;
+
+            TimingJudgement judgement = EvaluateCatchDecisionJudgement();
 
             lastDecisionInputText = "L1 RELEASE (QUEUED)";
 
@@ -396,6 +566,8 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             };
 
             sequenceUI?.FlashJudgement(judgement);
+
+            ShowGlobalJudgementInfo("L1 RELEASE", judgement);
 
             if (debugLogs)
                 Debug.Log($"[BoomerangLoopController] Catch decision L1 release. judgement={judgement}", this);
@@ -419,11 +591,11 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         }
 
         // 2) L2 => solo Perfect => reflect
-        if (TryConsumeReflectDecisionInput(input))
+        if (reflectIntentBuffered)
         {
-            TimingJudgement judgement = EvaluateTiming(
-                runtime.GetWindowNormalizedTime(),
-                activeDefinition.CatchDecisionRule);
+            reflectIntentBuffered = false;
+            reflectIntentBufferedTime = 0f;
+            TimingJudgement judgement = EvaluateCatchDecisionJudgement();
 
             lastDecisionInputText = "L2";
             lastDecisionWindowStateText = judgement switch
@@ -434,6 +606,8 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             };
 
             sequenceUI?.FlashJudgement(judgement);
+
+            ShowGlobalJudgementInfo("L2 REFLECT", judgement);
 
             if (debugLogs)
                 Debug.Log($"[BoomerangLoopController] Catch decision L2 input. judgement={judgement}", this);
@@ -470,7 +644,9 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         if (pendingDecisionRelease)
         {
             float elapsed = Time.time - pendingDecisionReleaseTime;
-            if (elapsed >= activeDefinition.DecisionReleaseToReflectGraceSeconds)
+
+            float graceSeconds = activeDefinition.ResolveDecisionReleaseToReflectGraceSeconds(rhythmClock);
+            if (elapsed >= graceSeconds)
             {
                 sequenceUI?.SetCatchPulseVisible(false);
 
@@ -537,8 +713,7 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         Vector2 aim = activeWeapon.CurrentAim;
         activeProjectile.LoopReflectFromMelee(aim);
 
-        runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
-        UpdateUI();
+        BeginRecallPhase(false);
 
 
         if (debugLogs)
@@ -742,10 +917,10 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         Vector2 aim = activeWeapon.CurrentAim;
         activeProjectile.Relaunch(aim);
 
-        runtime.BeginRecallWindow(activeDefinition.RecallWindowDuration);
-        UpdateUI();
+        BeginRecallPhase(false);
+        allowHeldRecallAfterDecision = true;
+        heldRecallAfterDecisionGraceEndTime = Time.time + heldRecallAfterDecisionGraceSeconds;
 
-       
         if (debugLogs)
             Debug.Log(
                 $"[BoomerangLoopController] Relaunch success. " +
@@ -791,7 +966,40 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             return;
         }
 
-        runtime.BeginCatchDecisionWindow(activeDefinition.CatchDecisionWindowDuration);
+        float decisionDuration = activeDefinition.ResolveCatchDecisionWindowDuration(rhythmClock);
+
+        if (activeDefinition.WaitForNextBeatOnDecision)
+        {
+            waitingForDecisionBeat = true;
+            runtime.BeginDecisionPendingBeat();
+
+            catchDecisionStartTime = 0f;
+            sawBoomerangHeldInDecision = false;
+
+            lastDecisionInputText = "WAIT NEXT BEAT";
+            lastDecisionWindowStateText = "DECISION PENDING";
+        }
+        else
+        {
+            waitingForDecisionBeat = false;
+            runtime.BeginCatchDecisionWindow(decisionDuration);
+
+            catchDecisionStartTime = Time.time;
+            sawBoomerangHeldInDecision = false;
+
+            lastDecisionInputText = "WAITING";
+            lastDecisionWindowStateText = "NONE";
+        }
+
+        pendingDecisionRelease = false;
+        pendingDecisionReleaseTime = 0f;
+        pendingDecisionReleaseJudgement = default;
+
+        releaseIntentBuffered = false;
+        releaseIntentBufferedTime = 0f;
+        reflectIntentBuffered = false;
+        reflectIntentBufferedTime = 0f;
+
         UpdateUI();
     }
 
@@ -909,6 +1117,9 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         ResetLoopCounters();
         ResetDecisionState();
         ResetFailState();
+        ClearGlobalRhythmContext();
+
+        ClearBufferedIntents();
 
         sequenceUI?.Hide();
     }
@@ -957,6 +1168,8 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
     private void UpdateDecisionUI(string phaseLabel, float normalized, TimedSequenceActionRule rule, bool useNeutralBar)
     {
+        sequenceUI.SetPlayerBarMarkerVisible(true);
+
         sequenceUI.SetBoomerangWindowProgress(
             normalized,
             relaunchSuccessCount + reflectSuccessCount,
@@ -965,8 +1178,6 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
             phaseLabel,
             useNeutralBar);
 
-        if (runtime.Phase == BoomerangLoopSequencePhase.CatchDecisionWindow)
-            lastDecisionWindowStateText = GetDecisionWindowStateText();
 
         sequenceUI.SetBoomerangDecisionDebug(lastDecisionInputText, lastDecisionWindowStateText);
 
@@ -1031,7 +1242,9 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         return runtime.Phase switch
         {
+            BoomerangLoopSequencePhase.RecallPendingBeat => activeDefinition.RecallRule,
             BoomerangLoopSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
+            BoomerangLoopSequencePhase.DecisionPendingBeat => activeDefinition.CatchDecisionRule,
             BoomerangLoopSequencePhase.CatchDecisionWindow => activeDefinition.CatchDecisionRule,
             _ => null
         };
@@ -1041,11 +1254,19 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     {
         return runtime.Phase switch
         {
+            BoomerangLoopSequencePhase.RecallPendingBeat =>
+                isPostRedirectRecall
+                    ? $"Recall {GetCurrentRecallAttemptLabel()}"
+                    : (pendingRecallShotRedirect ? "Shoot" : $"Recall {GetCurrentRecallAttemptLabel()}"),
+
             BoomerangLoopSequencePhase.OutboundRecallWindow =>
-                isPostRedirectRecall ? "Recall 2" : (pendingRecallShotRedirect ? "Shoot" : "Recall"),
+                isPostRedirectRecall
+                    ? $"Recall {GetCurrentRecallAttemptLabel()}"
+                    : (pendingRecallShotRedirect ? "Shoot" : $"Recall {GetCurrentRecallAttemptLabel()}"),
 
             BoomerangLoopSequencePhase.ShotRedirectedOutbound => "Redirect",
             BoomerangLoopSequencePhase.ReturningHold => "Hold",
+            BoomerangLoopSequencePhase.DecisionPendingBeat => "Decision",
             BoomerangLoopSequencePhase.CatchDecisionWindow => "Decision",
             BoomerangLoopSequencePhase.Recovery => "Recovery",
             BoomerangLoopSequencePhase.FailCooldown => "Failed",
@@ -1054,10 +1275,46 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         };
     }
 
+    private string GetCurrentRecallAttemptLabel()
+    {
+        if (recallAttemptsTotal <= 0)
+            return "1/1";
+
+        int currentAttempt = Mathf.Clamp((recallAttemptsTotal - recallAttemptsRemaining) + 1, 1, recallAttemptsTotal);
+        return $"{currentAttempt}/{recallAttemptsTotal}";
+    }
+
     private float GetCurrentNormalizedTime()
     {
-        return runtime.GetWindowNormalizedTime();
+        switch (runtime.Phase)
+        {
+            case BoomerangLoopSequencePhase.RecallPendingBeat:
+            case BoomerangLoopSequencePhase.DecisionPendingBeat:
+                return 0f;
+
+            case BoomerangLoopSequencePhase.OutboundRecallWindow:
+            case BoomerangLoopSequencePhase.CatchDecisionWindow:
+                {
+                    bool useBeatSyncedMarker =
+                        (runtime.Phase == BoomerangLoopSequencePhase.OutboundRecallWindow && activeDefinition != null && activeDefinition.UseBeatSteppedRecall) ||
+                        (runtime.Phase == BoomerangLoopSequencePhase.CatchDecisionWindow && activeDefinition != null && activeDefinition.UseBeatBasedDecisionTiming);
+
+                    if (useBeatSyncedMarker && globalRhythmContext != null)
+                    {
+                        GlobalRhythmBarController barController = globalRhythmContext.GetBarController();
+                        if (barController != null)
+                            return barController.GetBeatPhase01();
+                    }
+
+                    return runtime.GetWindowNormalizedTime();
+                }
+
+            default:
+                return runtime.GetWindowNormalizedTime();
+        }
     }
+
+
 
     private static TimingJudgement EvaluateTiming(float normalizedTime, TimedSequenceActionRule rule)
     {
@@ -1085,12 +1342,15 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
     {
         return runtime.Phase switch
         {
+            BoomerangLoopSequencePhase.RecallPendingBeat =>
+                isPostRedirectRecall ? "WAIT BEAT / L1 RECALL" : "WAIT BEAT / L1 RECALL / R2 SHOOT",
+
             BoomerangLoopSequencePhase.OutboundRecallWindow =>
                 isPostRedirectRecall ? "L1 RECALL" : "L1 RECALL / R2 SHOOT",
 
             BoomerangLoopSequencePhase.ShotRedirectedOutbound => "GET READY",
-
             BoomerangLoopSequencePhase.ReturningHold => "HOLD L1",
+            BoomerangLoopSequencePhase.DecisionPendingBeat => "WAIT BEAT / RELEASE OR R2",
             BoomerangLoopSequencePhase.CatchDecisionWindow => "L1 GOOD / L2 PERFECT",
             BoomerangLoopSequencePhase.Recovery => "RECOVERY",
             BoomerangLoopSequencePhase.FailCooldown => string.IsNullOrEmpty(failReasonText) ? "FAILED" : failReasonText,
@@ -1174,6 +1434,11 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
         pendingRecallShotRedirectJudgement = default;
 
         isPostRedirectRecall = false;
+
+        recallAttemptsRemaining = 0;
+        recallAttemptsTotal = 0;
+
+
     }
 
   
@@ -1255,5 +1520,427 @@ public class BoomerangLoopController : MonoBehaviour, IBoomerangSequenceBridge
 
         return true;
     }
+
+    private void ApplyBoomerangWeaponContext()
+    {
+        if (globalRhythmContext == null)
+            return;
+
+        globalRhythmContext.SetWeaponHint(GlobalRhythmWeaponHint.Boomerang);
+        globalBoomerangContextApplied = true;
+    }
+
+    private void ClearGlobalRhythmContext()
+    {
+        if (globalRhythmContext == null)
+            return;
+
+        globalRhythmContext.ClearPrompt();
+        globalRhythmContext.SetWindowRule(null);
+
+        GlobalRhythmBarController barController = globalRhythmContext.GetBarController();
+        if (barController != null)
+        {
+            GlobalRhythmBarView barView = barController.GetBarView();
+            if (barView != null)
+                barView.HideHoldOverlay();
+        }
+
+        if (globalBoomerangContextApplied)
+        {
+            globalRhythmContext.SetWeaponHint(GlobalRhythmWeaponHint.Default);
+            globalBoomerangContextApplied = false;
+        }
+
+        lastAppliedGlobalPrompt = GlobalRhythmPromptType.None;
+    }
+
+    private void UpdateGlobalRhythmContext()
+    {
+        if (globalRhythmContext == null)
+            return;
+
+        UpdateGlobalActionOverlay();
+
+        UpdateGlobalWindowRuleForCurrentPhase();
+
+        UpdateGlobalRecallAttemptText();
+
+        if (!runtime.IsRunning)
+        {
+            if (lastAppliedGlobalPrompt != GlobalRhythmPromptType.None)
+            {
+                globalRhythmContext.ClearPrompt();
+                lastAppliedGlobalPrompt = GlobalRhythmPromptType.None;
+            }
+
+            return;
+        }
+
+        GlobalRhythmPromptType prompt = ResolveGlobalPromptForCurrentPhase();
+
+        if (prompt == lastAppliedGlobalPrompt)
+            return;
+
+        if (prompt == GlobalRhythmPromptType.None)
+            globalRhythmContext.ClearPrompt();
+        else
+            globalRhythmContext.SetPrompt(prompt);
+
+        lastAppliedGlobalPrompt = prompt;
+    }
+
+    private void UpdateGlobalHoldOverlay(GlobalRhythmBarController barController, GlobalRhythmBarView barView)
+    {
+        if (!runtime.IsRunning || runtime.Phase != BoomerangLoopSequencePhase.ReturningHold || activeDefinition == null)
+        {
+            barView.HideHoldOverlay();
+            return;
+        }
+
+        float holdBeats;
+
+        if (activeDefinition.UseBeatBasedDecisionTiming && rhythmClock != null)
+            holdBeats = activeDefinition.ReturnHoldDurationBeats;
+        else if (rhythmClock != null && rhythmClock.SecondsPerBeat > 0.0001f)
+            holdBeats = activeDefinition.ResolveReturnHoldDuration(rhythmClock) / rhythmClock.SecondsPerBeat;
+        else
+            holdBeats = 1f;
+
+        float elapsedBeats = Mathf.Clamp01(runtime.GetWindowNormalizedTime()) * Mathf.Max(0f, holdBeats);
+
+        float startBeatLabel = globalHoldReleaseBeatOffset + holdBeats - elapsedBeats;
+        float endBeatLabel = globalHoldReleaseBeatOffset - elapsedBeats;
+
+        float leftOuterNormalized = barController.GetNormalizedXForBeatLabel(startBeatLabel, true);
+        float leftInnerNormalized = barController.GetNormalizedXForBeatLabel(endBeatLabel, true);
+
+        float rightInnerNormalized = barController.GetNormalizedXForBeatLabel(endBeatLabel, false);
+        float rightOuterNormalized = barController.GetNormalizedXForBeatLabel(startBeatLabel, false);
+
+        barView.ShowHoldOverlay(
+            leftOuterNormalized,
+            leftInnerNormalized,
+            rightInnerNormalized,
+            rightOuterNormalized,
+            globalHoldOverlayColor);
+    }
+
+    private GlobalRhythmPromptType ResolveGlobalPromptForCurrentPhase()
+    {
+        switch (runtime.Phase)
+        {
+            case BoomerangLoopSequencePhase.ReturningHold:
+                return GlobalRhythmPromptType.Hold;
+
+            case BoomerangLoopSequencePhase.CatchDecisionWindow:
+                return GlobalRhythmPromptType.Release;
+
+            case BoomerangLoopSequencePhase.OutboundRecallWindow:
+                return GlobalRhythmPromptType.None;
+
+            case BoomerangLoopSequencePhase.Recovery:
+            case BoomerangLoopSequencePhase.FailCooldown:
+                return GlobalRhythmPromptType.Danger;
+
+            default:
+                return GlobalRhythmPromptType.None;
+        }
+    }
+
+   
+
+    private TimingJudgement EvaluateGlobalRhythmJudgement()
+    {
+        if (rhythmCombat == null)
+            return default;
+
+        RhythmInputResult result = rhythmCombat.RegisterAttack(CombatAction.Special);
+
+        return result.quality switch
+        {
+            RhythmHitQuality.Perfect => TimingJudgement.Perfect,
+            RhythmHitQuality.Good => TimingJudgement.Good,
+            _ => default
+        };
+    }
+
+    private TimingJudgement EvaluateCatchDecisionJudgement()
+    {
+        if (activeDefinition != null && activeDefinition.UseBeatBasedDecisionTiming && rhythmCombat != null)
+            return EvaluateGlobalRhythmJudgement();
+
+        return EvaluateTiming(
+            runtime.GetWindowNormalizedTime(),
+            activeDefinition != null ? activeDefinition.CatchDecisionRule : null);
+    }
+
+    private void UpdateGlobalDecisionOverlay(GlobalRhythmBarController barController, GlobalRhythmBarView barView)
+    {
+        if (!runtime.IsRunning || runtime.Phase != BoomerangLoopSequencePhase.CatchDecisionWindow || activeDefinition == null)
+        {
+            barView.HideHoldOverlay();
+            return;
+        }
+
+        float decisionBeats;
+
+        if (activeDefinition.UseBeatBasedDecisionTiming && rhythmClock != null)
+            decisionBeats = activeDefinition.CatchDecisionWindowBeats;
+        else if (rhythmClock != null && rhythmClock.SecondsPerBeat > 0.0001f)
+            decisionBeats = activeDefinition.ResolveCatchDecisionWindowDuration(rhythmClock) / rhythmClock.SecondsPerBeat;
+        else
+            decisionBeats = 1f;
+
+        float elapsedBeats = Mathf.Clamp01(runtime.GetWindowNormalizedTime()) * Mathf.Max(0f, decisionBeats);
+
+        // La decisión va desde el beat de release (1) hasta el centro (0).
+        float currentBeatLabel = Mathf.Max(0f, globalHoldReleaseBeatOffset - elapsedBeats);
+
+        float leftOuterNormalized = barController.GetNormalizedXForBeatLabel(currentBeatLabel, true);
+        float leftInnerNormalized = 0.5f;
+
+        float rightInnerNormalized = 0.5f;
+        float rightOuterNormalized = barController.GetNormalizedXForBeatLabel(currentBeatLabel, false);
+
+        barView.ShowHoldOverlay(
+            leftOuterNormalized,
+            leftInnerNormalized,
+            rightInnerNormalized,
+            rightOuterNormalized,
+            globalDecisionOverlayColor);
+    }
+
+    private void UpdateGlobalActionOverlay()
+    {
+        if (globalRhythmContext == null)
+            return;
+
+        GlobalRhythmBarController barController = globalRhythmContext.GetBarController();
+        if (barController == null)
+            return;
+
+        GlobalRhythmBarView barView = barController.GetBarView();
+        if (barView == null)
+            return;
+
+        if (!runtime.IsRunning || activeDefinition == null)
+        {
+            barView.HideHoldOverlay();
+            return;
+        }
+
+        switch (runtime.Phase)
+        {
+            case BoomerangLoopSequencePhase.ReturningHold:
+                UpdateGlobalHoldOverlay(barController, barView);
+                break;
+
+            case BoomerangLoopSequencePhase.CatchDecisionWindow:
+                UpdateGlobalDecisionOverlay(barController, barView);
+                break;
+
+            default:
+                barView.HideHoldOverlay();
+                break;
+        }
+    }
+
+    private void ShowGlobalJudgementInfo(string label, TimingJudgement judgement)
+    {
+        globalRhythmContext?.ShowJudgementInfo(label, judgement);
+    }
+
+    private TimingJudgement EvaluateRecallJudgement()
+    {
+        if (activeDefinition != null && activeDefinition.UseBeatBasedDecisionTiming && rhythmCombat != null)
+            return EvaluateGlobalRhythmJudgement();
+
+        return EvaluateTiming(
+            runtime.GetWindowNormalizedTime(),
+            activeDefinition != null ? activeDefinition.RecallRule : null);
+    }
+
+
+    private void UpdateGlobalWindowRuleForCurrentPhase()
+    {
+        if (globalRhythmContext == null || activeDefinition == null)
+            return;
+
+        TimedSequenceActionRule rule = runtime.Phase switch
+        {
+            BoomerangLoopSequencePhase.OutboundRecallWindow => activeDefinition.RecallRule,
+            BoomerangLoopSequencePhase.CatchDecisionWindow => activeDefinition.CatchDecisionRule,
+            _ => null
+        };
+
+        globalRhythmContext.SetWindowRule(rule);
+    }
+
+    private void BeginRecallPhase(bool postRedirect)
+    {
+        if (activeDefinition == null)
+            return;
+
+        isPostRedirectRecall = postRedirect;
+        pendingRecallPostRedirect = postRedirect;
+
+        recallAttemptsTotal = activeDefinition.ResolveRecallBeatOpportunities(postRedirect);
+        recallAttemptsRemaining = recallAttemptsTotal;
+
+        float duration = activeDefinition.ResolveRecallStepWindowDuration(rhythmClock, postRedirect);
+
+        if (activeDefinition.WaitForNextBeatOnRecall)
+        {
+            waitingForRecallBeat = true;
+            runtime.BeginRecallPendingBeat();
+
+            lastDecisionInputText = "WAIT NEXT BEAT";
+            lastDecisionWindowStateText = $"RECALL 1/{recallAttemptsTotal}";
+        }
+        else
+        {
+            waitingForRecallBeat = false;
+            runtime.BeginRecallWindow(duration);
+
+            lastDecisionInputText = "WAIT L1";
+            lastDecisionWindowStateText = $"BEAT 1/{recallAttemptsTotal}";
+        }
+
+        UpdateUI();
+
+    }
+
+    private void TickRecallPendingBeat()
+    {
+        if (!waitingForRecallBeat || activeDefinition == null)
+            return;
+
+        if (!IsNearNextBeat())
+            return;
+
+        waitingForRecallBeat = false;
+
+        float duration = activeDefinition.ResolveRecallStepWindowDuration(rhythmClock, pendingRecallPostRedirect);
+        runtime.BeginRecallWindow(duration);
+
+
+
+        lastDecisionInputText = "WAIT L1";
+        lastDecisionWindowStateText = $"BEAT 1/{recallAttemptsTotal}";
+
+        if (debugLogs)
+            Debug.Log("[BoomerangLoopController] Recall pending -> recall window started on next beat.", this);
+
+        UpdateUI();
+    }
+
+    private bool AdvanceRecallAttemptWindow()
+    {
+        if (activeDefinition == null || !activeDefinition.UseBeatSteppedRecall)
+            return false;
+
+        if (recallAttemptsRemaining <= 1)
+            return false;
+
+        recallAttemptsRemaining--;
+
+        int currentAttempt = (recallAttemptsTotal - recallAttemptsRemaining) + 1;
+
+        pendingRecallPostRedirect = isPostRedirectRecall;
+
+        float duration = activeDefinition.ResolveRecallStepWindowDuration(rhythmClock, isPostRedirectRecall);
+
+        if (activeDefinition.WaitForNextBeatOnRecall)
+        {
+            waitingForRecallBeat = true;
+            runtime.BeginRecallPendingBeat();
+
+            lastDecisionInputText = "WAIT NEXT BEAT";
+            lastDecisionWindowStateText = $"RECALL {currentAttempt}/{recallAttemptsTotal}";
+        }
+        else
+        {
+            waitingForRecallBeat = false;
+            runtime.BeginRecallWindow(duration);
+
+            lastDecisionInputText = "WAIT L1";
+            lastDecisionWindowStateText = $"BEAT {currentAttempt}/{recallAttemptsTotal}";
+        }
+
+        if (debugLogs)
+            Debug.Log($"[BoomerangLoopController] Recall stepped window advanced -> pending beat {currentAttempt}/{recallAttemptsTotal}", this);
+
+        UpdateUI();
+        return true;
+    }
+
+    private void UpdateGlobalRecallAttemptText()
+    {
+        if (globalRhythmContext == null)
+            return;
+
+        if (!runtime.IsRunning || runtime.Phase != BoomerangLoopSequencePhase.OutboundRecallWindow)
+        {
+            globalRhythmContext.SetPromptTextOverride(string.Empty);
+            return;
+        }
+
+        globalRhythmContext.SetPromptTextOverride($"RECALL {GetCurrentRecallAttemptLabel()}");
+    }
+
+   
+
+    private float GetSecondsUntilNextBeat()
+    {
+        if (rhythmClock == null || rhythmClock.SecondsPerBeat <= 0.0001f)
+            return 0f;
+
+        float phase = rhythmClock.GetBeatPhase01();
+        float remaining01 = 1f - phase;
+
+        if (remaining01 <= 0.0001f)
+            return 0f;
+
+        return remaining01 * rhythmClock.SecondsPerBeat;
+    }
+
+    private bool IsNearNextBeat(float toleranceSeconds = 0.02f)
+    {
+        return GetSecondsUntilNextBeat() <= Mathf.Max(0.001f, toleranceSeconds);
+    }
+
+    private void TickDecisionPendingBeat(PlayerInputReader input)
+    {
+        if (!waitingForDecisionBeat || activeDefinition == null)
+            return;
+
+        if (!IsNearNextBeat())
+            return;
+
+        waitingForDecisionBeat = false;
+
+        float decisionDuration = activeDefinition.ResolveCatchDecisionWindowDuration(rhythmClock);
+        runtime.BeginCatchDecisionWindow(decisionDuration);
+
+        releaseIntentBuffered = false;
+        releaseIntentBufferedTime = 0f;
+        reflectIntentBuffered = false;
+        reflectIntentBufferedTime = 0f;
+
+        catchDecisionStartTime = Time.time;
+        sawBoomerangHeldInDecision = input != null && input.BoomerangHeld;
+
+        lastDecisionInputText = "WAITING";
+        lastDecisionWindowStateText = "NONE";
+
+        if (debugLogs)
+            Debug.Log("[BoomerangLoopController] Decision pending -> decision window started on next beat.", this);
+
+        UpdateUI();
+    }
+
+
+
 
 }

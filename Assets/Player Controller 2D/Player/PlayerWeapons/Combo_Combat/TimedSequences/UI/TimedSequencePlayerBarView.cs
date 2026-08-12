@@ -205,4 +205,10 @@ public class TimedSequencePlayerBarView : MonoBehaviour
 
         SetDecisionLineWidth(active ? 10f : 5f);
     }
+
+    public void SetMarkerVisible(bool visible)
+    {
+        if (marker != null && marker.gameObject.activeSelf != visible)
+            marker.gameObject.SetActive(visible);
+    }
 }

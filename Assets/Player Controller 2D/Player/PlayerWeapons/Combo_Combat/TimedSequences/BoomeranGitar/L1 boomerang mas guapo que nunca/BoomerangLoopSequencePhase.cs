@@ -6,8 +6,10 @@ public enum BoomerangLoopSequencePhase
     ReturningHold = 3,
     CatchDecisionWindow = 4,
     Recovery = 5,
-    OrbitReward = 6,
-    Completed = 7,
-    Failed = 8,
-    FailCooldown = 9
+    RecallPendingBeat = 6,
+    DecisionPendingBeat = 7,
+    OrbitReward = 8,
+    Completed = 9,
+    Failed = 10,
+    FailCooldown = 11
 }
